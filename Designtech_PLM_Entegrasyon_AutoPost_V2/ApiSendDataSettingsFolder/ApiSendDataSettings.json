@@ -1,0 +1,388 @@
+{
+  "WTPartMaster": [
+    {
+      "ID": "709cd587-12ee-4e86-8599-60988acfee8d",
+      "Name": "CreatedOn",
+      "SQLName": "CreatedOn",
+      "IsActive": "true"
+    },
+    {
+      "ID": "f2a6a110-750d-47ac-bc49-4f0a6ee028ee",
+      "Name": "ID",
+      "SQLName": "ID",
+      "IsActive": "true"
+    },
+    {
+      "ID": "ed44ca8c-c7aa-473c-8510-0f83743fe111",
+      "Name": "LastModified",
+      "SQLName": "LastModified",
+      "IsActive": "true"
+    },
+    {
+      "ID": "dad534bb-f71a-4b1e-80f4-83c30a1474ef",
+      "Name": "AlternateNumber",
+      "SQLName": "AlternateNumber",
+      "IsActive": "false"
+    },
+    {
+      "ID": "86847630-4adf-4348-9115-9dc9364c7d59",
+      "Name": "AssemblyModeValue",
+      "SQLName": "AssemblyModeValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "a5ca3dd7-aa68-44c7-9b6e-7663b84abfdb",
+      "Name": "AssemblyModeDisplay",
+      "SQLName": "AssemblyModeDisplay",
+      "IsActive": "false"
+    },
+    {
+      "ID": "a9cc51e6-4e5a-4689-b47b-c37e2c713094",
+      "Name": "CADName",
+      "SQLName": "CADName",
+      "IsActive": "false"
+    },
+    {
+      "ID": "92ab1500-8014-4b6b-a493-1edb12b5e593",
+      "Name": "CabinetName",
+      "SQLName": "CabinetName",
+      "IsActive": "false"
+    },
+    {
+      "ID": "b6ce04f9-a7af-4ce5-890f-a457df74926c",
+      "Name": "CheckOutStatus",
+      "SQLName": "CheckOutStatus",
+      "IsActive": "false"
+    },
+    {
+      "ID": "6092b199-18a6-4df3-96f0-e2892547262c",
+      "Name": "CheckoutState",
+      "SQLName": "CheckoutState",
+      "IsActive": "false"
+    },
+    {
+      "ID": "c9e93750-751f-4cd4-b0e3-277cbab209d1",
+      "Name": "Comments",
+      "SQLName": "Comments",
+      "IsActive": "false"
+    },
+    {
+      "ID": "6d4d45eb-0ac9-41bd-bf1f-8cc77e803804",
+      "Name": "ComponentType",
+      "SQLName": "ComponentType",
+      "IsActive": "false"
+    },
+    {
+      "ID": "04fe4ea5-6d2e-46a1-9625-674055deb645",
+      "Name": "ConfigurableModuleValue",
+      "SQLName": "ConfigurableModuleValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "329014d5-58d5-4fbe-a000-4dd87ff3a95e",
+      "Name": "ConfigurableModuleDisplay",
+      "SQLName": "ConfigurableModuleDisplay",
+      "IsActive": "false"
+    },
+    {
+      "ID": "e3f8cb06-b317-4b7b-9e32-95cdd873964b",
+      "Name": "CreatedBy",
+      "SQLName": "CreatedBy",
+      "IsActive": "true"
+    },
+    {
+      "ID": "76156003-6aef-4b25-b69c-2e29873ca2cb",
+      "Name": "DefaultTraceCodeValue",
+      "SQLName": "DefaultTraceCodeValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "6a8d20dc-30f0-4dbf-8d85-dbb1f282730f",
+      "Name": "DefaultTraceCodeDisplay",
+      "SQLName": "DefaultTraceCodeDisplay",
+      "IsActive": "false"
+    },
+    {
+      "ID": "2ac6e805-f3f7-4a2f-b0fa-6d833114d324",
+      "Name": "DefaultUnitValue",
+      "SQLName": "DefaultUnitValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "7582c75e-e62c-4c78-9f52-4637f86413bb",
+      "Name": "DefaultUnitDisplay",
+      "SQLName": "DefaultUnitDisplay",
+      "IsActive": "true"
+    },
+    {
+      "ID": "d21b450a-7bb7-4ad2-87e7-75f10924ef59",
+      "Name": "DenemeNX",
+      "SQLName": "DenemeNX",
+      "IsActive": "false"
+    },
+    {
+      "ID": "96f7956f-7e28-4c6b-bcd7-75a4358d0f72",
+      "Name": "Description",
+      "SQLName": "Description",
+      "IsActive": "false"
+    },
+    {
+      "ID": "d18db344-094f-4db2-a52a-b2b86eafc561",
+      "Name": "EndItem",
+      "SQLName": "EndItem",
+      "IsActive": "false"
+    },
+    {
+      "ID": "1ad41ef6-ac3f-4a08-9b7e-0db7dbe2f914",
+      "Name": "FolderLocation",
+      "SQLName": "FolderLocation",
+      "IsActive": "true"
+    },
+    {
+      "ID": "941fdda9-2fc9-4ef5-be12-c8682961b9bc",
+      "Name": "FolderName",
+      "SQLName": "FolderName",
+      "IsActive": "true"
+    },
+    {
+      "ID": "feb3e6ab-da25-44d0-8d8f-77639fe3b215",
+      "Name": "GatheringPart",
+      "SQLName": "GatheringPart",
+      "IsActive": "false"
+    },
+    {
+      "ID": "5c994a1e-045c-4ba9-bbce-add04f3de2eb",
+      "Name": "GeneralStatus",
+      "SQLName": "GeneralStatus",
+      "IsActive": "false"
+    },
+    {
+      "ID": "d676a232-c2f0-4681-a5b5-383200054750",
+      "Name": "Identity",
+      "SQLName": "Identity",
+      "IsActive": "false"
+    },
+    {
+      "ID": "2b8d6928-c48e-4a06-8556-0021d239f720",
+      "Name": "KaleKod",
+      "SQLName": "KaleKod",
+      "IsActive": "false"
+    },
+    {
+      "ID": "801b99f3-bfec-491e-b7bd-2dd72f3b615b",
+      "Name": "Kaleargenumber",
+      "SQLName": "Kaleargenumber",
+      "IsActive": "false"
+    },
+    {
+      "ID": "5870e434-dbbd-4918-b18e-0983c77caf7b",
+      "Name": "Latest",
+      "SQLName": "Latest",
+      "IsActive": "false"
+    },
+    {
+      "ID": "cbbe37ed-21ef-44bf-974e-37d40d3d5685",
+      "Name": "Length",
+      "SQLName": "Length",
+      "IsActive": "false"
+    },
+    {
+      "ID": "aa00c458-146e-46c9-846a-9cfec3c0faa3",
+      "Name": "LifeCycleTemplateName",
+      "SQLName": "LifeCycleTemplateName",
+      "IsActive": "false"
+    },
+    {
+      "ID": "6764ac9e-d958-4b2f-9286-5153d3f1b527",
+      "Name": "Material",
+      "SQLName": "Material",
+      "IsActive": "false"
+    },
+    {
+      "ID": "f113508d-8022-497d-99b8-ebb578219a52",
+      "Name": "ModifiedBy",
+      "SQLName": "ModifiedBy",
+      "IsActive": "true"
+    },
+    {
+      "ID": "0be5006c-3fa3-4647-9598-2744ac9c7c8c",
+      "Name": "NAME10",
+      "SQLName": "NAME10",
+      "IsActive": "false"
+    },
+    {
+      "ID": "3cc2016c-b454-458d-b662-b6f1a1bf1bfe",
+      "Name": "NAME20",
+      "SQLName": "NAME20",
+      "IsActive": "false"
+    },
+    {
+      "ID": "0c8c3424-d817-4cdf-9761-5624d4dc9706",
+      "Name": "NAME201_PTCC_MultipleAliasAttributeValues",
+      "SQLName": "NAME201_PTCC_MultipleAliasAttributeValues",
+      "IsActive": "false"
+    },
+    {
+      "ID": "621672e7-298b-4593-9a7a-5191ee40fb08",
+      "Name": "NAME201",
+      "SQLName": "NAME201",
+      "IsActive": "false"
+    },
+    {
+      "ID": "83479e5e-4eaa-4894-87d6-6b03800a5425",
+      "Name": "Name",
+      "SQLName": "Name",
+      "IsActive": "true"
+    },
+    {
+      "ID": "6a3e2ec8-0b7d-47a8-a945-ecede0e2961a",
+      "Name": "NAME30",
+      "SQLName": "NAME30",
+      "IsActive": "false"
+    },
+    {
+      "ID": "1ae7d9ba-169d-4b3a-a5f6-4516eacb6683",
+      "Name": "OEMPartSourcingStatus",
+      "SQLName": "OEMPartSourcingStatus",
+      "IsActive": "false"
+    },
+    {
+      "ID": "355aeb57-fab2-4540-878e-c949866eb090",
+      "Name": "Number",
+      "SQLName": "Number",
+      "IsActive": "true"
+    },
+    {
+      "ID": "3351bcda-d3ea-4075-b0f2-a11f961bdb1f",
+      "Name": "ObjectType",
+      "SQLName": "ObjectType",
+      "IsActive": "false"
+    },
+    {
+      "ID": "5058dc03-3d76-44ba-917d-aa4ea0a36e42",
+      "Name": "OrganizationReference",
+      "SQLName": "OrganizationReference",
+      "IsActive": "false"
+    },
+    {
+      "ID": "9842d4de-b4cd-42d9-b536-2cd75ed6fe29",
+      "Name": "PARCAADI",
+      "SQLName": "PARCAADI",
+      "IsActive": "false"
+    },
+    {
+      "ID": "5d116f64-571c-458b-8401-8b560cc49038",
+      "Name": "PTCWMNAME",
+      "SQLName": "PTCWMNAME",
+      "IsActive": "false"
+    },
+    {
+      "ID": "571a0ada-be3d-4020-8d14-7aeeb1e2a948",
+      "Name": "PhantomManufacturingPart",
+      "SQLName": "PhantomManufacturingPart",
+      "IsActive": "false"
+    },
+    {
+      "ID": "35de89c9-0291-442b-8255-ba378bc3abd1",
+      "Name": "Revision",
+      "SQLName": "Revision",
+      "IsActive": "false"
+    },
+    {
+      "ID": "b6cd7392-4682-46c9-b6d9-17651a2e6bee",
+      "Name": "SourceValue",
+      "SQLName": "SourceValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "aff06fb2-5d82-4026-807a-50a673a3bb70",
+      "Name": "SourceDisplay",
+      "SQLName": "SourceDisplay",
+      "IsActive": "false"
+    },
+    {
+      "ID": "33e38968-1eac-4a18-9246-2f6a88339b17",
+      "Name": "SourceDuplicate",
+      "SQLName": "SourceDuplicate",
+      "IsActive": "false"
+    },
+    {
+      "ID": "d0c2ad46-92fa-454f-b0f3-186a3b67e3d8",
+      "Name": "Standard",
+      "SQLName": "Standard",
+      "IsActive": "false"
+    },
+    {
+      "ID": "93fa2f3c-c321-4259-a26b-632fae70828e",
+      "Name": "StateValue",
+      "SQLName": "StateValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "5574b6b6-cdad-4c96-8081-f8ed8b2bafd3",
+      "Name": "StateDisplay",
+      "SQLName": "StateDisplay",
+      "IsActive": "false"
+    },
+    {
+      "ID": "83dbfa6b-2743-487a-8296-4a0ec188e384",
+      "Name": "Supersedes",
+      "SQLName": "Supersedes",
+      "IsActive": "false"
+    },
+    {
+      "ID": "be2b0b7f-f6e2-45b3-9add-a99153b199e7",
+      "Name": "Supplier",
+      "SQLName": "Supplier",
+      "IsActive": "false"
+    },
+    {
+      "ID": "ffa03e4a-0294-4984-8ec5-d5b6fa2aef9f",
+      "Name": "Thickness",
+      "SQLName": "Thickness",
+      "IsActive": "false"
+    },
+    {
+      "ID": "3fc9b64e-f9f2-4619-a83d-c1d3cfb34b80",
+      "Name": "TypeIconPath",
+      "SQLName": "TypeIconPath",
+      "IsActive": "false"
+    },
+    {
+      "ID": "63c237ef-3c74-4e32-a29e-c0bc513083c2",
+      "Name": "TypeIconTooltip",
+      "SQLName": "TypeIconTooltip",
+      "IsActive": "false"
+    },
+    {
+      "ID": "f4102c1d-4065-4aef-8725-8a7b85106aef",
+      "Name": "Version",
+      "SQLName": "Version",
+      "IsActive": "false"
+    },
+    {
+      "ID": "f1069797-4527-4054-8119-038053446ad3",
+      "Name": "VersionID",
+      "SQLName": "VersionID",
+      "IsActive": "false"
+    },
+    {
+      "ID": "43a6f6f7-111b-4ea5-8382-fe701bd284d1",
+      "Name": "View",
+      "SQLName": "View",
+      "IsActive": "false"
+    },
+    {
+      "ID": "a263bc6b-0713-4bb9-817f-f221a539e788",
+      "Name": "WorkInProgressStateValue",
+      "SQLName": "WorkInProgressStateValue",
+      "IsActive": "false"
+    },
+    {
+      "ID": "3fb9f4b1-4a59-4b9b-8fa0-b32b3fa66af8",
+      "Name": "WorkInProgressStateDisplay",
+      "SQLName": "WorkInProgressStateDisplay",
+      "IsActive": "false"
+    }
+  ]
+}
