@@ -588,9 +588,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 jsonObject["ConnectionType"] = false;
                 File.WriteAllText(filePath, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
                 notificatonSettings("Uygulama Durduruldu");
-                btnStartAutoPost.Enabled = true;
-                çalýþtýrToolStripMenuItem.Enabled = true;
-                button1btnStopAutoPost.Enabled = false;
+                //btnStartAutoPost.Enabled = true;
+                //çalýþtýrToolStripMenuItem.Enabled = true;
+                //button1btnStopAutoPost.Enabled = false;
                 _isRunning = false;
 
                 if (cancellationTokenSource != null)
@@ -604,7 +604,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
             }
         }
 
-        private void btnStartAutoPost_Click(object sender, EventArgs e)
+        private async void btnStartAutoPost_Click(object sender, EventArgs e)
         {
             try
             {
@@ -637,7 +637,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 //Task.Run(() => AutoPost(cancellationTokenSource.Token));
                 cancellationTokenSource = new CancellationTokenSource();
                 //cancellationTokenSource.CancelAfter(TimeSpan.Zero);
-                AutoPost(cancellationTokenSource.Token, anlikTarih);
+
+                await Task.Run(() => AutoPost(cancellationTokenSource.Token, anlikTarih));
+                await Task.Run(() => AutoPost_INWORK(cancellationTokenSource.Token, anlikTarih));
+                await Task.Run(() => AutoPost_CANCELED(cancellationTokenSource.Token, anlikTarih));
 
 
                 _isRunning = true;
@@ -663,171 +666,467 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
             public bool IsActive { get; set; }
         }
 
+		#region Tasks Auto Post
+		private async void AutoPost(CancellationToken stoppingToken, DateTime anlikTarih)
+		{
+			try
+			{
+				while (!stoppingToken.IsCancellationRequested)
+				{
+					ShowData();
+					ApiService _apiService = new ApiService();
+					//btnStartAutoPost.Enabled = false;
 
-        private async void AutoPost(CancellationToken stoppingToken, DateTime anlikTarih)
+					string directoryPath = "ConnectionData";
+					string fileName = "appsettings.json";
+					string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+					string directoryPath2 = "ApiSendDataSettingsFolder";
+					string fileName2 = "ApiSendDataSettings.json";
+					string filePath2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2, fileName2);
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+					}
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2));
+					}
+
+					string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+					string apiSendJsonData = File.Exists(filePath2) ? File.ReadAllText(filePath2) : string.Empty;
+
+					JObject jsonObject = JObject.Parse(jsonData);
+					var catalogValue = jsonObject["Catalog"].ToString();
+					var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+					var conn = new SqlConnection(connectionString);
+					var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
+					var apiEndpoint = jsonObject["APIConnectionINFO"]["ApiEndpoint"].ToString();
+					var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
+
+					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
+					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
+
+					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+
+					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
+					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
+
+					//CDC.fn_cdc_get_net_changes_WTPart
+					//and[updateStampA2] = { formattedTarih}
+					var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+
+					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+
+
+					foreach (var item in resolvedItems)
+					{
+
+
+
+
+
+
+						//               var existingColumns = conn.Query<string>(
+						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
+						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
+						//);
+						var nonExistingColumns = config
+							.Where(field => field.IsActive)
+							.Select(x => x.Name)
+							.ToList();
+						WindchillApiService windchillApiService = new WindchillApiService();
+						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
+
+						var jsonObject2 = JObject.Parse(json);
+
+						var jsonObject3 = new JObject();
+
+						// Yeni bir filteredJsonObject oluþtur
+						var filteredJsonObject = new JObject();
+						foreach (var columnName in nonExistingColumns)
+						{
+							if (jsonObject2.ContainsKey(columnName))
+							{
+								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							}
+						}
+
+
+						if (nonExistingColumns.Any())
+						{
+
+
+
+							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+							var turkishDateFormat2 = response.LastModified.ToString();
+							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+							response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+								new { idA2A2 = response.ID.Split(':')[2] });
+
+							if (existingLog == null)
+							{
+								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							else if (existingLog.updateStampA2 != response.LastModified)
+							{
+								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							// If LastUpdateTimestamp has not changed, do nothing
+						}
+					}
+
+					await Task.Delay(5000, stoppingToken);
+					//await Task.Delay(10000);
+				}
+			}
+			catch (Exception ex)
+			{
+				//btnStartAutoPost.Enabled = false;
+				MessageBox.Show("Hata!" + ex.Message);
+				// Handle exceptions or log errors
+			}
+			finally
+			{
+				//btnStartAutoPost.Enabled = true;
+			}
+		}
+
+
+		private async void AutoPost_INWORK(CancellationToken stoppingToken, DateTime anlikTarih)
+		{
+			try
+			{
+				while (!stoppingToken.IsCancellationRequested)
+				{
+					ShowData();
+					ApiService _apiService = new ApiService();
+					//btnStartAutoPost.Enabled = false;
+
+					string directoryPath = "ConnectionData";
+					string fileName = "appsettings.json";
+					string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+					string directoryPath2 = "ApiSendDataSettingsFolder";
+					string fileName2 = "ApiSendDataSettings.json";
+					string filePath2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2, fileName2);
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+					}
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2));
+					}
+
+					string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+					string apiSendJsonData = File.Exists(filePath2) ? File.ReadAllText(filePath2) : string.Empty;
+
+					JObject jsonObject = JObject.Parse(jsonData);
+					var catalogValue = jsonObject["Catalog"].ToString();
+					var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+					var conn = new SqlConnection(connectionString);
+					var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
+					//var apiEndpoint = jsonObject["APIConnectionINFO"]["ApiEndpoint"].ToString();
+					var apiEndpoint = "Designtech/INWORK";
+					var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
+
+					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
+					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
+
+					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+
+					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
+					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
+
+					//CDC.fn_cdc_get_net_changes_WTPart
+					//and[updateStampA2] = { formattedTarih}
+					var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+
+					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+
+
+					foreach (var item in resolvedItems)
+					{
+
+
+
+
+
+
+						//               var existingColumns = conn.Query<string>(
+						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
+						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
+						//);
+						var nonExistingColumns = config
+							.Where(field => field.IsActive)
+							.Select(x => x.Name)
+							.ToList();
+						WindchillApiService windchillApiService = new WindchillApiService();
+						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
+
+						var jsonObject2 = JObject.Parse(json);
+
+						var jsonObject3 = new JObject();
+
+						// Yeni bir filteredJsonObject oluþtur
+						var filteredJsonObject = new JObject();
+						foreach (var columnName in nonExistingColumns)
+						{
+							if (jsonObject2.ContainsKey(columnName))
+							{
+								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							}
+						}
+
+
+						if (nonExistingColumns.Any())
+						{
+
+
+
+							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+							var turkishDateFormat2 = response.LastModified.ToString();
+							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+							response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+								new { idA2A2 = response.ID.Split(':')[2] });
+
+							if (existingLog == null)
+							{
+								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							else if (existingLog.updateStampA2 != response.LastModified)
+							{
+								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							// If LastUpdateTimestamp has not changed, do nothing
+						}
+					}
+
+					await Task.Delay(5000, stoppingToken);
+					//await Task.Delay(10000);
+				}
+			}
+			catch (Exception ex)
+			{
+				//btnStartAutoPost.Enabled = false;
+				MessageBox.Show("Hata!" + ex.Message);
+				// Handle exceptions or log errors
+			}
+			finally
+			{
+				//btnStartAutoPost.Enabled = true;
+			}
+		}
+
+
+
+		private async void AutoPost_CANCELED(CancellationToken stoppingToken, DateTime anlikTarih)
+		{
+			try
+			{
+				while (!stoppingToken.IsCancellationRequested)
+				{
+					ShowData();
+					ApiService _apiService = new ApiService();
+					//btnStartAutoPost.Enabled = false;
+
+					string directoryPath = "ConnectionData";
+					string fileName = "appsettings.json";
+					string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+					string directoryPath2 = "ApiSendDataSettingsFolder";
+					string fileName2 = "ApiSendDataSettings.json";
+					string filePath2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2, fileName2);
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+					}
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2));
+					}
+
+					string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+					string apiSendJsonData = File.Exists(filePath2) ? File.ReadAllText(filePath2) : string.Empty;
+
+					JObject jsonObject = JObject.Parse(jsonData);
+					var catalogValue = jsonObject["Catalog"].ToString();
+					var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+					var conn = new SqlConnection(connectionString);
+					var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
+					//var apiEndpoint = jsonObject["APIConnectionINFO"]["ApiEndpoint"].ToString();
+					var apiEndpoint = "Designtech/CANCELED";
+					var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
+
+					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
+					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
+
+					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+
+					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
+					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
+
+					//CDC.fn_cdc_get_net_changes_WTPart
+					//and[updateStampA2] = { formattedTarih}
+					var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'CANCELLED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+
+					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+
+
+					foreach (var item in resolvedItems)
+					{
+
+
+
+
+
+
+						//               var existingColumns = conn.Query<string>(
+						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
+						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
+						//);
+						var nonExistingColumns = config
+							.Where(field => field.IsActive)
+							.Select(x => x.Name)
+							.ToList();
+						WindchillApiService windchillApiService = new WindchillApiService();
+						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
+
+						var jsonObject2 = JObject.Parse(json);
+
+						var jsonObject3 = new JObject();
+
+						// Yeni bir filteredJsonObject oluþtur
+						var filteredJsonObject = new JObject();
+						foreach (var columnName in nonExistingColumns)
+						{
+							if (jsonObject2.ContainsKey(columnName))
+							{
+								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							}
+						}
+
+
+						if (nonExistingColumns.Any())
+						{
+
+
+
+							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+							var turkishDateFormat2 = response.LastModified.ToString();
+							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+							response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+								new { idA2A2 = response.ID.Split(':')[2] });
+
+							if (existingLog == null)
+							{
+								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							else if (existingLog.updateStampA2 != response.LastModified)
+							{
+								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+							}
+							// If LastUpdateTimestamp has not changed, do nothing
+						}
+					}
+
+					await Task.Delay(5000, stoppingToken);
+					//await Task.Delay(10000);
+				}
+			}
+			catch (Exception ex)
+			{
+				//btnStartAutoPost.Enabled = false;
+				MessageBox.Show("Hata!" + ex.Message);
+				// Handle exceptions or log errors
+			}
+			finally
+			{
+				//btnStartAutoPost.Enabled = true;
+			}
+		}
+
+
+		#endregion
+
+		private async Task InsertLogAndPostDataAsync(Part response, string catalogValue, SqlConnection conn, string apiURL, string apiEndpoint)
         {
             try
             {
-                while (!stoppingToken.IsCancellationRequested)
-                {
-                    ShowData();
-                    ApiService _apiService = new ApiService();
-                    btnStartAutoPost.Enabled = false;
-
-                    string directoryPath = "ConnectionData";
-                    string fileName = "appsettings.json";
-                    string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
-
-                    string directoryPath2 = "ApiSendDataSettingsFolder";
-                    string fileName2 = "ApiSendDataSettings.json";
-                    string filePath2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2, fileName2);
-
-                    if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
-                    {
-                        Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
-                    }
-
-                    if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2)))
-                    {
-                        Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath2));
-                    }
-
-                    string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
-                    string apiSendJsonData = File.Exists(filePath2) ? File.ReadAllText(filePath2) : string.Empty;
-
-                    JObject jsonObject = JObject.Parse(jsonData);
-                    var catalogValue = jsonObject["Catalog"].ToString();
-                    var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
-                    var conn = new SqlConnection(connectionString);
-                    var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
-                    var apiEndpoint = jsonObject["APIConnectionINFO"]["ApiEndpoint"].ToString();
-                    var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
-
-                    JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
-                    var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
-
-                    var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
-                    var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
-
-                    //string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
-                    string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+				ApiService _apiService = new ApiService();
+				var jsonData3 = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiURL, apiEndpoint, jsonData3);
+				await conn.ExecuteAsync(
+					$"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name] , [WTPartNumber]) VALUES (@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber )",
+					new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number });
 
 
+				LogService logService = new LogService(_configuration);
+				logService.CreateJsonFileLog(jsonData3);
 
-                    //CDC.fn_cdc_get_net_changes_WTPart
-                    //and[updateStampA2] = { formattedTarih}
-                    var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
-
-                    var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
-
-
-                    foreach (var item in resolvedItems)
-                    {
-
-
-
-
-
-
-                        //               var existingColumns = conn.Query<string>(
-                        //	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
-                        //	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
-                        //);
-                        var nonExistingColumns = config
-                            .Where(field => field.IsActive)
-                            .Select(x => x.Name)
-                            .ToList();
-                        WindchillApiService windchillApiService = new WindchillApiService();
-                        var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
-
-                        var jsonObject2 = JObject.Parse(json);
-
-                        var jsonObject3 = new JObject();
-
-                        // Yeni bir filteredJsonObject oluþtur
-                        var filteredJsonObject = new JObject();
-                        foreach (var columnName in nonExistingColumns)
-                        {
-                            if (jsonObject2.ContainsKey(columnName))
-                            {
-                                filteredJsonObject.Add(columnName, jsonObject2[columnName]);
-                            }
-                        }
-
-
-                        if (nonExistingColumns.Any())
-                        {
-
-
-
-                            var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
-                            var turkishDateFormat2 = response.LastModified.ToString();
-                            var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-
-                            response.LastModified = Convert.ToDateTime(iso8601Date2);
-
-                            var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-                                $"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-                                new { idA2A2 = response.ID.Split(':')[2] });
-
-                            if (existingLog == null)
-                            {
-                                await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-                            }
-                            else if (existingLog.updateStampA2 != response.LastModified)
-                            {
-                                await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-                            }
-                            // If LastUpdateTimestamp has not changed, do nothing
-                        }
-                    }
-
-                    await Task.Delay(5000, stoppingToken);
-                    //await Task.Delay(10000);
-                }
-            }
-            catch (Exception ex)
+			}
+            catch (Exception)
             {
-                btnStartAutoPost.Enabled = false;
-                MessageBox.Show("Hata!" + ex.Message);
-                // Handle exceptions or log errors
+
             }
-            finally
-            {
-                btnStartAutoPost.Enabled = true;
-            }
-        }
+          
 
-        private async Task InsertLogAndPostDataAsync(Part response, string catalogValue, SqlConnection conn, string apiURL, string apiEndpoint)
-        {
-            ApiService _apiService = new ApiService();
-            await conn.ExecuteAsync(
-                $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([idA2A2], [ProcessTimestamp], [updateStampA2], [name] , [WTPartNumber]) VALUES (@idA2A2, @ProcessTimestamp, @updateStampA2, @name, @WTPartNumber )",
-                new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, name = response.Name, WTPartNumber = response.Number });
-
-            var jsonData3 = JsonConvert.SerializeObject(response);
-
-            LogService logService = new LogService(_configuration);
-            logService.CreateJsonFileLog(jsonData3);
-
-            await _apiService.PostDataAsync(apiURL, apiEndpoint, jsonData3);
         }
 
         private async Task UpdateLogAndPostDataAsync(Part response, string catalogValue, SqlConnection conn, string apiURL, string apiEndpoint)
         {
-            ApiService _apiService = new ApiService();
-            await conn.ExecuteAsync(
-                $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET [ProcessTimestamp] = @ProcessTimestamp, [updateStampA2] = @updateStampA2, [name] = @name , [WTPartNumber] = @WTPartNumber WHERE [idA2A2] = @idA2A2",
-                new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, name = response.Name, WTPartNumber = response.Number });
+            try
+            {
 
+            ApiService _apiService = new ApiService();
             var jsonData3 = JsonConvert.SerializeObject(response);
+            await _apiService.PostDataAsync(apiURL, apiEndpoint, jsonData3);
+            await conn.ExecuteAsync(
+                $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET [ProcessTimestamp] = @ProcessTimestamp, [updateStampA2] = @updateStampA2, [statestate] = @statestate,[name] = @name , [WTPartNumber] = @WTPartNumber WHERE [idA2A2] = @idA2A2",
+                new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number });
+
 
             LogService logService = new LogService(_configuration);
             logService.CreateJsonFileLog(jsonData3);
 
-            await _apiService.PostDataAsync(apiURL, apiEndpoint, jsonData3);
-        }
+			}
+			catch (Exception)
+			{
+
+			}
+
+		}
 
 
 
@@ -1236,7 +1535,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
         {
 
             notificatonSettings("Uygulama baþlatýldý");
-            btnStartAutoPost.Enabled = false;
+            //btnStartAutoPost.Enabled = false;
 
             çalýþtýrToolStripMenuItem.Enabled = false;
         }
@@ -1246,7 +1545,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
             try
             {
                 notificatonSettings("Uygulama Durduruldu");
-                btnStartAutoPost.Enabled = true;
+                //btnStartAutoPost.Enabled = true;
                 çalýþtýrToolStripMenuItem.Enabled = true;
             }
             catch (Exception)
@@ -1506,11 +1805,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                     await Task.Delay(10000, stoppingToken);
                 }
 
-                btnStartAutoPost.Enabled = true;
+                //btnStartAutoPost.Enabled = true;
             }
             catch (Exception ex)
             {
-                btnStartAutoPost.Enabled = false;
+                //btnStartAutoPost.Enabled = false;
                 MessageBox.Show("Hata!" + ex.Message);
             }
         }

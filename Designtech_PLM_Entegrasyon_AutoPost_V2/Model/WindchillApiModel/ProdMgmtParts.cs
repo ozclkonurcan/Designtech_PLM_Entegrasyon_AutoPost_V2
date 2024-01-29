@@ -101,7 +101,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string StateDisplay { get; set; }
         /// Test Amaçlı
         //[NotMapped]
-        //public State State { get; set; }
+        public State State { get; set; }
         public string Supersedes { get; set; }
         public string Supplier { get; set; }
         //public List<string> TalepEden { get; set; }
