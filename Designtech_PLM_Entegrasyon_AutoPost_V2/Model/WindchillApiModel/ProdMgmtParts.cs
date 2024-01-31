@@ -59,7 +59,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string FolderLocation { get; set; }
         public string FolderName { get; set; }
         public bool GatheringPart { get; set; }
-        public string GeneralStatus { get; set; }
+        //public string GeneralStatus { get; set; }
         public string Identity { get; set; }
         public string KaleKod { get; set; }
         public string Kaleargenumber { get; set; }

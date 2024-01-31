@@ -727,12 +727,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
 					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
 
-					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
-					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+					//var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					//var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
 
 					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
 					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
 					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
 
 
 
@@ -741,9 +743,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
 
 					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+					try
+					{
+					
 
-
-					foreach (var item in resolvedItems)
+						foreach (var item in resolvedItems)
 					{
 
 
@@ -755,53 +759,78 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
 						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
 						//);
-						var nonExistingColumns = config
-							.Where(field => field.IsActive)
-							.Select(x => x.Name)
-							.ToList();
+						//var nonExistingColumns = config
+						//	.Where(field => field.IsActive)
+						//	.Select(x => x.Name)
+						//	.ToList();
 						WindchillApiService windchillApiService = new WindchillApiService();
 						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
 
-						var jsonObject2 = JObject.Parse(json);
+						//var jsonObject2 = JObject.Parse(json);
 
-						var jsonObject3 = new JObject();
+						//var jsonObject3 = new JObject();
 
-						// Yeni bir filteredJsonObject oluþtur
-						var filteredJsonObject = new JObject();
-						foreach (var columnName in nonExistingColumns)
-						{
-							if (jsonObject2.ContainsKey(columnName))
+						//// Yeni bir filteredJsonObject oluþtur
+						//var filteredJsonObject = new JObject();
+
+							//try
+							//{
+							//	foreach (var columnName in nonExistingColumns)
+							//	{
+							//		if (jsonObject2.ContainsKey(columnName))
+							//		{
+							//			filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							//		}
+							//	}
+							//}
+							//catch (Exception ex)
+							//{
+
+							//}
+
+							try
 							{
-								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+								//if (nonExistingColumns.Any())
+								//{
+								//}
+
+
+
+								//var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+								var response = JsonConvert.DeserializeObject<Part>(json);
+									var turkishDateFormat2 = response.LastModified.ToString();
+									var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+									response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+										new { idA2A2 = response.ID.Split(':')[2] });
+
+									if (existingLog == null)
+									{
+										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									else if (existingLog.updateStampA2 != response.LastModified)
+									{
+										await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									// If LastUpdateTimestamp has not changed, do nothing
+
 							}
+							catch (Exception ex)
+							{
+
+							}
+
+					
+						
 						}
 
-
-						if (nonExistingColumns.Any())
-						{
-
-
-
-							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
-							var turkishDateFormat2 = response.LastModified.ToString();
-							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-
-							response.LastModified = Convert.ToDateTime(iso8601Date2);
-
-							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-								new { idA2A2 = response.ID.Split(':')[2] });
-
-							if (existingLog == null)
-							{
-								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							else if (existingLog.updateStampA2 != response.LastModified)
-							{
-								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							// If LastUpdateTimestamp has not changed, do nothing
-						}
+					}
+					catch (Exception ex)
+					{
+						MessageBox.Show(ex.Message);
 					}
 
 					await Task.Delay(5000, stoppingToken);
@@ -810,6 +839,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			}
 			catch (Exception ex)
 			{
+				MessageBox.Show(ex.Message);
 				//btnStartAutoPost.Enabled = false;
 				//MessageBox.Show("Hata!" + ex.Message);
 				// Handle exceptions or log errors
@@ -864,15 +894,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
 					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
 
-					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
-					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+					//var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					//var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
 
 					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
 					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
 					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-
-
-
 					//CDC.fn_cdc_get_net_changes_WTPart
 					//and[updateStampA2] = { formattedTarih}
 					var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
@@ -880,6 +907,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
 
 
+					try
+					{
+
+				
+
+
+			
 					foreach (var item in resolvedItems)
 					{
 
@@ -892,61 +926,86 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
 						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
 						//);
-						var nonExistingColumns = config
-							.Where(field => field.IsActive)
-							.Select(x => x.Name)
-							.ToList();
+						//var nonExistingColumns = config
+						//	.Where(field => field.IsActive)
+						//	.Select(x => x.Name)
+						//	.ToList();
 						WindchillApiService windchillApiService = new WindchillApiService();
 						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
 
-						var jsonObject2 = JObject.Parse(json);
+						//var jsonObject2 = JObject.Parse(json);
 
-						var jsonObject3 = new JObject();
+						//var jsonObject3 = new JObject();
 
-						// Yeni bir filteredJsonObject oluþtur
-						var filteredJsonObject = new JObject();
-						foreach (var columnName in nonExistingColumns)
-						{
-							if (jsonObject2.ContainsKey(columnName))
+						//// Yeni bir filteredJsonObject oluþtur
+						//var filteredJsonObject = new JObject();
+						//	try
+						//	{
+						//		foreach (var columnName in nonExistingColumns)
+						//		{
+						//			if (jsonObject2.ContainsKey(columnName))
+						//			{
+						//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+						//			}
+						//		}
+
+						//	}
+						//	catch (Exception ex)
+						//	{
+
+						//	}
+							
+							try
 							{
-								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+								//if (nonExistingColumns.Any())
+								//{
+
+
+								//}
+
+								//var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+								var response = JsonConvert.DeserializeObject<Part>(json);
+									var turkishDateFormat2 = response.LastModified.ToString();
+									var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+									response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+										new { idA2A2 = response.ID.Split(':')[2] });
+
+									if (existingLog == null)
+									{
+										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									else if (existingLog.updateStampA2 != response.LastModified)
+									{
+										await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									// If LastUpdateTimestamp has not changed, do nothing
+
 							}
+							catch (Exception ex)
+							{
+
+							}
+			
+
+					
 						}
 
-
-						if (nonExistingColumns.Any())
-						{
-
-
-
-							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
-							var turkishDateFormat2 = response.LastModified.ToString();
-							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-
-							response.LastModified = Convert.ToDateTime(iso8601Date2);
-
-							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-								new { idA2A2 = response.ID.Split(':')[2] });
-
-							if (existingLog == null)
-							{
-								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							else if (existingLog.updateStampA2 != response.LastModified)
-							{
-								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							// If LastUpdateTimestamp has not changed, do nothing
-						}
 					}
-
+					catch (Exception ex)
+					{
+						MessageBox.Show(ex.Message);
+					}
 					await Task.Delay(5000, stoppingToken);
 					//await Task.Delay(10000);
 				}
 			}
 			catch (Exception ex)
 			{
+				MessageBox.Show(ex.Message);
 				//btnStartAutoPost.Enabled = false;
 				//MessageBox.Show("Hata!" + ex.Message);
 				// Handle exceptions or log errors
@@ -1002,14 +1061,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					JObject apiSendJsonDataObject = JObject.Parse(apiSendJsonData);
 					var apiSendJsonDataList = apiSendJsonDataObject["WTPartMaster"];
 
-					var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
-					var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
+					//var jsonConfig = apiSendJsonDataObject["WTPartMaster"].ToString();
+					//var config = JsonConvert.DeserializeObject<List<Field>>(jsonConfig);
 
 					//string formattedTarih = anlikTarih.ToString("yyyy-MM-dd ");
 					string formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
 					string formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-
-
 
 					//CDC.fn_cdc_get_net_changes_WTPart
 					//and[updateStampA2] = { formattedTarih}
@@ -1017,6 +1074,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 					var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
 
+					try
+					{
+
+					
+			
 
 					foreach (var item in resolvedItems)
 					{
@@ -1030,53 +1092,77 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
 						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
 						//);
-						var nonExistingColumns = config
-							.Where(field => field.IsActive)
-							.Select(x => x.Name)
-							.ToList();
+						//var nonExistingColumns = config
+						//	.Where(field => field.IsActive)
+						//	.Select(x => x.Name)
+						//	.ToList();
 						WindchillApiService windchillApiService = new WindchillApiService();
 						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')");
 
-						var jsonObject2 = JObject.Parse(json);
+						//var jsonObject2 = JObject.Parse(json);
 
-						var jsonObject3 = new JObject();
+						//var jsonObject3 = new JObject();
 
 						// Yeni bir filteredJsonObject oluþtur
-						var filteredJsonObject = new JObject();
-						foreach (var columnName in nonExistingColumns)
-						{
-							if (jsonObject2.ContainsKey(columnName))
+						//var filteredJsonObject = new JObject();
+						//	try
+						//	{
+						//		foreach (var columnName in nonExistingColumns)
+						//		{
+						//			if (jsonObject2.ContainsKey(columnName))
+						//			{
+						//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+						//			}
+						//		}
+						//	}
+						//	catch (Exception ex)
+						//	{
+
+						//	}
+							try
 							{
-								filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+								//if (nonExistingColumns.Any())
+								//{
+
+								//}
+
+
+								//var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
+								var response = JsonConvert.DeserializeObject<Part>(json);
+								var turkishDateFormat2 = response.LastModified.ToString();
+									var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+									response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+										new { idA2A2 = response.ID.Split(':')[2] });
+
+									if (existingLog == null)
+									{
+										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									else if (existingLog.updateStampA2 != response.LastModified)
+									{
+										await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+									}
+									// If LastUpdateTimestamp has not changed, do nothing
+
 							}
+							catch (Exception ex)
+							{
+
+							}
+				
+
+
+					
 						}
 
-
-						if (nonExistingColumns.Any())
-						{
-
-
-
-							var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
-							var turkishDateFormat2 = response.LastModified.ToString();
-							var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-
-							response.LastModified = Convert.ToDateTime(iso8601Date2);
-
-							var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-								$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-								new { idA2A2 = response.ID.Split(':')[2] });
-
-							if (existingLog == null)
-							{
-								await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							else if (existingLog.updateStampA2 != response.LastModified)
-							{
-								await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-							}
-							// If LastUpdateTimestamp has not changed, do nothing
-						}
+					}
+					catch (Exception ex)
+					{
+						MessageBox.Show(ex.Message);
 					}
 
 					await Task.Delay(5000, stoppingToken);
@@ -1085,6 +1171,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			}
 			catch (Exception ex)
 			{
+				MessageBox.Show(ex.Message);
+
 				//btnStartAutoPost.Enabled = false;
 				//MessageBox.Show("Hata!" + ex.Message);
 				// Handle exceptions or log errors
