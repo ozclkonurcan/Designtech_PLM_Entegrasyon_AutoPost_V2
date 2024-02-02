@@ -26,6 +26,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 
                 using (var client = new HttpClient())
                 {
+                    client.Timeout = Timeout.InfiniteTimeSpan;
                     var request = new HttpRequestMessage(HttpMethod.Post, $"{apiURL}/{endpoint}");
                     var content = new StringContent(jsonContent.ToString(), Encoding.UTF8, "application/json");
                     request.Content = content;

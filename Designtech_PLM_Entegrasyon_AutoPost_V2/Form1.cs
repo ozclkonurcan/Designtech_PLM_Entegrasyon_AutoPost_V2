@@ -806,6 +806,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
 										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
 										new { idA2A2 = response.ID.Split(':')[2] });
+								//,commandTimeout: Int32.MaxValue
 
 									if (existingLog == null)
 									{
@@ -972,8 +973,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
 										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-										new { idA2A2 = response.ID.Split(':')[2] });
-
+										new { idA2A2 = response.ID.Split(':')[2] }
+										);
+								//,commandTimeout: Int32.MaxValue
 									if (existingLog == null)
 									{
 										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
@@ -1137,6 +1139,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
 										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
 										new { idA2A2 = response.ID.Split(':')[2] });
+								//,commandTimeout: Int32.MaxValue
 
 									if (existingLog == null)
 									{
