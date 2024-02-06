@@ -48,6 +48,7 @@
 			label2 = new Label();
 			label1 = new Label();
 			groupBox3 = new GroupBox();
+			txt_CSRF_NONCE = new TextBox();
 			btnApiEkle = new Button();
 			label4 = new Label();
 			txtApiEndpoint = new TextBox();
@@ -65,6 +66,9 @@
 			durdurToolStripMenuItem = new ToolStripMenuItem();
 			kapatToolStripMenuItem = new ToolStripMenuItem();
 			notifyIcon1 = new NotifyIcon(components);
+			txtBasicUsername = new TextBox();
+			txtBasicPassword = new TextBox();
+			lblBasicAuth = new Label();
 			groupBox1.SuspendLayout();
 			groupBox2.SuspendLayout();
 			groupBox3.SuspendLayout();
@@ -247,20 +251,33 @@
 			// 
 			// groupBox3
 			// 
+			groupBox3.Controls.Add(lblBasicAuth);
+			groupBox3.Controls.Add(txtBasicPassword);
+			groupBox3.Controls.Add(txtBasicUsername);
+			groupBox3.Controls.Add(txt_CSRF_NONCE);
 			groupBox3.Controls.Add(btnApiEkle);
 			groupBox3.Controls.Add(label4);
 			groupBox3.Controls.Add(txtApiEndpoint);
 			groupBox3.Controls.Add(txtApiUrl);
 			groupBox3.Location = new Point(12, 193);
 			groupBox3.Name = "groupBox3";
-			groupBox3.Size = new Size(647, 125);
+			groupBox3.Size = new Size(647, 215);
 			groupBox3.TabIndex = 3;
 			groupBox3.TabStop = false;
 			groupBox3.Text = "Api Bağlantı Ayarları";
 			// 
+			// txt_CSRF_NONCE
+			// 
+			txt_CSRF_NONCE.Cursor = Cursors.IBeam;
+			txt_CSRF_NONCE.Location = new Point(11, 59);
+			txt_CSRF_NONCE.Name = "txt_CSRF_NONCE";
+			txt_CSRF_NONCE.PlaceholderText = "CSRF_NONCE";
+			txt_CSRF_NONCE.Size = new Size(406, 27);
+			txt_CSRF_NONCE.TabIndex = 10;
+			// 
 			// btnApiEkle
 			// 
-			btnApiEkle.Location = new Point(541, 90);
+			btnApiEkle.Location = new Point(541, 180);
 			btnApiEkle.Name = "btnApiEkle";
 			btnApiEkle.Size = new Size(94, 29);
 			btnApiEkle.TabIndex = 9;
@@ -336,9 +353,9 @@
 			// groupBox4
 			// 
 			groupBox4.Controls.Add(listBox1);
-			groupBox4.Location = new Point(12, 333);
+			groupBox4.Location = new Point(12, 414);
 			groupBox4.Name = "groupBox4";
-			groupBox4.Size = new Size(1333, 426);
+			groupBox4.Size = new Size(1333, 325);
 			groupBox4.TabIndex = 8;
 			groupBox4.TabStop = false;
 			groupBox4.Text = "PLM Data Post List";
@@ -346,9 +363,9 @@
 			// listBox1
 			// 
 			listBox1.FormattingEnabled = true;
-			listBox1.Location = new Point(6, 26);
+			listBox1.Location = new Point(11, 46);
 			listBox1.Name = "listBox1";
-			listBox1.Size = new Size(1310, 404);
+			listBox1.Size = new Size(1310, 264);
 			listBox1.TabIndex = 0;
 			// 
 			// groupBox5
@@ -407,6 +424,33 @@
 			notifyIcon1.Visible = true;
 			notifyIcon1.DoubleClick += NotifyIcon_DoubleClick;
 			notifyIcon1.MouseDoubleClick += notifyIcon1_MouseDoubleClick;
+			// 
+			// txtBasicUsername
+			// 
+			txtBasicUsername.Cursor = Cursors.IBeam;
+			txtBasicUsername.Location = new Point(11, 127);
+			txtBasicUsername.Name = "txtBasicUsername";
+			txtBasicUsername.PlaceholderText = "Username";
+			txtBasicUsername.Size = new Size(192, 27);
+			txtBasicUsername.TabIndex = 7;
+			// 
+			// txtBasicPassword
+			// 
+			txtBasicPassword.Cursor = Cursors.IBeam;
+			txtBasicPassword.Location = new Point(209, 127);
+			txtBasicPassword.Name = "txtBasicPassword";
+			txtBasicPassword.PlaceholderText = "Password";
+			txtBasicPassword.Size = new Size(192, 27);
+			txtBasicPassword.TabIndex = 11;
+			// 
+			// lblBasicAuth
+			// 
+			lblBasicAuth.AutoSize = true;
+			lblBasicAuth.Location = new Point(11, 104);
+			lblBasicAuth.Name = "lblBasicAuth";
+			lblBasicAuth.Size = new Size(78, 20);
+			lblBasicAuth.TabIndex = 12;
+			lblBasicAuth.Text = "Basic Auth";
 			// 
 			// Form1
 			// 
@@ -479,5 +523,9 @@
         private ToolStripMenuItem durdurToolStripMenuItem;
         private ToolStripMenuItem kapatToolStripMenuItem;
         private NotifyIcon notifyIcon1;
-    }
+		private TextBox txt_CSRF_NONCE;
+		private Label lblBasicAuth;
+		private TextBox txtBasicPassword;
+		private TextBox txtBasicUsername;
+	}
 }
