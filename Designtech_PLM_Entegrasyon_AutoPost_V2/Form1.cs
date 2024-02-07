@@ -770,7 +770,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						var state = item["state"].ToString();
 						var sablonDataDurumu = item["sablonDataDurumu"].ToString();
 						var sourceApi = item["source_Api"].ToString();
-
+							
 						if (sablonDataDurumu == "true")
 						{
 							await ProcessStateAsync(state, catalogValue, conn, apiURL, CSRF_NONCE, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint);
@@ -816,14 +816,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						response.LastModified = Convert.ToDateTime(iso8601Date2);
 
 						var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-							$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+							$"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
 							new { idA2A2 = response.ID.Split(':')[2] });
 
 						if (existingLog == null)
 						{
 							await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
 						}
-						else if (existingLog.updateStampA2 != response.LastModified)
+						//else if (existingLog.updateStampA2 != partItem.updateStampA2)
+						else if (existingLog.statestate != response.State.Value)
 						{
 							await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
 						}
@@ -1316,6 +1317,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
 										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
 										new { idA2A2 = response.ID.Split(':')[2] });
+								
 								//,commandTimeout: Int32.MaxValue
 
 									if (existingLog == null)
