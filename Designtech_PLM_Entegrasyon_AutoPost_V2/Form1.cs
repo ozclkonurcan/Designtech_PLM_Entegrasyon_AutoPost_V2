@@ -796,7 +796,18 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			var formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
 			var formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
 
-			var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+			var sql = "";
+			if (sourceApi.Contains("ProdMgmt"))
+			{
+
+			 sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+			}
+
+			if (sourceApi.Contains("CADDocumentMgmt"))
+			{
+
+				 sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+			}
 
 			var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
 
@@ -805,7 +816,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				foreach (var partItem in resolvedItems)
 				{
 					WindchillApiService windchillApiService = new WindchillApiService();
-					var json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi}('OR:wt.part.WTPart:{partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+					var json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi+ partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
 
 					try
 					{
@@ -824,7 +835,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 							await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
 						}
 						//else if (existingLog.updateStampA2 != partItem.updateStampA2)
-						else if (existingLog.statestate != response.State.Value)
+						else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
 						{
 							await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
 						}
