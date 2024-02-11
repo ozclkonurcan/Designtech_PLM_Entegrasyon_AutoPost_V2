@@ -23,6 +23,10 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using System.Net.Http;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocumentMgmt;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System.Net.Http.Headers;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -33,11 +37,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		private System.Windows.Forms.Timer timer;
 		private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(Timeout.InfiniteTimeSpan);
 		private bool _isRunning;
-
+		private readonly HttpClient _httpClient = new HttpClient();
 		public Form1(ApiService apiService, IDbConnection db, IConfiguration configuration)
 		{
 			conn = db;
 			_configuration = configuration;
+			_httpClient = new HttpClient();
 		}
 
 		public Form1()
@@ -817,9 +822,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				{
 					WindchillApiService windchillApiService = new WindchillApiService();
 					var json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi+ partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+					var json2 = await windchillApiService.GetApiData("192.168.1.11", $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.idA2A2}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+
 
 					try
 					{
+					
 						var response = JsonConvert.DeserializeObject<Part>(json);
 						var turkishDateFormat2 = response.LastModified.ToString();
 						var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
@@ -833,11 +841,24 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						if (existingLog == null)
 						{
 							await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
+					
 						}
 						//else if (existingLog.updateStampA2 != partItem.updateStampA2)
 						else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
 						{
 							await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, endPoint);
+						
+						}
+
+
+						if (!json2.Contains("Response status code does not indicate success: 404 (404)."))
+						{
+							var responsePDF = JsonConvert.DeserializeObject<AdditionalFileValue>(json2);
+							var pdfSettings = responsePDF.Value.FirstOrDefault().AdditionalFiles.FirstOrDefault();
+							var pdfUrl = pdfSettings.URL;
+							var pdfFileName = pdfSettings.FileName;
+							await SendPdfToCustomerApiAsync(pdfUrl, pdfFileName, BasicUsername, BasicPassword, CSRF_NONCE);
+
 						}
 						// If LastUpdateTimestamp has not changed, do nothing
 					}
@@ -855,6 +876,72 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 
+		private async Task SendPdfToCustomerApiAsync(string pdfUrl, string pdfFileName,string BasicUsername,string BasicPassword,string CSRF_NONCE)
+		{
+			try
+			{
+				// PDF dosyasýný indir
+				byte[] pdfBytes = await DownloadPdfAsync(pdfUrl,BasicUsername,BasicPassword,CSRF_NONCE);
+
+				// Müþteri tarafýndan saðlanan API endpoint
+				string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE"; // Müþteri tarafýndan saðlanan API endpointi
+
+				// PDF dosyasýný müþteri API'sine gönder
+				await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint);
+
+				MessageBox.Show($"PDF dosyasý ({pdfFileName}) müþteri API'sine gönderildi.");
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Hata: {ex.Message}");
+			}
+		}
+		private async Task<byte[]> DownloadPdfAsync(string pdfUrl, string BasicUsername, string BasicPassword, string CSRF_NONCE)
+		{
+			try
+			{
+				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{BasicUsername}:{BasicPassword}")));
+
+				_httpClient.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
+				using (var response = await _httpClient.GetAsync(pdfUrl))
+				{
+					if (response.IsSuccessStatusCode)
+					{
+						return await response.Content.ReadAsByteArrayAsync();
+					}
+					else
+					{
+						// Hata durumunu ele al
+						throw new Exception($"PDF indirme baþarýsýz. StatusCode: {response.StatusCode}");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				// Hata durumunu ele al 
+				throw new Exception($"PDF indirme hatasý: {ex.Message}");
+			}
+		}
+
+
+		private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint)
+		{
+			using (var httpClient = new HttpClient())
+			{
+				using (var content = new MultipartFormDataContent())
+				{
+					content.Add(new ByteArrayContent(pdfBytes), "file", pdfFileName);
+
+					var response = await httpClient.PostAsync(customerApiEndpoint, content);
+
+					// Yanýtý kontrol et ve gerekirse hata durumunu ele al
+					if (!response.IsSuccessStatusCode)
+					{
+						throw new Exception($"PDF dosyasýný müþteri API'sine gönderme baþarýsýz. StatusCode: {response.StatusCode}");
+					}
+				}
+			}
+		}
 
 
 
