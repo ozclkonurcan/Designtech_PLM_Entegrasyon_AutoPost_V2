@@ -37,7 +37,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		private System.Windows.Forms.Timer timer;
 		private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(Timeout.InfiniteTimeSpan);
 		private bool _isRunning;
-		private readonly HttpClient _httpClient = new HttpClient();
+		private readonly HttpClient _httpClient;
 		public Form1(ApiService apiService, IDbConnection db, IConfiguration configuration)
 		{
 			conn = db;
@@ -851,13 +851,29 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 						}
 
 
+						try
+						{
+
+					
 						if (!json2.Contains("Response status code does not indicate success: 404 (404)."))
 						{
 							var responsePDF = JsonConvert.DeserializeObject<AdditionalFileValue>(json2);
+								if(responsePDF.Value.Count > 0)
+								{
+
 							var pdfSettings = responsePDF.Value.FirstOrDefault().AdditionalFiles.FirstOrDefault();
+							if(pdfSettings is not null)
+							{
 							var pdfUrl = pdfSettings.URL;
 							var pdfFileName = pdfSettings.FileName;
-							await SendPdfToCustomerApiAsync(pdfUrl, pdfFileName, BasicUsername, BasicPassword, CSRF_NONCE);
+							await SendPdfToCustomerApiAsync(pdfUrl, pdfFileName);
+							}
+								}
+
+						}
+						}
+						catch (Exception)
+						{
 
 						}
 						// If LastUpdateTimestamp has not changed, do nothing
@@ -876,12 +892,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 
-		private async Task SendPdfToCustomerApiAsync(string pdfUrl, string pdfFileName,string BasicUsername,string BasicPassword,string CSRF_NONCE)
+		private async Task SendPdfToCustomerApiAsync(string pdfUrl, string pdfFileName)
 		{
 			try
 			{
 				// PDF dosyasýný indir
-				byte[] pdfBytes = await DownloadPdfAsync(pdfUrl,BasicUsername,BasicPassword,CSRF_NONCE);
+				byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
 
 				// Müþteri tarafýndan saðlanan API endpoint
 				string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE"; // Müþteri tarafýndan saðlanan API endpointi
@@ -889,21 +905,49 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				// PDF dosyasýný müþteri API'sine gönder
 				await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint);
 
-				MessageBox.Show($"PDF dosyasý ({pdfFileName}) müþteri API'sine gönderildi.");
+				//MessageBox.Show($"PDF dosyasý ({pdfFileName}) gönderildi.");
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Hata: {ex.Message}");
+				//MessageBox.Show($"Hata: {ex.Message}");
 			}
 		}
-		private async Task<byte[]> DownloadPdfAsync(string pdfUrl, string BasicUsername, string BasicPassword, string CSRF_NONCE)
+		private async Task<byte[]> DownloadPdfAsync(string pdfUrl)
 		{
 			try
 			{
-				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{BasicUsername}:{BasicPassword}")));
 
-				_httpClient.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
-				using (var response = await _httpClient.GetAsync(pdfUrl))
+
+				string directoryPath = "ConnectionData";
+				string fileName = "appsettings.json";
+				string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+				string directoryPath2 = "ApiSendDataSettingsFolder";
+				string fileName2 = "ApiSendDataSettings.json";
+
+				if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+				{
+					Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+				}
+
+				
+
+				// (Önceki kodlar burada)
+
+				string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+
+				JObject jsonObject = JObject.Parse(jsonData);
+		
+				var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+				var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+				var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+
+				var _httpClient1 = new HttpClient();
+				_httpClient1.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{BasicUsername}:{BasicPassword}")));
+
+				_httpClient1.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
+				using (var response = await _httpClient1.GetAsync(pdfUrl))
 				{
 					if (response.IsSuccessStatusCode)
 					{
@@ -926,6 +970,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 		private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint)
 		{
+			try
+			{
+
+			
 			using (var httpClient = new HttpClient())
 			{
 				using (var content = new MultipartFormDataContent())
@@ -935,11 +983,16 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					var response = await httpClient.PostAsync(customerApiEndpoint, content);
 
 					// Yanýtý kontrol et ve gerekirse hata durumunu ele al
-					if (!response.IsSuccessStatusCode)
-					{
-						throw new Exception($"PDF dosyasýný müþteri API'sine gönderme baþarýsýz. StatusCode: {response.StatusCode}");
-					}
+					//if (!response.IsSuccessStatusCode)
+					//{
+					//	throw new Exception($"PDF dosyasýný müþteri API'sine gönderme baþarýsýz. StatusCode: {response.StatusCode}");
+					//}
 				}
+			}
+			}
+			catch (Exception)
+			{
+
 			}
 		}
 
