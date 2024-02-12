@@ -42,7 +42,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		{
 			conn = db;
 			_configuration = configuration;
-			_httpClient = new HttpClient();
+			_httpClient = new HttpClient(); 
 		}
 
 		public Form1()
