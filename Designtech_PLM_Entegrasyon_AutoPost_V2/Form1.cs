@@ -816,19 +816,86 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 			var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
 
-			try
+
+		
+
+
+
+				try
 			{
 				foreach (var partItem in resolvedItems)
 				{
+
+					dynamic WTPartAlternateLinkrSqlQueryItems = new ExpandoObject();
+					if (sourceApi.Contains("ProdMgmt"))
+					{
+						var WTPartMasterSqlQuery = $"SELECT [idA2A2], [name], [WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{partItem.idA3masterReference}'";
+						var WTPartMasterSqlQueryItems = await conn.QueryAsync<dynamic>(WTPartMasterSqlQuery);
+
+						
+						var WTPartAlternateLinkrSqlQuery = $"SELECT [idA2A2], [idA3A5], [idA3B5] FROM {catalogValue}.WTPartAlternateLink WHERE [idA3A5] = '{WTPartMasterSqlQueryItems.FirstOrDefault().idA2A2}'";
+						 WTPartAlternateLinkrSqlQueryItems = await conn.QueryAsync<dynamic>(WTPartAlternateLinkrSqlQuery);
+
+
+				
+
+
+					}
+
+
+
 					WindchillApiService windchillApiService = new WindchillApiService();
 					var json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi+ partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
 					var json2 = await windchillApiService.GetApiData("192.168.1.11", $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.idA2A2}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+
+
+			
+
 
 
 					try
 					{
 					
 						var response = JsonConvert.DeserializeObject<Part>(json);
+
+						//try
+						//{
+
+						//if (WTPartAlternateLinkrSqlQueryItems is not null)
+						//{
+
+						//	//response.AlternateNumber = new List<string>();
+						//	response.AlternateNumber = new List<AlternateNumber>();
+						//	foreach (var item in WTPartAlternateLinkrSqlQueryItems)
+						//	{
+
+						//		//response.AlternateNumber.Add(item.idA3B5.ToString());
+
+
+						//		var AgainWTPartMasterSqlQuery = $"SELECT [idA2A2], [name], [WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{item.idA3B5}'";
+						//		var AgainWTPartMasterSqlQueryItems = await conn.QueryAsync<dynamic>(AgainWTPartMasterSqlQuery);
+
+						//		var firstItem = AgainWTPartMasterSqlQueryItems.FirstOrDefault();
+
+						//		if (firstItem != null)
+						//		{
+						//			response.AlternateNumber.Add(new AlternateNumber
+						//			{
+						//				name = firstItem.name,
+						//				WTPartNumber = firstItem.WTPartNumber,
+						//				Version = response.Version,
+						//			});
+						//		}
+
+						//	}
+
+						//}
+
+						//}
+						//catch (Exception)
+						//{
+						//}
+						
 						var turkishDateFormat2 = response.LastModified.ToString();
 						var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
 

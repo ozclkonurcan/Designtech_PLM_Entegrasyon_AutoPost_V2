@@ -17,7 +17,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public DateTime CreatedOn { get; set; }
         public string? ID { get; set; }
         public DateTime LastModified { get; set; }
-        public string? AlternateNumber { get; set; }
+        public List<AlternateNumber>? AlternateNumber { get; set; }
+        //public string? AlternateNumber { get; set; }
 
         /// Test Amaçlı
         public string? AssemblyModeValue { get; set; }
@@ -124,6 +125,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         //public WorkInProgressState WorkInProgressState { get; set; }
     }
 
+    public class AlternateNumber
+	{
+		public string name { get; set; } = string.Empty;
+		public string WTPartNumber { get; set; } = string.Empty;
+		public string Version { get; set; } = string.Empty;
+	} 
     public class AssemblyMode
 	{
 		public string Value { get; set; } = string.Empty;
