@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,18 +18,18 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public DateTime CreatedOn { get; set; }
         public string? ID { get; set; }
         public DateTime LastModified { get; set; }
-        public List<AlternateNumber>? AlternateNumber { get; set; }
-        //public string? AlternateNumber { get; set; }
+		//public List<AlternateNumber>? AlternateNumber { get; set; }
+		public string? AlternateNumber { get; set; }
 
-        /// Test Amaçlı
-        public string? AssemblyModeValue { get; set; }
+		/// Test Amaçlı
+		public string? AssemblyModeValue { get; set; }
         public string? AssemblyModeDisplay { get; set; }
         /// Test Amaçlı
         //[NotMapped]
-        //public AssemblyMode AssemblyMode { get; set; }
-        //public string BOMType { get; set; }
+        public AssemblyMode? AssemblyMode { get; set; }
+        public List<BomType>? BOMType { get; set; }
         public string? CADName { get; set; }
-        //public string CLASSIFICATION { get; set; }
+        //public CLASSIFICATION? CLASSIFICATION { get; set; }
         public string? CabinetName { get; set; }
         //public string ChangeStatus { get; set; }
         public string? CheckOutStatus { get; set; }
@@ -81,7 +82,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 
         //		[NotMapped]
         //public List<string> OEMPartSourcingStatus { get; set; }
-        public string? ObjectType { get; set; }
+        public string? stringType { get; set; }
         public string? OrganizationReference { get; set; }
         public string? PARCAADI { get; set; }
         public string? PTCWMNAME { get; set; }
@@ -120,12 +121,133 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         /// Test Amaçlı
         public string? WorkInProgressStateValue { get; set; }
         public string? WorkInProgressStateDisplay { get; set; }
+
         /// Test Amaçlı
         //[NotMapped]
         //public WorkInProgressState WorkInProgressState { get; set; }
+        public List<Alternates> Alternates { get; set; }
     }
 
-    public class AlternateNumber
+
+
+	#region CLASSTIFICATION CLASS
+	public class CLASSIFICATION
+	{
+		public string ClfNodeInternalName { get; set; }
+		public string ClfNodeDisplayName { get; set; }
+		public string ClfNodeHierarchyDisplayName { get; set; }
+		public List<ClassificationAttribute> ClassificationAttributes { get; set; }
+	}
+
+	public class ClassificationAttribute
+	{
+		[Key]
+		public string InternalName { get; set; }
+		public string DisplayName { get; set; }
+		public string Value { get; set; }
+		public string DisplayValue { get; set; }
+	}
+	#endregion
+
+
+
+	#region Alternates Classı
+
+	public class Alternates 
+    {
+        [Key]
+		public string? ID { get; set; }
+		public string? CreatedOn { get; set; }
+		public string? LastModified { get; set; }
+		public string? stringType { get; set; }
+		public ReplacementType? ReplacementType { get; set; }
+		public bool TwoWay { get; set; }
+		public TypeIcon? TypeIcon { get; set; }
+		public AlternatePart? AlternatePart { get; set; }
+	}
+
+	public class ReplacementType
+	{
+		[Key]
+		public string Value { get; set; }
+		public string Display { get; set; }
+	}
+
+	public class AlternatePart
+	{
+		[Key]
+		public string? ID { get; set; }
+		public string? CreatedOn { get; set; }
+		public string? LastModified { get; set; }
+		public string? _15 { get; set; }
+		public string? AlternateNumber { get; set; }
+		public AssemblyMode? AssemblyMode { get; set; }
+		public string? BOMType { get; set; }
+		public string? CADName { get; set; }
+		public string? CLASSIFICATION { get; set; }
+		public string? CabinetName { get; set; }
+		public string? ChangeStatus { get; set; }
+		public string? CheckOutStatus { get; set; }
+		public string? CheckoutState { get; set; }
+		public string? Comments { get; set; }
+		public string? ComponentType { get; set; }
+		public ConfigurableModule? ConfigurableModule { get; set; }
+		public string? CreatedBy { get; set; }
+		public DefaultTraceCode? DefaultTraceCode { get; set; }
+		public DefaultUnit? DefaultUnit { get; set; }
+		public string? DenemeNX { get; set; }
+		public string? Description { get; set; }
+		public bool EndItem { get; set; }
+		public string? EntegrasyonDurumu { get; set; }
+		public string? EntegrasyonTarihi { get; set; }
+		public string? FolderLocation { get; set; }
+		public string? FolderName { get; set; }
+		public bool GatheringPart { get; set; }
+		public string? GeneralStatus { get; set; }
+		public string? Identity { get; set; }
+		public string? KaleKod { get; set; }
+		public string? Kaleargenumber { get; set; }
+		public bool Latest { get; set; }
+		public string? Length { get; set; }
+		public string? LifeCycleTemplateName { get; set; }
+		public string? Mass { get; set; }
+		public string? Material { get; set; }
+		public string? ModifiedBy { get; set; }
+		public string? MuhasebeKodu { get; set; }
+		public string? NAME10 { get; set; }
+		public string? NAME20 { get; set; }
+		public string? NAME201 { get; set; }
+		public string? Name { get; set; }
+		public string? Name30 { get; set; }
+		public string? Number { get; set; }
+		public List<string>? OEMPartSourcingStatus { get; set; }
+		public string? stringType { get; set; }
+		public string? OrganizationReference { get; set; }
+		public string? PARCAADI { get; set; }
+		public string? PTCWMNAME { get; set; }
+		public bool PhantomManufacturingPart { get; set; }
+		public string? Revision { get; set; }
+		public string? ShareStatus { get; set; }
+		public Source? Source { get; set; }
+		public string? SourceDuplicate { get; set; }
+		public string? Standard { get; set; }
+		public State? State { get; set; }
+		public string? Supersedes { get; set; }
+		public string? Supplier { get; set; }
+		public List<string>? TalepEden { get; set; }
+		public string? Thickness { get; set; }
+		public TypeIcon? TypeIcon { get; set; }
+		public string? UretimYeri { get; set; }
+		public string? Version { get; set; }
+		public string? VersionID { get; set; }
+		public string? View { get; set; }
+		public WorkInProgressState? WorkInProgressState { get; set; }
+	}
+
+	#endregion
+
+
+	public class AlternateNumber
 	{
 		public string name { get; set; } = string.Empty;
 		public string WTPartNumber { get; set; } = string.Empty;
@@ -133,48 +255,63 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 	} 
     public class AssemblyMode
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class ConfigurableModule
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class DefaultTraceCode
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class DefaultUnit
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class Source
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class State
 	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}
 
 	public class TypeIcon
 	{
+		[Key]
 		public string Path { get; set; } = string.Empty;
 		public string Tooltip { get; set; } = string.Empty;
 	}
 
 	public class WorkInProgressState
 	{
+		[Key]
+		public string Value { get; set; } = string.Empty;
+		public string Display { get; set; } = string.Empty;
+	}	
+	
+	public class BomType
+	{
+		[Key]
 		public string Value { get; set; } = string.Empty;
 		public string Display { get; set; } = string.Empty;
 	}

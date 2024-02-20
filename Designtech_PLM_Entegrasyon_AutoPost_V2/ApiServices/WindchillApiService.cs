@@ -10,6 +10,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 	public class WindchillApiService
 	{
 
+
+		//public async Task GetApiToken()
+		//{
+		//http://192.168.1.11/Windchill/servlet/odata/PTC/GetCSRFToken()
+		//}
+
+
 		public async Task<string> GetApiData(string baseUrl, string endpoint,string username, string password,string CSRF_NONCE)
 		{
 			int maxRetryCount = 3; // Maksimum deneme sayısı
@@ -57,6 +64,20 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 		}
 
 
+
+
+		//public async Task PostApiData()
+		//{
+		//}
+
+
+		//public async Task PatchApiData()
+		//{
+		//}
+
+
+
+		#region GetApiEski
 		//public async Task<string> GetApiData(string baseUrl, string endpoint)
 		//{
 
@@ -89,5 +110,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 		//		return ex.Message;
 		//	}
 		//}
+
+		#endregion
+
+
 	}
 }

@@ -821,31 +821,22 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 
-				try
+			try
 			{
 				foreach (var partItem in resolvedItems)
 				{
 
-					dynamic WTPartAlternateLinkrSqlQueryItems = new ExpandoObject();
+					var json = "";
+					WindchillApiService windchillApiService = new WindchillApiService();
 					if (sourceApi.Contains("ProdMgmt"))
 					{
-						var WTPartMasterSqlQuery = $"SELECT [idA2A2], [name], [WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{partItem.idA3masterReference}'";
-						var WTPartMasterSqlQueryItems = await conn.QueryAsync<dynamic>(WTPartMasterSqlQuery);
-
-						
-						var WTPartAlternateLinkrSqlQuery = $"SELECT [idA2A2], [idA3A5], [idA3B5] FROM {catalogValue}.WTPartAlternateLink WHERE [idA3A5] = '{WTPartMasterSqlQueryItems.FirstOrDefault().idA2A2}'";
-						 WTPartAlternateLinkrSqlQueryItems = await conn.QueryAsync<dynamic>(WTPartAlternateLinkrSqlQuery);
-
-
-				
-
-
+						json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi + partItem.idA2A2}')?$expand=Alternates($expand=AlternatePart)", BasicUsername, BasicPassword, CSRF_NONCE);
 					}
-
-
-
-					WindchillApiService windchillApiService = new WindchillApiService();
-					var json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi+ partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+					if (sourceApi.Contains("CADDocumentMgmt"))
+					{
+						json = await windchillApiService.GetApiData("192.168.1.11", $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+					}
+				
 					var json2 = await windchillApiService.GetApiData("192.168.1.11", $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.idA2A2}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
 
 
@@ -856,46 +847,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					try
 					{
 					
+
+						
 						var response = JsonConvert.DeserializeObject<Part>(json);
 
-						//try
-						//{
-
-						//if (WTPartAlternateLinkrSqlQueryItems is not null)
-						//{
-
-						//	//response.AlternateNumber = new List<string>();
-						//	response.AlternateNumber = new List<AlternateNumber>();
-						//	foreach (var item in WTPartAlternateLinkrSqlQueryItems)
-						//	{
-
-						//		//response.AlternateNumber.Add(item.idA3B5.ToString());
-
-
-						//		var AgainWTPartMasterSqlQuery = $"SELECT [idA2A2], [name], [WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{item.idA3B5}'";
-						//		var AgainWTPartMasterSqlQueryItems = await conn.QueryAsync<dynamic>(AgainWTPartMasterSqlQuery);
-
-						//		var firstItem = AgainWTPartMasterSqlQueryItems.FirstOrDefault();
-
-						//		if (firstItem != null)
-						//		{
-						//			response.AlternateNumber.Add(new AlternateNumber
-						//			{
-						//				name = firstItem.name,
-						//				WTPartNumber = firstItem.WTPartNumber,
-						//				Version = response.Version,
-						//			});
-						//		}
-
-						//	}
-
-						//}
-
-						//}
-						//catch (Exception)
-						//{
-						//}
-						
 						var turkishDateFormat2 = response.LastModified.ToString();
 						var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
 
@@ -957,6 +912,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			}
 		}
 
+		#endregion
+
+
+		#region PDF Download Settings
 
 
 		private async Task SendPdfToCustomerApiAsync(string pdfUrl, string pdfFileName)
@@ -966,8 +925,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				// PDF dosyasýný indir
 				byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
 
-				// Müþteri tarafýndan saðlanan API endpoint
-				string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE"; // Müþteri tarafýndan saðlanan API endpointi
+				//  Api Endpoint
+				string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE"; 
 
 				// PDF dosyasýný müþteri API'sine gönder
 				await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint);
@@ -1000,7 +959,6 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				
 
 				// (Önceki kodlar burada)
-
 				string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
 
 				JObject jsonObject = JObject.Parse(jsonData);
@@ -1062,6 +1020,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 			}
 		}
+
+		#endregion
+
+
+
+
+		#region Eski Kod günvenlik amaçlý tutuyoruz
+
 
 
 
@@ -1302,51 +1268,51 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					try
 					{
 
-				
-
-
-			
-					foreach (var item in resolvedItems)
-					{
 
 
 
 
+						foreach (var item in resolvedItems)
+						{
 
 
-						//               var existingColumns = conn.Query<string>(
-						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
-						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
-						//);
-						//var nonExistingColumns = config
-						//	.Where(field => field.IsActive)
-						//	.Select(x => x.Name)
-						//	.ToList();
-						WindchillApiService windchillApiService = new WindchillApiService();
-						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')",BasicUsername,BasicPassword,CSRF_NONCE);
 
-						//var jsonObject2 = JObject.Parse(json);
 
-						//var jsonObject3 = new JObject();
 
-						//// Yeni bir filteredJsonObject oluþtur
-						//var filteredJsonObject = new JObject();
-						//	try
-						//	{
-						//		foreach (var columnName in nonExistingColumns)
-						//		{
-						//			if (jsonObject2.ContainsKey(columnName))
-						//			{
-						//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
-						//			}
-						//		}
 
-						//	}
-						//	catch (Exception ex)
-						//	{
+							//               var existingColumns = conn.Query<string>(
+							//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
+							//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
+							//);
+							//var nonExistingColumns = config
+							//	.Where(field => field.IsActive)
+							//	.Select(x => x.Name)
+							//	.ToList();
+							WindchillApiService windchillApiService = new WindchillApiService();
+							var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
 
-						//	}
-							
+							//var jsonObject2 = JObject.Parse(json);
+
+							//var jsonObject3 = new JObject();
+
+							//// Yeni bir filteredJsonObject oluþtur
+							//var filteredJsonObject = new JObject();
+							//	try
+							//	{
+							//		foreach (var columnName in nonExistingColumns)
+							//		{
+							//			if (jsonObject2.ContainsKey(columnName))
+							//			{
+							//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							//			}
+							//		}
+
+							//	}
+							//	catch (Exception ex)
+							//	{
+
+							//	}
+
 							try
 							{
 								//if (nonExistingColumns.Any())
@@ -1357,34 +1323,34 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 								//var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
 								var response = JsonConvert.DeserializeObject<Part>(json);
-									var turkishDateFormat2 = response.LastModified.ToString();
-									var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+								var turkishDateFormat2 = response.LastModified.ToString();
+								var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
 
-									response.LastModified = Convert.ToDateTime(iso8601Date2);
+								response.LastModified = Convert.ToDateTime(iso8601Date2);
 
-									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-										new { idA2A2 = response.ID.Split(':')[2] }
-										);
+								var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+									$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+									new { idA2A2 = response.ID.Split(':')[2] }
+									);
 								//,commandTimeout: Int32.MaxValue
-									if (existingLog == null)
-									{
-										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-									}
-									else if (existingLog.updateStampA2 != response.LastModified)
-									{
-										await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-									}
-									// If LastUpdateTimestamp has not changed, do nothing
+								if (existingLog == null)
+								{
+									await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+								}
+								else if (existingLog.updateStampA2 != response.LastModified)
+								{
+									await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+								}
+								// If LastUpdateTimestamp has not changed, do nothing
 
 							}
 							catch (Exception ex)
 							{
 
 							}
-			
 
-					
+
+
 						}
 
 					}
@@ -1475,48 +1441,48 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					try
 					{
 
-					
-			
-
-					foreach (var item in resolvedItems)
-					{
 
 
+
+						foreach (var item in resolvedItems)
+						{
 
 
 
 
-						//               var existingColumns = conn.Query<string>(
-						//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
-						//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
-						//);
-						//var nonExistingColumns = config
-						//	.Where(field => field.IsActive)
-						//	.Select(x => x.Name)
-						//	.ToList();
-						WindchillApiService windchillApiService = new WindchillApiService();
-						var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')",BasicUsername,BasicPassword,CSRF_NONCE);
 
-						//var jsonObject2 = JObject.Parse(json);
 
-						//var jsonObject3 = new JObject();
+							//               var existingColumns = conn.Query<string>(
+							//	"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'WTPartMaster' AND COLUMN_NAME IN @ColumnNames",
+							//	new { ColumnNames = config.Where(field => field.IsActive && !field.Name.Contains("idA2A2") && !field.Name.Contains("idA3masterReference")).Select(field => field.Name) }
+							//);
+							//var nonExistingColumns = config
+							//	.Where(field => field.IsActive)
+							//	.Select(x => x.Name)
+							//	.ToList();
+							WindchillApiService windchillApiService = new WindchillApiService();
+							var json = await windchillApiService.GetApiData("192.168.1.11", $"ProdMgmt/Parts('OR:wt.part.WTPart:{item.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
 
-						// Yeni bir filteredJsonObject oluþtur
-						//var filteredJsonObject = new JObject();
-						//	try
-						//	{
-						//		foreach (var columnName in nonExistingColumns)
-						//		{
-						//			if (jsonObject2.ContainsKey(columnName))
-						//			{
-						//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
-						//			}
-						//		}
-						//	}
-						//	catch (Exception ex)
-						//	{
+							//var jsonObject2 = JObject.Parse(json);
 
-						//	}
+							//var jsonObject3 = new JObject();
+
+							// Yeni bir filteredJsonObject oluþtur
+							//var filteredJsonObject = new JObject();
+							//	try
+							//	{
+							//		foreach (var columnName in nonExistingColumns)
+							//		{
+							//			if (jsonObject2.ContainsKey(columnName))
+							//			{
+							//				filteredJsonObject.Add(columnName, jsonObject2[columnName]);
+							//			}
+							//		}
+							//	}
+							//	catch (Exception ex)
+							//	{
+
+							//	}
 							try
 							{
 								//if (nonExistingColumns.Any())
@@ -1528,35 +1494,35 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 								//var response = JsonConvert.DeserializeObject<Part>(filteredJsonObject.ToString());
 								var response = JsonConvert.DeserializeObject<Part>(json);
 								var turkishDateFormat2 = response.LastModified.ToString();
-									var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+								var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
 
-									response.LastModified = Convert.ToDateTime(iso8601Date2);
+								response.LastModified = Convert.ToDateTime(iso8601Date2);
 
-									var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-										$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-										new { idA2A2 = response.ID.Split(':')[2] });
-								
+								var existingLog = await conn.QuerySingleOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+									$"SELECT [idA2A2], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+									new { idA2A2 = response.ID.Split(':')[2] });
+
 								//,commandTimeout: Int32.MaxValue
 
-									if (existingLog == null)
-									{
-										await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-									}
-									else if (existingLog.updateStampA2 != response.LastModified)
-									{
-										await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
-									}
-									// If LastUpdateTimestamp has not changed, do nothing
+								if (existingLog == null)
+								{
+									await InsertLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+								}
+								else if (existingLog.updateStampA2 != response.LastModified)
+								{
+									await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiURL, apiEndpoint);
+								}
+								// If LastUpdateTimestamp has not changed, do nothing
 
 							}
 							catch (Exception ex)
 							{
 
 							}
-				
 
 
-					
+
+
 						}
 
 					}
@@ -1585,6 +1551,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 		#endregion
+
+
+
+
 
 		private async Task InsertLogAndPostDataAsync(Part response, string catalogValue, SqlConnection conn, string apiURL, string apiEndpoint)
 		{
