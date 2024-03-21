@@ -1,0 +1,38 @@
+{
+  "PARTS - RELEASED": [
+    {
+      "source_Api": "ProdMgmt/Parts('OR:wt.part.WTPart:",
+      "state": "RELEASED",
+      "sablonDataDurumu": "true"
+    }
+  ],
+  "PARTS - CANCELLED": [
+    {
+      "source_Api": "ProdMgmt/Parts('OR:wt.part.WTPart:",
+      "state": "CANCELLED",
+      "sablonDataDurumu": "true"
+    }
+  ],
+  "PARTS - INWORK": [
+    {
+      "source_Api": "ProdMgmt/Parts('OR:wt.part.WTPart:",
+      "state": "INWORK",
+      "sablonDataDurumu": "false",
+      "WTPartMaster": []
+    }
+  ],
+  "CADDocuments - RELEASED": [
+    {
+      "source_Api": "CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:",
+      "state": "RELEASED",
+      "sablonDataDurumu": "true"
+    }
+  ],
+  "CADDocuments - CANCELLED": [
+    {
+      "source_Api": "CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:",
+      "state": "CANCELLED",
+      "sablonDataDurumu": "true"
+    }
+  ]
+}

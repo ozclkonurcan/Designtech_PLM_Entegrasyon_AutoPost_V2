@@ -65,55 +65,41 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
             }
         }
 
-        public void CreateJsonFileLog(dynamic dataModel)
+
+        public void CreateJsonFileLog(dynamic dataModel, string message = null)
         {
             try
             {
-            
-
-                // Log dosyasının adını ve yolu oluştur
-                currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "TakvimFile");
+                // Log dosyasının adını ve yolunu oluştur
+                currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration\\logs", "TakvimFile");
                 string dateFormatted = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
                 logFileName = Path.Combine(currentMonthFolder, dateFormatted + ".json");
 
-                string jsonData = "";
+                JArray dataArray;
                 if (File.Exists(logFileName))
                 {
-                    jsonData = File.ReadAllText(logFileName);
-                }
-
-                JObject jsonObject;
-                if (string.IsNullOrWhiteSpace(jsonData))
-                {
-                    // JSON verisi boşsa yeni bir nesne oluştur
-                    jsonObject = new JObject
-                    {
-                        ["data"] = new JArray()
-                    };
+                    string jsonData = File.ReadAllText(logFileName);
+                    dataArray = JArray.Parse(jsonData); // JArray'e dönüştür
                 }
                 else
                 {
-                    // JSON verisi mevcutsa, onu bir nesneye çevir
-                    jsonObject = JObject.Parse(jsonData);
+                    dataArray = new JArray();
                 }
 
-                // Yeni veriyi JSON nesnesine ekle veya güncelle
-                JArray dataArray = (JArray)jsonObject["data"];
-                dataArray.Add(JObject.FromObject(dataModel));
+                // Yeni veriyi oluştur
+                JObject jsonDataObject = JObject.Parse(dataModel);
 
+                // Mesaj girildiyse ekle
+                if (!string.IsNullOrEmpty(message))
+                {
+                    jsonDataObject.Add("Mesaj", message);
+                }
+
+                // Diziye ekle
+                dataArray.Add(jsonDataObject);
 
                 // JSON dosyasına yaz
-                File.WriteAllText(logFileName, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
-                // Log dosyasına yazma işlemi
-                //Log.Logger = new LoggerConfiguration()
-                //    .MinimumLevel.Information()
-                //    .WriteTo.File(new CustomJsonFormatter(), logFileName, shared: true)
-                //    .CreateLogger();
-
-                //// JSON verisini log'a yazma işlemi
-                //var jsonText = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
-                //Log.Information(jsonText);
-                //Log.CloseAndFlush();
+                File.WriteAllText(logFileName, JsonConvert.SerializeObject(dataArray, Formatting.Indented));
             }
             catch (Exception ex)
             {
@@ -121,6 +107,100 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                 Log.Error("Log oluşturulurken hata oluştu: " + ex.Message);
             }
         }
+
+
+        //public void CreateJsonFileLog(dynamic dataModel,string message)
+        //{
+        //    try
+        //    {
+        //        // Log dosyasının adını ve yolu oluştur
+        //        currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration\\logs", "TakvimFile");
+        //        string dateFormatted = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+        //        logFileName = Path.Combine(currentMonthFolder, dateFormatted + ".json");
+
+        //        JArray dataArray;
+        //        if (File.Exists(logFileName))
+        //        {
+        //            string jsonData = File.ReadAllText(logFileName);
+        //            dataArray = JArray.Parse(jsonData);  // JArray'e dönüştür
+        //        }
+        //        else
+        //        {
+        //            dataArray = new JArray();
+        //        }
+
+        //        // Yeni veriyi diziye ekle
+        //        dataArray.Add(JObject.Parse(dataModel));
+
+
+        //        // JSON dosyasına yaz
+        //        File.WriteAllText(logFileName, JsonConvert.SerializeObject(dataArray, Formatting.Indented));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Hata durumunda log oluşturma işlemi
+        //        Log.Error("Log oluşturulurken hata oluştu: " + ex.Message);
+        //    }
+        //}
+
+
+
+        //public void CreateJsonFileLog(dynamic dataModel)
+        //{
+        //    try
+        //    {
+
+
+        //        // Log dosyasının adını ve yolu oluştur
+        //        currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "TakvimFile");
+        //        string dateFormatted = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+        //        logFileName = Path.Combine(currentMonthFolder, dateFormatted + ".json");
+
+        //        string jsonData = "";
+        //        if (File.Exists(logFileName))
+        //        {
+        //            jsonData = File.ReadAllText(logFileName);
+        //        }
+
+        //        JObject jsonObject;
+        //        if (string.IsNullOrWhiteSpace(jsonData))
+        //        {
+        //            // JSON verisi boşsa yeni bir nesne oluştur
+        //            jsonObject = new JObject
+        //            {
+        //                ["data"] = new JArray()
+        //            };
+        //        }
+        //        else
+        //        {
+        //            // JSON verisi mevcutsa, onu bir nesneye çevir
+        //            jsonObject = JObject.Parse(jsonData);
+        //        }
+
+        //        // Yeni veriyi JSON nesnesine ekle veya güncelle
+        //        JArray dataArray = (JArray)jsonObject["data"];
+        //        dataArray.Add(JObject.FromObject(dataModel));
+
+
+        //        // JSON dosyasına yaz
+        //        File.WriteAllText(logFileName, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
+        //        // Log dosyasına yazma işlemi
+        //        //Log.Logger = new LoggerConfiguration()
+        //        //    .MinimumLevel.Information()
+        //        //    .WriteTo.File(new CustomJsonFormatter(), logFileName, shared: true)
+        //        //    .CreateLogger();
+
+        //        //// JSON verisini log'a yazma işlemi
+        //        //var jsonText = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+        //        //Log.Information(jsonText);
+        //        //Log.CloseAndFlush();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Hata durumunda log oluşturma işlemi
+        //        Log.Error("Log oluşturulurken hata oluştu: " + ex.Message);
+        //    }
+        //}
 
 
     }

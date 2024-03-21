@@ -18,7 +18,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
     public class ApiService
     {
 
-        public async Task<string> PostDataAsync(string apiURL, string endpoint,string jsonContent)
+        public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent)
         {
             try
             {
@@ -27,7 +27,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                 using (var client = new HttpClient())
                 {
                     client.Timeout = Timeout.InfiniteTimeSpan;
-                    var request = new HttpRequestMessage(HttpMethod.Post, $"{apiURL}/{endpoint}");
+                    //var request = new HttpRequestMessage(HttpMethod.Post, $"{apiURL}/{endpoint}");
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{apiFullUrl}/{endpoint}");
                     var content = new StringContent(jsonContent.ToString(), Encoding.UTF8, "application/json");
                     request.Content = content;
 
@@ -58,6 +59,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                 throw;
             }
         }
+
+
 
 
         //public async Task<string> PostDataAsync(string apiURL,string endpoint, string jsonContent)
