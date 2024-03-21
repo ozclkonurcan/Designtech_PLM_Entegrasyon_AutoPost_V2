@@ -50,7 +50,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
         public Form1()
         {
-
+             
             InitializeComponent();
             ShowData();
             DisplayJsonDataInListBox();
