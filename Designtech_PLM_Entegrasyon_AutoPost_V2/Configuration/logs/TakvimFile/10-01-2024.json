@@ -1,0 +1,139 @@
+{
+  "data": [
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "101235_.prt",
+      "WTPartNumber": "0000000001",
+      "updateStampA2": "2023-07-11T12:44:22",
+      "createStampA2": "11.07.2023 12:43:38"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "101217_.prt",
+      "WTPartNumber": "0000003333",
+      "updateStampA2": "2023-07-11T12:44:22",
+      "createStampA2": "11.07.2023 12:43:38"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Parça-1",
+      "WTPartNumber": "0000000011",
+      "updateStampA2": "2023-07-14T20:06:01",
+      "createStampA2": "14.07.2023 20:06:01"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "kalem ucu",
+      "WTPartNumber": "0000000015",
+      "updateStampA2": "2023-07-14T20:42:06",
+      "createStampA2": "14.07.2023 20:41:06"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Gupilya",
+      "WTPartNumber": "0000000007",
+      "updateStampA2": "2023-07-14T20:53:05",
+      "createStampA2": "11.07.2023 12:43:38"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kapak Grubu",
+      "WTPartNumber": "0000000019",
+      "updateStampA2": "2023-07-18T19:25:04",
+      "createStampA2": "18.07.2023 16:34:15"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Mürekkep Kartuşu",
+      "WTPartNumber": "0000000025",
+      "updateStampA2": "2023-07-18T19:26:04",
+      "createStampA2": "18.07.2023 16:38:37"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Gövde Grubu",
+      "WTPartNumber": "0000000020",
+      "updateStampA2": "2023-07-18T19:25:04",
+      "createStampA2": "18.07.2023 16:34:56"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kartuş Gövdesi",
+      "WTPartNumber": "0000000026",
+      "updateStampA2": "2023-08-20T17:52:15",
+      "createStampA2": "18.07.2023 16:39:18"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kalem Ucu",
+      "WTPartNumber": "0000000024",
+      "updateStampA2": "2023-08-20T17:53:15",
+      "createStampA2": "18.07.2023 16:38:11"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kapak",
+      "WTPartNumber": "0000000021",
+      "updateStampA2": "2023-08-20T17:52:15",
+      "createStampA2": "18.07.2023 16:36:03"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kapak Tokası",
+      "WTPartNumber": "0000000022",
+      "updateStampA2": "2023-08-20T17:53:15",
+      "createStampA2": "18.07.2023 16:36:31"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Gövde Borusu",
+      "WTPartNumber": "0000000023",
+      "updateStampA2": "2023-08-20T17:53:15",
+      "createStampA2": "18.07.2023 16:37:16"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Kartuş Kapağı",
+      "WTPartNumber": "0000000027",
+      "updateStampA2": "2023-08-20T17:51:15",
+      "createStampA2": "18.07.2023 16:39:42"
+    },
+    {
+      "idA2A2": "NULL",
+      "idA3masterReference": "NULL",
+      "statestate": "NULL",
+      "name": "Dolma Kalem",
+      "WTPartNumber": "0000000018",
+      "updateStampA2": "2023-08-20T18:09:21",
+      "createStampA2": "18.07.2023 16:08:22"
+    }
+  ]
+}

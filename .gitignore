@@ -361,3 +361,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Designtech_PLM_Entegrasyon_AutoPost_V2/Designtech_PLM_Entegrasyon_AutoPost_V2.csproj
