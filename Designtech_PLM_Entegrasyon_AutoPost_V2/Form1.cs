@@ -50,7 +50,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
         public Form1()
         {
-            
+             
             InitializeComponent();
             ShowData();
             DisplayJsonDataInListBox();
@@ -2311,6 +2311,7 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
 
                         foreach (JObject dataObject in dataArray)
                         {
+
                             // Format the string with selected properties
                             string displayString = $"[{dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]} ({dataObject["State"]["Display"]})";
 

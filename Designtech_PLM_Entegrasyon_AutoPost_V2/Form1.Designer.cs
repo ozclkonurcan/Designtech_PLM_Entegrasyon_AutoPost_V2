@@ -540,7 +540,7 @@
             groupBox5.Size = new Size(279, 882);
             groupBox5.TabIndex = 9;
             groupBox5.TabStop = false;
-            groupBox5.Text = "groupBox5";
+            groupBox5.Text = "Log dosya listesi";
             // 
             // btnListbox2Reflesh
             // 
