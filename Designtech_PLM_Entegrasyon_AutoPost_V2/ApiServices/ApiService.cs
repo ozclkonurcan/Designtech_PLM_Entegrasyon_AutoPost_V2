@@ -61,7 +61,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                 throw;
             }
         }
-
+         
         //İnternet bağlantısnın kontrolünü yapıyoruz burada.
         bool IsConnectedToInternet()
         {
