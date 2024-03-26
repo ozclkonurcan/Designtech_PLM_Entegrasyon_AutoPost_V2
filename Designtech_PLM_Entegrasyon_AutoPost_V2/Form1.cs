@@ -272,106 +272,66 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
             #region AlterneLinkLog için kullanýlacak sql komutu
 
-            //string createTableSql2 = @"
-            //    CREATE TABLE " + scheman + @".WTPartAlternateLink_LOG (
-            //     ID varchar(200),
-            //     ObjectType varchar(MAX),
-            //     Name varchar(MAX),
-            //     Number varchar(MAX),
-            //     updateStampA2 datetime,
-            //	  modifyStampA2 datetime,
-            //     ProcessTimestamp datetime
-            //    )";
+            string createTableSql2 = @"
+                CREATE TABLE " + scheman + @".WTPartAlternateLink_LOG (
+                 ID varchar(200),
+                 ObjectType varchar(MAX),
+                 Name varchar(MAX),
+                 Number varchar(MAX),
+                 updateStampA2 datetime,
+            	  modifyStampA2 datetime,
+                 ProcessTimestamp datetime,
+                 state varchar(MAX),
+                )";
+
+
+
+
+            string createTableSql3 = @"
+CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
+  AdministrativeLockIsNull tinyint,
+  TypeAdministrativeLock varchar(MAX),
+  ClassNameKeyDomainRef varchar(MAX),
+  IdA3DomainRef bigint,
+  InheritedDomain tinyint,
+  ReplacementType varchar(MAX),
+  ClassNameKeyRoleAObjectRef varchar(MAX),
+  IdA3A5 bigint,
+  ClassNameKeyRoleBObjectRef varchar(MAX),
+  IdA3B5 bigint,
+  SecurityLabels varchar(MAX),
+  CreateStampA2 datetime,
+  MarkForDeleteA2 bigint,
+  ModifyStampA2 datetime,
+  ClassNameA2A2 varchar(MAX),
+  IdA2A2 bigint,
+  UpdateCountA2 int,
+  UpdateStampA2 datetime
+)
+";
             #endregion
 
 
 
-            //            string createTableSql = @"
-            //    CREATE TABLE " + scheman + @".Change_Notice_LogTable (
-            //    ProcessTimestamp datetime,
-            //    CreatedOn datetime,
-            //    ID varchar(MAX),
-            //    LastModified datetime,
-            //    AlternateNumber varchar(MAX), 
-            //    AssemblyModeValue varchar(MAX),
-            //    AssemblyModeDisplay varchar(MAX),
-            //    CADName varchar(MAX),
-            //    CabinetName varchar(MAX),
-            //    CheckOutStatus varchar(MAX),
-            //    CheckoutState varchar(MAX),
-            //    Comments varchar(MAX),
-            //    ComponentType varchar(MAX),
-            //    ConfigurableModuleValue varchar(MAX),
-            //    ConfigurableModuleDisplay varchar(MAX),
-            //    CreatedBy varchar(MAX), 
-            //    DefaultTraceCodeValue varchar(MAX),
-            //    DefaultTraceCodeDisplay varchar(MAX),
-            //    DefaultUnitValue varchar(MAX),
-            //    DefaultUnitDisplay varchar(MAX),
-            //    DenemeNX varchar(MAX),
-            //    Description varchar(MAX),
-            //    EndItem bit,
-            //    FolderLocation varchar(MAX),
-            //    FolderName varchar(MAX),
-            //    GatheringPart bit, 
-            //    GeneralStatus varchar(MAX),
-            //	[Identity] varchar(MAX),
-            //    KaleKod varchar(MAX),
-            //    Kaleargenumber varchar(MAX),
-            //    Latest bit,
-            //    Length varchar(MAX),
-            //    LifeCycleTemplateName varchar(MAX),
-            //    Material varchar(MAX),
-            //    ModifiedBy varchar(MAX),
-            //    NAME10 varchar(MAX),
-            //    NAME20 varchar(MAX), 
-            //    NAME201_PTCC_MultipleAliasAttributeValues varchar(MAX),
-            //    NAME201 varchar(MAX),
-            //    Name varchar(MAX),
-            //    Name30 varchar(MAX),
-            //	OEMPartSourcingStatus varchar(MAX),
-            //    Number varchar(MAX),
-            //    ObjectType varchar(MAX),
-            //    OrganizationReference varchar(MAX),
-            //    PARCAADI varchar(MAX),
-            //    PTCWMNAME varchar(MAX),
-            //    PhantomManufacturingPart bit,
-            //    Revision varchar(MAX),
-            //    SourceValue varchar(MAX),
-            //    SourceDisplay varchar(MAX),
-            //    SourceDuplicate varchar(MAX),
-            //    Standard varchar(MAX),
-            //    StateValue varchar(MAX),
-            //    StateDisplay varchar(MAX),
-            //    Supersedes varchar(MAX),
-            //    Supplier varchar(MAX),
-            //    Thickness varchar(MAX), 
-            //    TypeIconPath varchar(MAX),
-            //    TypeIconTooltip varchar(MAX),
-            //    Version varchar(MAX),
-            //    VersionID varchar(MAX),
-            //    [View] varchar(MAX), 
-            //    WorkInProgressStateValue varchar(MAX),
-            //    WorkInProgressStateDisplay varchar(MAX)
-            //)";
-
-
-
-            //        CREATE TABLE dbo.Change_Notice_LogTable(
-            //  idA2A2 varchar(50),
-            //  idA3masterReference varchar(MAX),
-            //  statestate varchar(MAX),
-            //   name varchar(MAX),
-            //    WTPartNumber varchar(MAX),
-            //  updateStampA2 datetime,
-            //  ProcessTimestamp datetime
-            //)
-
             using (var connection = new SqlConnection(connectionString))
-            using (var command = new SqlCommand(createTableSql, connection))
             {
+
                 connection.Open();
-                command.ExecuteNonQuery();
+                using (var command1 = new SqlCommand(createTableSql, connection))
+                {
+                    command1.ExecuteNonQuery();
+                }
+
+                // Create the second table
+                using (var command2 = new SqlCommand(createTableSql2, connection))
+                {
+                    command2.ExecuteNonQuery();
+                }
+                // Create the third table
+                using (var command2 = new SqlCommand(createTableSql3, connection))
+                {
+                    command2.ExecuteNonQuery();
+                }
             }
         }
 
@@ -478,21 +438,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
         {
             try
             {
-                //if (listBox2.DataSource != null)
-                //{
-                //    ((BindingSource)listBox2.DataSource).EndEdit();
-                //    listBox2.Refresh();
-                //}
-                // JSON dosyasýndaki verileri çek
+        
                 string directoryPath = "Configuration";
                 string fileName = "appsettings.json";
                 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
 
 
-                //Ana dizindeki parçayý çekiyor ayarlar yapýldýktan sonra bunu kullanýcaz.
-                //string directoryPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                //string fileName = "Configuration\\appsettings.json";
-                //string filePath = Path.Combine(directoryPath, fileName);
+        
 
 
 
@@ -697,9 +649,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 jsonObject["ConnectionType"] = false;
                 File.WriteAllText(filePath, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
                 notificatonSettings("Uygulama Durduruldu");
-                //btnStartAutoPost.Enabled = true;
-                //çalýþtýrToolStripMenuItem.Enabled = true;
-                //button1btnStopAutoPost.Enabled = false;
+
                 _isRunning = false;
 
                 if (cancellationTokenSource != null)
@@ -744,10 +694,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 jsonObject["ConnectionType"] = true;
                 File.WriteAllText(filePath, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
 
-                //cancellationTokenSource = new CancellationTokenSource();
-                //Task.Run(() => AutoPost(cancellationTokenSource.Token));
+               
                 cancellationTokenSource = new CancellationTokenSource();
-                //cancellationTokenSource.CancelAfter(TimeSpan.Zero);
+              
 
                 await Task.Run(() => AutoPost(cancellationTokenSource.Token, anlikTarih));
 
@@ -922,24 +871,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
         private async Task ProcessStateAsync(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string ServerName, string BasicUsername, string BasicPassword, DateTime anlikTarih, string sourceApi, string endPoint, int oldAlternateLinkCount, string API_ENDPOINT_ALTERNATE_PART, string API_ENDPOINT_REMOVED, string API_ENDPOINT_SEND_FILE)
         {
+          
 
-
-            //var formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-            //var formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-
-            //var sql = "";
-            //if (sourceApi.Contains("ProdMgmt"))
-            //{
-
-            //    sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
-            //}
-
-            //if (sourceApi.Contains("CADDocumentMgmt"))
-            //{
-
-            //    sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
-            //}
-
+  
 
             bool ilkCalistirmaProdMgmt = true;
             bool ilkCalistirmaCADDocumentMgmt = true;
@@ -1078,19 +1012,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                                 new { ID = item.AlternatePart.ID.Split(':')[2] });
 
 
-                                //if (alternateLinkLogs == null)
-                                //{
-
-
-                                //	await AlternatesInsertLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-                                //}
-                                //else if (alternateLinkLogs.modifyStampA2 != item.LastModified)
-                                //{
-
-                                //	await AlternatesUpdateLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-
-                                //}
-
+                       
 
                                 //AlternateLinkde bulunan sayýlarda uyuþmazlýk var ise tekrar post edilicek veriler birisndee çakýþma olabilir.
 
@@ -1436,11 +1358,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
                         var response = await httpClient.PostAsync(customerApiEndpoint, content);
 
-                        // Yanýtý kontrol et ve gerekirse hata durumunu ele al
-                        //if (!response.IsSuccessStatusCode)
-                        //{
-                        //	throw new Exception($"PDF dosyasýný müþteri API'sine gönderme baþarýsýz. StatusCode: {response.StatusCode}");
-                        //}
+                  
                     }
                 }
             }
@@ -1478,21 +1396,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 var jsonData3 = JsonConvert.SerializeObject(response);
 
                 await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
-                #region released parts
-                //if (response.State.Value != "CANCELLED")
-                //{
 
-                //	Part alternateResponse = response;
-                //	alternateResponse.Alternates = alternateResponse.Alternates
-                //		.Where(x => x.AlternatePart.State.Value == "RELEASED")
-                //		.ToList();
-
-                //	var jsonData = JsonConvert.SerializeObject(alternateResponse);
-
-                //	await _apiService.PostDataAsync(apiFullUrl, apiURL, "ALTERNATE_RELEASED", jsonData);
-
-                //}
-                #endregion
                 if (response.State.Value == "A")
                 {
                     response.State.Value = "RELEASED";
@@ -1553,19 +1457,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
                 #region released parts
-                //if(response.State.Value != "CANCELLED")
-                //{
-
-                //Part alternateResponse = response;
-                //alternateResponse.Alternates = alternateResponse.Alternates
-                //	.Where(x => x.AlternatePart.State.Value == "RELEASED")
-                //	.ToList();
-
-                //var jsonData = JsonConvert.SerializeObject(alternateResponse);
-
-                //		await _apiService.PostDataAsync(apiFullUrl, apiURL, "ALTERNATE_RELEASED", jsonData);
-
-                //}
+         
                 #endregion
 
                 if (response.State.Value == "A")
@@ -1886,11 +1778,6 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
             }
         }
 
-        //static string ConvertToIso8601Format(string turkishDateFormat)
-        //{
-        //    DateTime dateTime = DateTime.ParseExact(turkishDateFormat, "dd.MM.yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
-        //    return dateTime.ToString("yyyy-MM-ddTHH:mm:ss");
-        //}
 
         private void CreateJsonFile(Part dataModel)
         {
@@ -2033,21 +1920,6 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
                 notificatonSettings("Program kapatýlýyor.");
             }
         }
-
-
-        //private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        //{
-        //    if (e.CloseReason != CloseReason.ApplicationExitCall)
-        //    {
-        //        e.Cancel = true;
-        //        Hide();
-        //    }
-        //    //if (e.CloseReason == CloseReason.UserClosing && this.WindowState == FormWindowState.Minimized)
-        //    //{
-        //    //    e.Cancel = true; // Kapatma iþlemini iptal et
-        //    //    this.Hide();      // Formu gizle
-        //    //}
-        //}
 
 
 
@@ -2331,17 +2203,7 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
                         }
 
 
-                        // Iterate through the array and display each item
-                        //foreach (JObject dataObject in dataArray)
-                        //{
-                        //    // Format the string with selected properties
-                        //    string displayString = $"[{dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]} ({dataObject["State"]["Display"]})";
-
-                        //    // Add to the ListBox
-                        //    listBox1.Items.Add(displayString);
-                        //    lblDataCount.Text = listBox1.Items.Count.ToString();
-                        //}
-
+                  
 
                     }
                     else
@@ -2357,92 +2219,7 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
         }
 
 
-        //private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
-        //       {
-        //           try
-        //           {
-        //               string selectedLogFile = listBox2.SelectedItem as string;
-
-        //               if (selectedLogFile != null)
-        //               {
-        //                   string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration\\logs", "TakvimFile", selectedLogFile);
-
-        //                   if (File.Exists(filePath))
-        //                   {
-        //                       string jsonContent = File.ReadAllText(filePath);
-
-        //                       // JSON içeriðini oku
-        //                       JObject jsonObject = JObject.Parse(jsonContent);
-
-        //                       // "data" alanýný bir JArray olarak al
-        //                       JArray dataArray = (JArray)jsonObject["data"];
-
-        //                       // ListBox'ý temizle
-        //                       listBox1.Items.Clear();
-
-        //                       // JSON verisini listeleyerek ListBox'a ekle
-        //                       for (int i = 0; i < dataArray.Count; i++)
-        //                       {
-        //                           JObject dataObject = (JObject)dataArray[i];
-
-        //                           dynamic dataModel = new ExpandoObject();
-
-        //                           foreach (var property in dataObject.Properties())
-        //                           {
-        //                               ((IDictionary<string, object>)dataModel).Add(property.Name, property.Value?.ToString());
-        //                           }
-
-        //                           // Formatlanmýþ string oluþtur
-        //                           string displayString = $"[{i + 1}]   ";
-
-        //                           foreach (var property in ((IDictionary<string, object>)dataModel))
-        //                           {
-        //                               displayString += $"{property.Key} : {property.Value}, ";
-        //                           }
-
-        //                           // Son virgülü kaldýr
-        //                           displayString = displayString.TrimEnd(',', ' ');
-
-        //                           // ListBox'a ekle
-        //                           listBox1.Items.Add(displayString);
-        //                           lblDataCount.Text = listBox1.Items.Count.ToString();
-        //                       }
-        //                   }
-        //                   else
-        //                   {
-        //                       MessageBox.Show("Dosya bulunamadý: " + filePath, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //                   }
-        //               }
-        //           }
-        //           catch (Exception ex)
-        //           {
-        //               MessageBox.Show("Hata! JSON verisi ListBox'ta gösterilemedi: " + ex.Message);
-        //           }
-        //       }
-
-
-
-
-        //private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
-        //{
-        //    string selectedLogFile = listBox2.SelectedItem as string;
-
-        //    if (selectedLogFile != null)
-        //    {
-        //        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "TakvimFile", selectedLogFile);
-
-        //        if (File.Exists(filePath))
-        //        {
-        //            string jsonContent = File.ReadAllText(filePath);
-        //            listBox1.Items.Add(jsonContent);
-        //        }
-        //        else
-        //        {
-        //            MessageBox.Show("Dosya bulunamadý: " + filePath, "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        //        }
-        //    }
-
-        //}
+      
 
         private void btnConnectionReflesh_Click(object sender, EventArgs e)
         {

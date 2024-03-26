@@ -605,7 +605,7 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
-            ClientSize = new Size(1642, 907);
+            ClientSize = new Size(1642, 940);
             Controls.Add(groupBox5);
             Controls.Add(groupBox4);
             Controls.Add(lblDataCount);

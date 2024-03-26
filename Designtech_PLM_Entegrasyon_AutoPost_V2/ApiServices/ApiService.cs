@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -48,20 +49,28 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                     }
                 }
             }
-            catch (HttpRequestException ex)
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
             {
-                MessageBox.Show($"HTTP isteği hatası: {ex.Message}");
+                MessageBox.Show("API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!");
                 throw;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Beklenmeyen bir hata oluştu: {ex.Message}");
+                var message = ex is ArgumentException ? ex.Message : "Beklenmeyen bir hata oluştu";
+                MessageBox.Show($"Hata: {message}");
                 throw;
             }
         }
 
-
-
+        //İnternet bağlantısnın kontrolünü yapıyoruz burada.
+        bool IsConnectedToInternet()
+        {
+            using (var ping = new Ping())
+            {
+                var reply = ping.Send("www.google.com", 1000);
+                return reply.Status == IPStatus.Success;
+            }
+        }
 
         //public async Task<string> PostDataAsync(string apiURL,string endpoint, string jsonContent)
         //{
