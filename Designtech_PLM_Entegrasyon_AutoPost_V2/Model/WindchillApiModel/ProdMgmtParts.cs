@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.Entity;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 	}
 
 
-	public class Part
+	public class Part : BaseEntity
 	{
 	
 		[Key]
@@ -100,7 +101,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string Display { get; set; }
 	}
 
-	public class AlternatePart
+	public class AlternatePart:BaseEntity
 	{
 		[Key]
 		public string? ID { get; set; }

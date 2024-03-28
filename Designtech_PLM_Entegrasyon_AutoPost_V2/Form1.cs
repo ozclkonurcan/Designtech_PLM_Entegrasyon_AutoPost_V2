@@ -458,16 +458,6 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                     txtShowCatalog.Text = jsonObject["Catalog"].ToString();
                     txtShowApiURL.Text = jsonObject["APIConnectionINFO"]["API"].ToString();
 
-                    txtApiUrl.Text = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
-                    txtApiEndpoint.Text = jsonObject["APIConnectionINFO"]["ApiEndpoint"].ToString();
-
-                    //txt_CSRF_NONCE.Text = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
-                    txtEndpointReleased.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_RELEASED"].ToString();
-                    txtEndpointInwork.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_INWORK"].ToString();
-                    txtEndpointCancelled.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_CANCELLED"].ToString();
-                    txtEndpointAltermatePart.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_ALTERNATE_PART"].ToString();
-                    txtEndpointSendFile.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_SEND_FILE"].ToString();
-                    txtEndpointRemoved.Text = jsonObject["APIConnectionINFO"]["API_ENDPOINT_REMOVED"].ToString();
                     txtBasicUsername.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
                     txtBasicPassword.Text = jsonObject["APIConnectionINFO"]["Password"].ToString();
 
@@ -584,15 +574,6 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
 
                 // Yeni veriyi JSON nesnesine ekle veya güncelle
 
-                jsonObject["APIConnectionINFO"]["ApiURL"] = txtApiUrl.Text;
-                jsonObject["APIConnectionINFO"]["ApiEndpoint"] = txtApiEndpoint.Text;
-                jsonObject["APIConnectionINFO"]["API"] = txtApiUrl.Text + "/" + txtApiEndpoint.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_RELEASED"] = txtEndpointReleased.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_INWORK"] = txtEndpointInwork.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_CANCELLED"] = txtEndpointCancelled.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_ALTERNATE_PART"] = txtEndpointAltermatePart.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_SEND_FILE"] = txtEndpointSendFile.Text;
-                jsonObject["APIConnectionINFO"]["API_ENDPOINT_REMOVED"] = txtEndpointRemoved.Text;
                 jsonObject["APIConnectionINFO"]["Username"] = txtBasicUsername.Text;
                 jsonObject["APIConnectionINFO"]["Password"] = txtBasicPassword.Text;
 
@@ -802,7 +783,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                     var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
                     var conn = new SqlConnection(connectionString);
                     var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
-                    var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
+                    //var apiFullUrl = jsonObject["APIConnectionINFO"]["API"].ToString();
                     var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
                     var API_ENDPOINT_RELEASED = jsonObject["APIConnectionINFO"]["API_ENDPOINT_RELEASED"].ToString();
                     var API_ENDPOINT_INWORK = jsonObject["APIConnectionINFO"]["API_ENDPOINT_INWORK"].ToString();
@@ -818,10 +799,13 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
 
 
 
+                    var apiFullUrl = "";
+                    var apiAdres = "";
+                    var anaKaynak = "";
                     var endPoint = "";
 
 
-
+                    
 
                     JObject apiSendJsonDataArray = JObject.Parse(apiSendJsonData);
 
@@ -830,23 +814,59 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                         foreach (var item in item1.Value)
                         {
 
-
-                            if (item["state"]?.ToString() == "RELEASED")
-                            {
-                                endPoint = API_ENDPOINT_RELEASED;
-                            }
-                            else if (item["state"]?.ToString() == "INWORK")
-                            {
-                                endPoint = API_ENDPOINT_INWORK;
-                            }
-                            else if (item["state"]?.ToString() == "CANCELLED")
-                            {
-                                endPoint = API_ENDPOINT_CANCELLED;
-                            }
-
                             var state = item["state"].ToString();
                             var sablonDataDurumu = item["sablonDataDurumu"].ToString();
                             var sourceApi = item["source_Api"].ToString();
+                     
+
+
+                            if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            {
+                                
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+                            else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+                            else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+                            else if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+                            else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+                            else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
+
+
+
+
 
                             if (sablonDataDurumu == "true")
                             {
@@ -2185,7 +2205,7 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
                         {
 
                             // Format the string with selected properties
-                            string displayString = $"[{dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]} ({dataObject["State"]["Display"]})";
+                            string displayString = $"[{dataObject["TransferID"]}] - {dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]} ({dataObject["State"]["Display"]})";
 
                             // Check if message exists
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("kaldýrýldý"))

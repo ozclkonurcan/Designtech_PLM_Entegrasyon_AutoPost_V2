@@ -48,26 +48,9 @@
             label2 = new Label();
             label1 = new Label();
             groupBox3 = new GroupBox();
-            txtEndpointAltermatePart = new TextBox();
-            label8 = new Label();
-            txtEndpointRemoved = new TextBox();
-            txtEndpointSendFile = new TextBox();
-            txtEndpointCancelled = new TextBox();
-            txtEndpointInwork = new TextBox();
-            txtEndpointReleased = new TextBox();
-            label6 = new Label();
-            lblRemoved = new Label();
-            lblSendFile = new Label();
-            lblCancelled = new Label();
-            lblInwork = new Label();
-            lblReleased = new Label();
-            lblBasicAuth = new Label();
             txtBasicPassword = new TextBox();
             txtBasicUsername = new TextBox();
             btnApiEkle = new Button();
-            label4 = new Label();
-            txtApiEndpoint = new TextBox();
-            txtApiUrl = new TextBox();
             label5 = new Label();
             button1btnStopAutoPost = new Button();
             btnKapat = new Button();
@@ -92,7 +75,7 @@
             // 
             // btnStartAutoPost
             // 
-            btnStartAutoPost.Location = new Point(1234, 527);
+            btnStartAutoPost.Location = new Point(1234, 210);
             btnStartAutoPost.Name = "btnStartAutoPost";
             btnStartAutoPost.Size = new Size(94, 29);
             btnStartAutoPost.TabIndex = 0;
@@ -264,164 +247,21 @@
             // 
             // groupBox3
             // 
-            groupBox3.Controls.Add(txtEndpointAltermatePart);
-            groupBox3.Controls.Add(label8);
-            groupBox3.Controls.Add(txtEndpointRemoved);
-            groupBox3.Controls.Add(txtEndpointSendFile);
-            groupBox3.Controls.Add(txtEndpointCancelled);
-            groupBox3.Controls.Add(txtEndpointInwork);
-            groupBox3.Controls.Add(txtEndpointReleased);
-            groupBox3.Controls.Add(label6);
-            groupBox3.Controls.Add(lblRemoved);
-            groupBox3.Controls.Add(lblSendFile);
-            groupBox3.Controls.Add(lblCancelled);
-            groupBox3.Controls.Add(lblInwork);
-            groupBox3.Controls.Add(lblReleased);
-            groupBox3.Controls.Add(lblBasicAuth);
             groupBox3.Controls.Add(txtBasicPassword);
             groupBox3.Controls.Add(txtBasicUsername);
             groupBox3.Controls.Add(btnApiEkle);
-            groupBox3.Controls.Add(label4);
-            groupBox3.Controls.Add(txtApiEndpoint);
-            groupBox3.Controls.Add(txtApiUrl);
             groupBox3.Location = new Point(12, 193);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(1333, 301);
+            groupBox3.Size = new Size(647, 89);
             groupBox3.TabIndex = 3;
             groupBox3.TabStop = false;
-            groupBox3.Text = "Api Bağlantı Ayarları";
+            groupBox3.Text = "Api kullanıcı ayarı - Basic Auth";
             groupBox3.Enter += groupBox3_Enter;
-            // 
-            // txtEndpointAltermatePart
-            // 
-            txtEndpointAltermatePart.Cursor = Cursors.IBeam;
-            txtEndpointAltermatePart.Location = new Point(828, 133);
-            txtEndpointAltermatePart.Name = "txtEndpointAltermatePart";
-            txtEndpointAltermatePart.PlaceholderText = "ALTERNATE PART";
-            txtEndpointAltermatePart.Size = new Size(389, 27);
-            txtEndpointAltermatePart.TabIndex = 31;
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(670, 141);
-            label8.Name = "label8";
-            label8.Size = new Size(123, 20);
-            label8.TabIndex = 30;
-            label8.Text = "ALTERNATE PART";
-            // 
-            // txtEndpointRemoved
-            // 
-            txtEndpointRemoved.Cursor = Cursors.IBeam;
-            txtEndpointRemoved.Location = new Point(828, 208);
-            txtEndpointRemoved.Name = "txtEndpointRemoved";
-            txtEndpointRemoved.PlaceholderText = "REMOVED";
-            txtEndpointRemoved.Size = new Size(389, 27);
-            txtEndpointRemoved.TabIndex = 29;
-            // 
-            // txtEndpointSendFile
-            // 
-            txtEndpointSendFile.Cursor = Cursors.IBeam;
-            txtEndpointSendFile.Location = new Point(828, 171);
-            txtEndpointSendFile.Name = "txtEndpointSendFile";
-            txtEndpointSendFile.PlaceholderText = "SEND FILE";
-            txtEndpointSendFile.Size = new Size(389, 27);
-            txtEndpointSendFile.TabIndex = 28;
-            // 
-            // txtEndpointCancelled
-            // 
-            txtEndpointCancelled.Cursor = Cursors.IBeam;
-            txtEndpointCancelled.Location = new Point(828, 100);
-            txtEndpointCancelled.Name = "txtEndpointCancelled";
-            txtEndpointCancelled.PlaceholderText = "CANCELLED";
-            txtEndpointCancelled.Size = new Size(389, 27);
-            txtEndpointCancelled.TabIndex = 27;
-            // 
-            // txtEndpointInwork
-            // 
-            txtEndpointInwork.Cursor = Cursors.IBeam;
-            txtEndpointInwork.Location = new Point(828, 67);
-            txtEndpointInwork.Name = "txtEndpointInwork";
-            txtEndpointInwork.PlaceholderText = "INWORK";
-            txtEndpointInwork.Size = new Size(389, 27);
-            txtEndpointInwork.TabIndex = 26;
-            // 
-            // txtEndpointReleased
-            // 
-            txtEndpointReleased.Cursor = Cursors.IBeam;
-            txtEndpointReleased.Location = new Point(828, 27);
-            txtEndpointReleased.Name = "txtEndpointReleased";
-            txtEndpointReleased.PlaceholderText = "RELEASED";
-            txtEndpointReleased.Size = new Size(389, 27);
-            txtEndpointReleased.TabIndex = 25;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new Point(641, 29);
-            label6.Name = "label6";
-            label6.Size = new Size(15, 20);
-            label6.TabIndex = 23;
-            label6.Text = "/";
-            // 
-            // lblRemoved
-            // 
-            lblRemoved.AutoSize = true;
-            lblRemoved.Location = new Point(670, 215);
-            lblRemoved.Name = "lblRemoved";
-            lblRemoved.Size = new Size(78, 20);
-            lblRemoved.TabIndex = 17;
-            lblRemoved.Text = "REMOVED";
-            // 
-            // lblSendFile
-            // 
-            lblSendFile.AutoSize = true;
-            lblSendFile.Location = new Point(670, 178);
-            lblSendFile.Name = "lblSendFile";
-            lblSendFile.Size = new Size(77, 20);
-            lblSendFile.TabIndex = 16;
-            lblSendFile.Text = "SEND FILE";
-            // 
-            // lblCancelled
-            // 
-            lblCancelled.AutoSize = true;
-            lblCancelled.Location = new Point(670, 104);
-            lblCancelled.Name = "lblCancelled";
-            lblCancelled.Size = new Size(89, 20);
-            lblCancelled.TabIndex = 15;
-            lblCancelled.Text = "CANCELLED";
-            // 
-            // lblInwork
-            // 
-            lblInwork.AutoSize = true;
-            lblInwork.Location = new Point(670, 67);
-            lblInwork.Name = "lblInwork";
-            lblInwork.Size = new Size(67, 20);
-            lblInwork.TabIndex = 14;
-            lblInwork.Text = "INWORK";
-            // 
-            // lblReleased
-            // 
-            lblReleased.AutoSize = true;
-            lblReleased.Location = new Point(670, 30);
-            lblReleased.Name = "lblReleased";
-            lblReleased.Size = new Size(78, 20);
-            lblReleased.TabIndex = 13;
-            lblReleased.Text = "RELEASED";
-            // 
-            // lblBasicAuth
-            // 
-            lblBasicAuth.AutoSize = true;
-            lblBasicAuth.Location = new Point(11, 56);
-            lblBasicAuth.Name = "lblBasicAuth";
-            lblBasicAuth.Size = new Size(78, 20);
-            lblBasicAuth.TabIndex = 12;
-            lblBasicAuth.Text = "Basic Auth";
             // 
             // txtBasicPassword
             // 
             txtBasicPassword.Cursor = Cursors.IBeam;
-            txtBasicPassword.Location = new Point(225, 79);
+            txtBasicPassword.Location = new Point(204, 41);
             txtBasicPassword.Name = "txtBasicPassword";
             txtBasicPassword.PasswordChar = '.';
             txtBasicPassword.PlaceholderText = "Password";
@@ -431,7 +271,7 @@
             // txtBasicUsername
             // 
             txtBasicUsername.Cursor = Cursors.IBeam;
-            txtBasicUsername.Location = new Point(11, 79);
+            txtBasicUsername.Location = new Point(11, 41);
             txtBasicUsername.Name = "txtBasicUsername";
             txtBasicUsername.PlaceholderText = "Username";
             txtBasicUsername.Size = new Size(192, 27);
@@ -439,7 +279,7 @@
             // 
             // btnApiEkle
             // 
-            btnApiEkle.Location = new Point(1222, 253);
+            btnApiEkle.Location = new Point(541, 41);
             btnApiEkle.Name = "btnApiEkle";
             btnApiEkle.Size = new Size(94, 29);
             btnApiEkle.TabIndex = 9;
@@ -447,37 +287,10 @@
             btnApiEkle.UseVisualStyleBackColor = true;
             btnApiEkle.Click += btnApiEkle_Click;
             // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new Point(423, 29);
-            label4.Name = "label4";
-            label4.Size = new Size(15, 20);
-            label4.TabIndex = 8;
-            label4.Text = "/";
-            // 
-            // txtApiEndpoint
-            // 
-            txtApiEndpoint.Cursor = Cursors.IBeam;
-            txtApiEndpoint.Location = new Point(443, 26);
-            txtApiEndpoint.Name = "txtApiEndpoint";
-            txtApiEndpoint.PlaceholderText = "Endpoint";
-            txtApiEndpoint.Size = new Size(192, 27);
-            txtApiEndpoint.TabIndex = 7;
-            // 
-            // txtApiUrl
-            // 
-            txtApiUrl.Cursor = Cursors.IBeam;
-            txtApiUrl.Location = new Point(11, 26);
-            txtApiUrl.Name = "txtApiUrl";
-            txtApiUrl.PlaceholderText = "Api URL";
-            txtApiUrl.Size = new Size(406, 27);
-            txtApiUrl.TabIndex = 7;
-            // 
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(668, 536);
+            label5.Location = new Point(1169, 17);
             label5.Name = "label5";
             label5.Size = new Size(129, 20);
             label5.TabIndex = 4;
@@ -485,7 +298,7 @@
             // 
             // button1btnStopAutoPost
             // 
-            button1btnStopAutoPost.Location = new Point(1107, 527);
+            button1btnStopAutoPost.Location = new Point(1134, 210);
             button1btnStopAutoPost.Name = "button1btnStopAutoPost";
             button1btnStopAutoPost.Size = new Size(94, 29);
             button1btnStopAutoPost.TabIndex = 5;
@@ -495,7 +308,7 @@
             // 
             // btnKapat
             // 
-            btnKapat.Location = new Point(979, 527);
+            btnKapat.Location = new Point(1034, 210);
             btnKapat.Name = "btnKapat";
             btnKapat.Size = new Size(94, 29);
             btnKapat.TabIndex = 6;
@@ -506,7 +319,7 @@
             // lblDataCount
             // 
             lblDataCount.AutoSize = true;
-            lblDataCount.Location = new Point(803, 536);
+            lblDataCount.Location = new Point(1304, 17);
             lblDataCount.Name = "lblDataCount";
             lblDataCount.Size = new Size(17, 20);
             lblDataCount.TabIndex = 7;
@@ -515,9 +328,11 @@
             // groupBox4
             // 
             groupBox4.Controls.Add(listBox1);
-            groupBox4.Location = new Point(12, 569);
+            groupBox4.Controls.Add(lblDataCount);
+            groupBox4.Controls.Add(label5);
+            groupBox4.Location = new Point(12, 300);
             groupBox4.Name = "groupBox4";
-            groupBox4.Size = new Size(1333, 325);
+            groupBox4.Size = new Size(1333, 335);
             groupBox4.TabIndex = 8;
             groupBox4.TabStop = false;
             groupBox4.Text = "PLM Data Post List";
@@ -525,9 +340,9 @@
             // listBox1
             // 
             listBox1.FormattingEnabled = true;
-            listBox1.Location = new Point(11, 46);
+            listBox1.Location = new Point(11, 40);
             listBox1.Name = "listBox1";
-            listBox1.Size = new Size(1310, 264);
+            listBox1.Size = new Size(1310, 284);
             listBox1.TabIndex = 0;
             listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged_1;
             // 
@@ -537,7 +352,7 @@
             groupBox5.Controls.Add(listBox2);
             groupBox5.Location = new Point(1351, 12);
             groupBox5.Name = "groupBox5";
-            groupBox5.Size = new Size(279, 882);
+            groupBox5.Size = new Size(279, 623);
             groupBox5.TabIndex = 9;
             groupBox5.TabStop = false;
             groupBox5.Text = "Log dosya listesi";
@@ -557,7 +372,7 @@
             listBox2.FormattingEnabled = true;
             listBox2.Location = new Point(7, 27);
             listBox2.Name = "listBox2";
-            listBox2.Size = new Size(267, 844);
+            listBox2.Size = new Size(267, 584);
             listBox2.TabIndex = 0;
             listBox2.SelectedIndexChanged += listBox2_SelectedIndexChanged;
             // 
@@ -605,13 +420,11 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
-            ClientSize = new Size(1642, 940);
+            ClientSize = new Size(1642, 642);
             Controls.Add(groupBox5);
             Controls.Add(groupBox4);
-            Controls.Add(lblDataCount);
             Controls.Add(btnKapat);
             Controls.Add(button1btnStopAutoPost);
-            Controls.Add(label5);
             Controls.Add(groupBox3);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
@@ -619,7 +432,7 @@
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Designtech PLM Entegrasyon v1.7.0";
+            Text = "Designtech PLM Entegrasyon v1.8.0";
             FormClosing += Form1_FormClosing_1;
             FormClosed += Form1_FormClosed;
             Load += Form1_Load_1;
@@ -631,10 +444,10 @@
             groupBox3.ResumeLayout(false);
             groupBox3.PerformLayout();
             groupBox4.ResumeLayout(false);
+            groupBox4.PerformLayout();
             groupBox5.ResumeLayout(false);
             contextMenuStrip1.ResumeLayout(false);
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -654,9 +467,6 @@
         private RadioButton rbLocalChoose;
         private Button btnBaglantiKur;
         private GroupBox groupBox3;
-        private Label label4;
-        private TextBox txtApiEndpoint;
-        private TextBox txtApiUrl;
         private Button btnApiEkle;
         private Label label5;
         private Button button1btnStopAutoPost;
@@ -674,22 +484,8 @@
         private ToolStripMenuItem durdurToolStripMenuItem;
         private ToolStripMenuItem kapatToolStripMenuItem;
         private NotifyIcon notifyIcon1;
-		private Label lblBasicAuth;
 		private TextBox txtBasicPassword;
 		private TextBox txtBasicUsername;
-        private Label lblRemoved;
-        private Label lblSendFile;
-        private Label lblCancelled;
-        private Label lblInwork;
-        private Label lblReleased;
-        private TextBox txtEndpointRemoved;
-        private TextBox txtEndpointSendFile;
-        private TextBox txtEndpointCancelled;
-        private TextBox txtEndpointInwork;
-        private TextBox txtEndpointReleased;
-        private Label label6;
-        private TextBox txtEndpointAltermatePart;
-        private Label label8;
         private Button btnListbox2Reflesh;
     }
 }

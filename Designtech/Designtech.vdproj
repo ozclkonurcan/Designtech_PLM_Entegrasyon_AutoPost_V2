@@ -55,6 +55,22 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
+            }
         }
         "Release"
         {
@@ -71,6 +87,14 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+            }
         }
     }
     "Deployable"
@@ -192,7 +216,7 @@
                     "{9EF0B969-E518-4E46-987F-47570745A589}:_2A7F05F77DE44E4AAD10BE89AC25E690"
                     {
                     "Name" = "8:Configuration"
-                    "AlwaysCreate" = "11:FALSE"
+                    "AlwaysCreate" = "11:TRUE"
                     "Condition" = "8:"
                     "Transitive" = "11:FALSE"
                     "Property" = "8:_7B6E3DA17D7E483A904EC36A12B22260"
@@ -201,7 +225,7 @@
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_AC5681C9DA0B4288B333118DA10ED16A"
                             {
                             "Name" = "8:logs"
-                            "AlwaysCreate" = "11:FALSE"
+                            "AlwaysCreate" = "11:TRUE"
                             "Condition" = "8:"
                             "Transitive" = "11:FALSE"
                             "Property" = "8:_D147CC772E174C4CA1FEAC07B7C84E35"
@@ -210,7 +234,7 @@
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_DE0A2E3E50004018A107BB27CB32EBAC"
                                     {
                                     "Name" = "8:TakvimFile"
-                                    "AlwaysCreate" = "11:FALSE"
+                                    "AlwaysCreate" = "11:TRUE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
                                     "Property" = "8:_607FE02DC6194AF5B0C430710FD70C02"
@@ -251,15 +275,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Designtech"
-        "ProductCode" = "8:{A3C29204-4089-4F25-92E0-81CAC4BA1A33}"
-        "PackageCode" = "8:{822A8513-3F75-468F-8BC0-C07415DD2205}"
+        "ProductCode" = "8:{9CBC100B-4EAB-418D-B651-69E0F5235D6F}"
+        "PackageCode" = "8:{A55A43C3-ECB2-4124-909F-7469FA0D84EF}"
         "UpgradeCode" = "8:{96F1B4BB-B66F-4A2B-80D6-F04A058480BF}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.7.0"
+        "ProductVersion" = "8:1.8.0"
         "Manufacturer" = "8:Designtech"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
