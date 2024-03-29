@@ -25,11 +25,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? Name { get; set; }
 		public string? Description { get; set; }
 		public State? State { get; set; }
-		public string? MuhasebeKodu { get; set; }
+		public string? MuhasebeKodu { get; set; } = "0000000";
 		public string? MuhasebeAdi { get; set; }
 		public string? BirimAdi { get; set; }
 		public string? BirimKodu { get; set; }
-		public CLASSIFICATION? CLASSIFICATION { get; set; }
+
+		public string? PlanlamaTipiKodu { get; set; } = "P";
+        public string? Fai { get; set; }
+		public string? PLM { get; set; } = "E";
+        public CLASSIFICATION? CLASSIFICATION { get; set; }
 		public List<Alternates>? Alternates { get; set; }
 
 
@@ -103,6 +107,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 
 	public class AlternatePart:BaseEntity
 	{
+
 		[Key]
 		public string? ID { get; set; }
 		public string? Number { get; set; }
@@ -111,11 +116,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public State? State { get; set; }
 
 		public string? MuhasebeAdi { get; set; }
-		public string? MuhasebeKodu { get; set; }
+		public string? MuhasebeKodu { get; set; } = "0000000";
 		public string? BirimAdi { get; set; }
 		public string? BirimKodu { get; set; }
 
-		public CLASSIFICATION? CLASSIFICATION { get; set; }
+        public string? PlanlamaTipiKodu { get; set; } = "P";
+        public string? Fai { get; set; }
+        public string? PLM { get; set; } = "E";
+        public CLASSIFICATION? CLASSIFICATION { get; set; }
 
 
 

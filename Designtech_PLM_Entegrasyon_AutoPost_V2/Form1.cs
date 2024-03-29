@@ -185,6 +185,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                     var catalogValue = jsonObject["Catalog"].ToString();
                     // Tablo varsa kontrol et
                     var tableExists = TableExists($"[{catalogValue}].Change_Notice_LogTable", connectionString);
+                    //var tableExistsLOG = TableExists($"[{catalogValue}].WTPartAlternateLink_LOG", connectionString);
+                    //var tableExistsControlLog = TableExists($"[{catalogValue}].WTPartAlternateLink_ControlLog", connectionString);
 
                     if (!tableExists)
                     {
@@ -228,6 +230,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
             }
         }
 
+
         private void CreateTable(string connectionString)
         {
 
@@ -259,13 +262,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
             string createTableSql = @"
     CREATE TABLE " + scheman + @".Change_Notice_LogTable (
+     TransferID varchar(MAX),
       idA2A2 varchar(50),
       idA3masterReference varchar(MAX),
       statestate varchar(MAX),
       name varchar(MAX),
       WTPartNumber varchar(MAX),
       updateStampA2 datetime,
-      ProcessTimestamp datetime
+      ProcessTimestamp datetime,
  Version varchar(MAX),
  VersionID varchar(MAX)
     )";
@@ -274,6 +278,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
             string createTableSql2 = @"
                 CREATE TABLE " + scheman + @".WTPartAlternateLink_LOG (
+TransferID varchar(MAX),
                  ID varchar(200),
                  ObjectType varchar(MAX),
                  Name varchar(MAX),
@@ -281,14 +286,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                  updateStampA2 datetime,
             	  modifyStampA2 datetime,
                  ProcessTimestamp datetime,
-                 state varchar(MAX),
+                 state varchar(MAX)
                 )";
 
 
 
 
             string createTableSql3 = @"
-CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
+CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
+TransferID varchar(MAX),
   AdministrativeLockIsNull tinyint,
   TypeAdministrativeLock varchar(MAX),
   ClassNameKeyDomainRef varchar(MAX),
@@ -334,6 +340,12 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                 }
             }
         }
+
+
+
+
+
+
 
         private async Task<bool> TestDatabaseConnection(string connectionString)
         {
@@ -842,6 +854,13 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                                 endPoint = item["alt_endpoint"].ToString();
                                 apiFullUrl = apiAdres + "/" + anaKaynak;
                             }
+                            else if (item["state"]?.ToString() == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            {
+                                apiAdres = item["api_adres"].ToString();
+                                anaKaynak = item["ana_kaynak"].ToString();
+                                endPoint = item["alt_endpoint"].ToString();
+                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                            }
                             else if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
                             {
                                 apiAdres = item["api_adres"].ToString();
@@ -870,7 +889,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
 
                             if (sablonDataDurumu == "true")
                             {
-                                await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
+                                await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
                             }
                         }
 
@@ -889,7 +908,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
             }
         }
 
-        private async Task ProcessStateAsync(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string ServerName, string BasicUsername, string BasicPassword, DateTime anlikTarih, string sourceApi, string endPoint, int oldAlternateLinkCount, string API_ENDPOINT_ALTERNATE_PART, string API_ENDPOINT_REMOVED, string API_ENDPOINT_SEND_FILE)
+        private async Task ProcessStateAsync(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string ServerName, string BasicUsername, string BasicPassword, DateTime anlikTarih, string sourceApi, string endPoint, int oldAlternateLinkCount,string sablonDataDurumu, string API_ENDPOINT_ALTERNATE_PART, string API_ENDPOINT_REMOVED, string API_ENDPOINT_SEND_FILE)
         {
           
 
@@ -909,15 +928,28 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
                     formattedTarih2 = DateTime.Today.AddDays(-7).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    if(state == "ALTERNATE_RELEASED")
+                    {
+                    sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                    }
+                    else
+                    {
                     sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                    }
                     ilkCalistirmaProdMgmt = false;
                 }
                 else
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
                     formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    if (state == "ALTERNATE_RELEASED")
+                    {
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                    }
+                    else
+                    {
                     sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
-
+                    }
                 }
 
             }
@@ -992,7 +1024,8 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
 
 
 
-
+                        if(state != "ALTERNATE_RELEASED")
+                        {
 
                         if (existingLog == null)
                         {
@@ -1005,6 +1038,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                         {
                             await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint);
 
+                        }
                         }
 
                         #region AlternateLinkVeriSayýsý
@@ -1020,7 +1054,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
 
 
 
-                        if (response.State.Value == "RELEASED" && response.Alternates != null)
+                        if (response.State.Value == "RELEASED" && response.Alternates != null && state == "ALTERNATE_RELEASED")
                         {
 
                             foreach (var item in response.Alternates)
@@ -1071,7 +1105,7 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                                     ID = response.ID,
                                     LastModified = response.LastModified,
                                     MuhasebeAdi = response.MuhasebeAdi,
-                                    MuhasebeKodu = response.MuhasebeKodu,
+                                    //MuhasebeKodu = response.MuhasebeKodu,
                                     Name = response.Name,
                                     Number = response.Number,
                                     State = response.State,
@@ -1081,18 +1115,19 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                                 };
 
 
-
-
-                                if (item.AlternatePart.State.Value == "RELEASED" && alternateLinkLogs == null)
+                             
+                              
+                                if (item.AlternatePart.State.Value == "RELEASED" && alternateLinkLogs == null )
                                 {
-                                    await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, API_ENDPOINT_ALTERNATE_PART);
+                                    await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL,endPoint);
                                     //await RELEASED_AlternatesInsertLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, "ALTERNATE_RELEASED");
                                 }
                                 else if (item.AlternatePart.State.Value == "RELEASED" && (item.LastModified != alternateLinkLogs.modifyStampA2))
                                 {
-                                    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, API_ENDPOINT_ALTERNATE_PART);
+                                    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL,endPoint);
                                     //await RELEASED_AlternatesUpdateLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, "ALTERNATE_RELEASED");
                                 }
+                                
                             }
                         }
 
@@ -1213,11 +1248,11 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                         {
 
                             var wtpart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
-            $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1' AND idA3view = (SELECT MAX(idA3view) FROM [{catalogValue}].[WTPart])",
+            $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
             new { idA3MasterReference = item.IdA3A5 }));
 
                             var wtpartAlternatePart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
-            $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1' AND idA3view = (SELECT MAX(idA3view) FROM [{catalogValue}].[WTPart])",
+            $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
             new { idA3MasterReference = item.IdA3B5 }));
 
 
@@ -1429,8 +1464,8 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                 }
 
                 await conn.ExecuteAsync(
-                    $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name], [WTPartNumber],[Version],[VersionID]) VALUES (@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber,@Version,@VersionID )",
-                    new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
+                    $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name], [WTPartNumber],[Version],[VersionID]) VALUES (@TransferID,@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber,@Version,@VersionID )",
+                    new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
 
                 LogService logService = new LogService(_configuration);
                 if (response.State.Value == "RELEASED")
@@ -1492,8 +1527,8 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                 }
 
                 await conn.ExecuteAsync(
-                    $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET [ProcessTimestamp] = @ProcessTimestamp, [updateStampA2] = @updateStampA2, [statestate] = @statestate,[name] = @name , [WTPartNumber] = @WTPartNumber, [Version] = @Version, [VersionID] = @VersionID WHERE [idA2A2] = @idA2A2",
-                    new { idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
+                    $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET [TransferID] = @TransferID, [ProcessTimestamp] = @ProcessTimestamp, [updateStampA2] = @updateStampA2, [statestate] = @statestate,[name] = @name , [WTPartNumber] = @WTPartNumber, [Version] = @Version, [VersionID] = @VersionID WHERE [idA2A2] = @idA2A2",
+                    new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
 
                 LogService logService = new LogService(_configuration);
                 if (response.State.Value == "RELEASED")
@@ -1551,8 +1586,8 @@ CREATE TABLE  CREATE TABLE " + scheman + @".WTPartAlternateLink_ControlLog (
                 }
 
                 await conn.ExecuteAsync(
-$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
-new { ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State });
+$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
+new {TransferID = item.AlternatePart.TransferID , ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State });
 
 
 
@@ -1600,8 +1635,8 @@ new { ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.Alte
                 }
 
                 await conn.ExecuteAsync(
-$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state",
-new { ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state",
+new {TransferID = item.AlternatePart.TransferID, ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLog(jsonData3);
@@ -1657,8 +1692,8 @@ new { ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.Alte
                 }
 
                 await conn.ExecuteAsync(
-$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
-new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
+new { TransferID = item.AlternatePart.TransferID,ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
 
 
@@ -1712,8 +1747,8 @@ new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Na
                 }
 
                 await conn.ExecuteAsync(
-$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state WHERE ID = {item.AlternatePart.ID.Split(':')[2]} ",
-new { ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state WHERE ID = {item.AlternatePart.ID.Split(':')[2]} ",
+new {TransferID = item.AlternatePart.TransferID , ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
 
 

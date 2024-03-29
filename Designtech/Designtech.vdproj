@@ -27,6 +27,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_4B1524D0907B445E9C75D5158D46E11B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_85B939F8729E45FFB8E7FF0F6B06FC8A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -94,6 +100,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
     }
@@ -131,7 +145,7 @@
             "SourcePath" = "8:..\\Designtech_PLM_Entegrasyon_AutoPost_V2\\bin\\Debug\\net8.0-windows\\Configuration\\ApiSendDataSettings.json"
             "TargetName" = "8:ApiSendDataSettings.json"
             "Tag" = "8:"
-            "Folder" = "8:_2A7F05F77DE44E4AAD10BE89AC25E690"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -171,7 +185,7 @@
             "SourcePath" = "8:..\\Designtech_PLM_Entegrasyon_AutoPost_V2\\bin\\Debug\\net8.0-windows\\Configuration\\appsettings.json"
             "TargetName" = "8:appsettings.json"
             "Tag" = "8:"
-            "Folder" = "8:_2A7F05F77DE44E4AAD10BE89AC25E690"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -207,13 +221,13 @@
             {
             "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
             "Name" = "8:#1925"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
-            "Transitive" = "11:FALSE"
+            "Transitive" = "11:TRUE"
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_2A7F05F77DE44E4AAD10BE89AC25E690"
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_3F19ACDA7B1A4D589B0798083F7C31C8"
                     {
                     "Name" = "8:Configuration"
                     "AlwaysCreate" = "11:TRUE"
@@ -276,7 +290,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Designtech"
         "ProductCode" = "8:{9CBC100B-4EAB-418D-B651-69E0F5235D6F}"
-        "PackageCode" = "8:{A55A43C3-ECB2-4124-909F-7469FA0D84EF}"
+        "PackageCode" = "8:{C51814F9-25F5-475E-9193-E4CDF46D025B}"
         "UpgradeCode" = "8:{96F1B4BB-B66F-4A2B-80D6-F04A058480BF}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -845,6 +859,34 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:PublishItems"
+            "OutputProjectGuid" = "8:{0202D9C4-BC85-44CF-A44B-BCB31E8A9270}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4B1524D0907B445E9C75D5158D46E11B"
+            {
+            "SourcePath" = "8:..\\Designtech_PLM_Entegrasyon_AutoPost_V2\\obj\\Debug\\net8.0-windows\\Designtech_PLM_Entegrasyon_AutoPost_V2.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_92DDC59D76444C5EA2D96A599D12304E"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{0202D9C4-BC85-44CF-A44B-BCB31E8A9270}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"

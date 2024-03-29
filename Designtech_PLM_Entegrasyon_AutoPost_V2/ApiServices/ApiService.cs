@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Azure;
+using Designtech_PLM_Entegrasyon_AutoPost.Helper;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,6 +22,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
     public class ApiService
     {
 
+        private readonly IConfiguration _configuration;
         public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent)
         {
             try
@@ -27,7 +31,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 
                 using (var client = new HttpClient())
                 {
-                    client.Timeout = Timeout.InfiniteTimeSpan;
+        client.Timeout = Timeout.InfiniteTimeSpan;
                     //var request = new HttpRequestMessage(HttpMethod.Post, $"{apiURL}/{endpoint}");
                     var request = new HttpRequestMessage(HttpMethod.Post, $"{apiFullUrl}/{endpoint}");
                     var content = new StringContent(jsonContent.ToString(), Encoding.UTF8, "application/json");
@@ -51,12 +55,16 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
             {
-                MessageBox.Show("API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!");
+                LogService logService = new LogService(_configuration);
+                logService.CreateJsonFileLog(jsonContent,ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
+                    MessageBox.Show("API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!");
                 throw;
             }
             catch (Exception ex)
             {
                 var message = ex is ArgumentException ? ex.Message : "Beklenmeyen bir hata oluştu";
+                LogService logService = new LogService(_configuration);
+                logService.CreateJsonFileLog(jsonContent, "HATA " + "Parça gönderilmedi - ('"+message+"') - " + apiFullUrl +"/"+ endpoint);
                 MessageBox.Show($"Hata: {message}");
                 throw;
             }

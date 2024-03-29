@@ -118,6 +118,7 @@
             rbLocalChoose.TabIndex = 5;
             rbLocalChoose.Text = "Local";
             rbLocalChoose.UseVisualStyleBackColor = true;
+            rbLocalChoose.CheckedChanged += rbLocalChoose_CheckedChanged;
             // 
             // rbServerChoose
             // 
@@ -130,6 +131,7 @@
             rbServerChoose.TabStop = true;
             rbServerChoose.Text = "Server";
             rbServerChoose.UseVisualStyleBackColor = true;
+            rbServerChoose.CheckedChanged += rbServerChoose_CheckedChanged;
             // 
             // txtParola
             // 
@@ -340,8 +342,11 @@
             // listBox1
             // 
             listBox1.FormattingEnabled = true;
+            listBox1.HorizontalScrollbar = true;
+            listBox1.IntegralHeight = false;
             listBox1.Location = new Point(11, 40);
             listBox1.Name = "listBox1";
+            listBox1.ScrollAlwaysVisible = true;
             listBox1.Size = new Size(1310, 284);
             listBox1.TabIndex = 0;
             listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged_1;
