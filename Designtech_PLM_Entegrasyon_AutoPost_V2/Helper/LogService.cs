@@ -73,6 +73,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                 // Log dosyasının adını ve yolunu oluştur
                 currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration\\logs", "TakvimFile");
                 string dateFormatted = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+                string islemTarihi = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
                 logFileName = Path.Combine(currentMonthFolder, dateFormatted + ".json");
 
                 JArray dataArray;
@@ -94,6 +95,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                 {
                     jsonDataObject.Add("Mesaj", message);
                 }
+
+                jsonDataObject.Add("islemTarihi", islemTarihi);
 
                 // Diziye ekle
                 dataArray.Add(jsonDataObject);

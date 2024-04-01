@@ -468,7 +468,6 @@ TransferID varchar(MAX),
                     // Ýlgili verileri çek ve kullanýcýya göster
                     txtShowServerName.Text = jsonObject["ServerName"].ToString();
                     txtShowCatalog.Text = jsonObject["Catalog"].ToString();
-                    txtShowApiURL.Text = jsonObject["APIConnectionINFO"]["API"].ToString();
 
                     txtBasicUsername.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
                     txtBasicPassword.Text = jsonObject["APIConnectionINFO"]["Password"].ToString();
@@ -826,62 +825,105 @@ TransferID varchar(MAX),
                         foreach (var item in item1.Value)
                         {
 
-                            var state = item["state"].ToString();
+                            var state = item["state"]?.ToString();
                             var sablonDataDurumu = item["sablonDataDurumu"].ToString();
                             var sourceApi = item["source_Api"].ToString();
-                     
 
 
-                            if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            if (sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
                             {
-                                
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART")
+                                {
+                                    apiAdres = item["api_adres"].ToString();
+                                    anaKaynak = item["ana_kaynak"].ToString();
+                                    endPoint = item["alt_endpoint"].ToString();
+                                    apiFullUrl = apiAdres + "/" + anaKaynak;
+                                }
                             }
-                            else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
                             {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
+                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART")
+                                {
+                                    apiAdres = item["api_adres"].ToString();
+                                    anaKaynak = item["ana_kaynak"].ToString();
+                                    endPoint = item["alt_endpoint"].ToString();
+                                    apiFullUrl = apiAdres + "/" + anaKaynak;
+                                }
                             }
-                            else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
-                            {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
-                            }
-                            else if (item["state"]?.ToString() == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
-                            {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
-                            }
-                            else if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
-                            {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
-                            }
-                            else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
-                            {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
-                            }
-                            else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
-                            {
-                                apiAdres = item["api_adres"].ToString();
-                                anaKaynak = item["ana_kaynak"].ToString();
-                                endPoint = item["alt_endpoint"].ToString();
-                                apiFullUrl = apiAdres + "/" + anaKaynak;
-                            }
+
+                            #region Eski yönlendirme kodu
+
+                            //if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            //{
+
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}else if (item["state"]?.ToString() == "REMOVED_PART" && sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "RELEASED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "INWORK" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "ALTERNATE_RELEASED" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            //else if (item["state"]?.ToString() == "REMOVED_PART" && sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            //{
+                            //    apiAdres = item["api_adres"].ToString();
+                            //    anaKaynak = item["ana_kaynak"].ToString();
+                            //    endPoint = item["alt_endpoint"].ToString();
+                            //    apiFullUrl = apiAdres + "/" + anaKaynak;
+                            //}
+                            #endregion
 
 
 
@@ -1239,10 +1281,10 @@ TransferID varchar(MAX),
 
 
                     // Silinen verileri kontrol et
-                    var deletedData = AlternateLinkLogDatas.Except(AlternateLinkDatas, new WTPartAlternateLinkComparer1());
+                        var deletedData = AlternateLinkLogDatas.Except(AlternateLinkDatas, new WTPartAlternateLinkComparer1());
 
                     // Eðer silinen veriler varsa, bu verileri iþleyin
-                    if (deletedData.Any())
+                    if (deletedData.Any() && state == "REMOVED_PART" && sablonDataDurumu == "true")
                     {
                         foreach (var item in deletedData)
                         {
@@ -1298,6 +1340,10 @@ TransferID varchar(MAX),
                             await conn.ExecuteAsync($@"
 				DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
 				WHERE IdA2A2 IN @Ids", new { Ids = deletedData.Select(d => d.IdA2A2).ToArray() });
+
+                            await conn.ExecuteAsync($@"
+				DELETE FROM [{catalogValue}].[WTPartAlternateLink_LOG]
+				WHERE Number IN @Ids", new { Ids = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray() });
                         }
                     }
 
@@ -1586,8 +1632,8 @@ TransferID varchar(MAX),
                 }
 
                 await conn.ExecuteAsync(
-$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
-new {TransferID = item.AlternatePart.TransferID , ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State });
+$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([AnaParcaTransferID],[AnaParcaID],[AnaParcaNumber],[AnaParcaName],[TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@AnaParcaTransferID,@AnaParcaID,@AnaParcaNumber,@AnaParcaName,@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
+new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, TransferID = item.AlternatePart.TransferID , ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State });
 
 
 
@@ -1635,8 +1681,8 @@ new {TransferID = item.AlternatePart.TransferID , ID = item.ID.Split(':')[2], Ob
                 }
 
                 await conn.ExecuteAsync(
-$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state",
-new {TransferID = item.AlternatePart.TransferID, ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET  [AnaParcaTransferID] = @AnaParcaTransferID,[AnaParcaID] = @AnaParcaID,[AnaParcaNumber] = @AnaParcaNumber,[AnaParcaName] = @AnaParcaName, [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state",
+new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, TransferID = item.AlternatePart.TransferID, ID = item.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLog(jsonData3);
@@ -1692,8 +1738,8 @@ new {TransferID = item.AlternatePart.TransferID, ID = item.ID.Split(':')[2], Obj
                 }
 
                 await conn.ExecuteAsync(
-$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
-new { TransferID = item.AlternatePart.TransferID,ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"INSERT INTO [{catalogValue}].[WTPartAlternateLink_LOG] ([AnaParcaTransferID],[AnaParcaID],[AnaParcaNumber],[AnaParcaName],[TransferID],[ID],[ObjectType],[Name], [Number],[updateStampA2], [modifyStampA2], [ProcessTimestamp], [state]) VALUES (@AnaParcaTransferID,@AnaParcaID,@AnaParcaNumber,@AnaParcaName,@TransferID,@ID,@ObjectType,@Name, @Number,@modifyStampA2, @modifyStampA2, @ProcessTimestamp,@state)",
+new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, TransferID = item.AlternatePart.TransferID,ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
 
 
@@ -1747,8 +1793,8 @@ new { TransferID = item.AlternatePart.TransferID,ID = item.AlternatePart.ID.Spli
                 }
 
                 await conn.ExecuteAsync(
-$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state WHERE ID = {item.AlternatePart.ID.Split(':')[2]} ",
-new {TransferID = item.AlternatePart.TransferID , ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
+$"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [AnaParcaTransferID] = @AnaParcaTransferID,[AnaParcaID] = @AnaParcaID,[AnaParcaNumber] = @AnaParcaNumber,[AnaParcaName] = @AnaParcaName, [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state WHERE ID = {item.AlternatePart.ID.Split(':')[2]} ",
+new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParcaNumber = response.Number, AnaParcaName = response.Name, TransferID = item.AlternatePart.TransferID , ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = DateTime.UtcNow, state = item.AlternatePart.State.Value });
 
 
 
@@ -1776,6 +1822,7 @@ new {TransferID = item.AlternatePart.TransferID , ID = item.AlternatePart.ID.Spl
                 ApiService _apiService = new ApiService();
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+
 
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLog(jsonData3, "Muadil parça kaldýrýldý.");
@@ -2252,6 +2299,8 @@ new {TransferID = item.AlternatePart.TransferID , ID = item.AlternatePart.ID.Spl
                             {
                                 displayString += $" - {dataObject["Mesaj"]}";
                             }
+
+                            displayString += $" - {dataObject["islemTarihi"]}";
                             // Add to the ListBox
                             listBox1.Items.Add(displayString);
                             lblDataCount.Text = listBox1.Items.Count.ToString();

@@ -40,11 +40,9 @@
             txtDatabaseAdi = new TextBox();
             txtServerName = new TextBox();
             groupBox2 = new GroupBox();
-            txtShowApiURL = new TextBox();
             txtShowCatalog = new TextBox();
             txtShowServerName = new TextBox();
             btnConnectionReflesh = new Button();
-            label3 = new Label();
             label2 = new Label();
             label1 = new Label();
             groupBox3 = new GroupBox();
@@ -172,11 +170,9 @@
             // 
             // groupBox2
             // 
-            groupBox2.Controls.Add(txtShowApiURL);
             groupBox2.Controls.Add(txtShowCatalog);
             groupBox2.Controls.Add(txtShowServerName);
             groupBox2.Controls.Add(btnConnectionReflesh);
-            groupBox2.Controls.Add(label3);
             groupBox2.Controls.Add(label2);
             groupBox2.Controls.Add(label1);
             groupBox2.Location = new Point(698, 12);
@@ -185,14 +181,6 @@
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
             groupBox2.Text = "Bağlantı Durumu";
-            // 
-            // txtShowApiURL
-            // 
-            txtShowApiURL.Enabled = false;
-            txtShowApiURL.Location = new Point(142, 118);
-            txtShowApiURL.Name = "txtShowApiURL";
-            txtShowApiURL.Size = new Size(389, 27);
-            txtShowApiURL.TabIndex = 6;
             // 
             // txtShowCatalog
             // 
@@ -219,15 +207,6 @@
             btnConnectionReflesh.Text = "Yenile";
             btnConnectionReflesh.UseVisualStyleBackColor = true;
             btnConnectionReflesh.Click += btnConnectionReflesh_Click;
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(27, 121);
-            label3.Name = "label3";
-            label3.Size = new Size(68, 20);
-            label3.TabIndex = 2;
-            label3.Text = "APİ URL :";
             // 
             // label2
             // 
@@ -466,7 +445,6 @@
         private TextBox txtServerName;
         private GroupBox groupBox2;
         private Button btnConnectionReflesh;
-        private Label label3;
         private Label label2;
         private Label label1;
         private RadioButton rbLocalChoose;
@@ -481,7 +459,6 @@
         private ListBox listBox1;
         private GroupBox groupBox5;
         private ListBox listBox2;
-        private TextBox txtShowApiURL;
         private TextBox txtShowCatalog;
         private TextBox txtShowServerName;
         private ContextMenuStrip contextMenuStrip1;
