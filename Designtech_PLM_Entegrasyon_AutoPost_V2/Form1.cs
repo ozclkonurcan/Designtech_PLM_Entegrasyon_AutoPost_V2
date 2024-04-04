@@ -925,10 +925,6 @@ TransferID varchar(MAX),
                             //}
                             #endregion
 
-
-
-
-
                             if (sablonDataDurumu == "true")
                             {
                                 await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
@@ -1053,6 +1049,8 @@ TransferID varchar(MAX),
                     {
                         var response = JsonConvert.DeserializeObject<Part>(json);
 
+                        
+
 
                         var turkishDateFormat2 = response.LastModified.ToString();
                         var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
@@ -1071,7 +1069,8 @@ TransferID varchar(MAX),
 
                         if (existingLog == null)
                         {
-                            await InsertLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                      
+                                await InsertLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint);
 
                         }
 
@@ -1481,20 +1480,48 @@ TransferID varchar(MAX),
         {
             try
             {
-                ApiService _apiService = new ApiService();
-
-
+                var anaPart = new AnaPart();
+                var anaPartCancelled = new AnaPartCancelled();
+                var jsonData3 = "";
                 if (response.State.Value == "RELEASED")
                 {
                     response.State.Value = "A";
                     response.State.Display = "Aktif";
+                    anaPart = new AnaPart
+                    {
+                        Number = response.Number,
+                        Name = response.Name,
+                        Fai = response.Fai,
+                        MuhasebeKodu = "0000000",
+                        PlanlamaTipiKodu = "P",
+                        PLM ="E",
+                        State = response.State,
+                        TransferID = response.TransferID,
+                        Description = response.Description,
+                        BirimKodu = response.BirimKodu,
+                        CLASSIFICATION = response.CLASSIFICATION
+                    };
+                    jsonData3 = JsonConvert.SerializeObject(anaPart);
                 }
-                if (response.State.Value == "CANCELLED")
+                else if (response.State.Value == "CANCELLED")
                 {
                     response.State.Value = "P";
                     response.State.Display = "Pasif";
+                    anaPartCancelled = new AnaPartCancelled
+                    {
+                        Number = response.Number,
+                        State = response.State,
+                
+                    };
+                    jsonData3 = JsonConvert.SerializeObject(anaPartCancelled);
                 }
-                var jsonData3 = JsonConvert.SerializeObject(response);
+            
+
+                ApiService _apiService = new ApiService();
+
+
+             
+                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
 
                 await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
 
@@ -1541,21 +1568,55 @@ TransferID varchar(MAX),
         {
             try
             {
-
-
-                ApiService _apiService = new ApiService();
-
+                var anaPart = new AnaPart();
+                var anaPartCancelled = new AnaPartCancelled();
+                var jsonData3 = "";
                 if (response.State.Value == "RELEASED")
                 {
                     response.State.Value = "A";
                     response.State.Display = "Aktif";
+                    anaPart = new AnaPart
+                    {
+                        Number = response.Number,
+                        Name = response.Name,
+                        Fai = response.Fai,
+                        MuhasebeKodu = "0000000",
+                        PlanlamaTipiKodu = "P",
+                        PLM = "E",
+                        State = response.State,
+                        TransferID = response.TransferID,
+                        Description = response.Description,
+                        BirimKodu = response.BirimKodu,
+                        CLASSIFICATION = response.CLASSIFICATION
+                    };
+                    jsonData3 = JsonConvert.SerializeObject(anaPart);
                 }
-                if (response.State.Value == "CANCELLED")
+                else if (response.State.Value == "CANCELLED")
                 {
                     response.State.Value = "P";
                     response.State.Display = "Pasif";
+                    anaPartCancelled = new AnaPartCancelled
+                    {
+                        Number = response.Number,
+                        State = response.State,
+
+                    };
+                    jsonData3 = JsonConvert.SerializeObject(anaPartCancelled);
                 }
-                var jsonData3 = JsonConvert.SerializeObject(response);
+
+                ApiService _apiService = new ApiService();
+
+                //if (response.State.Value == "RELEASED")
+                //{
+                //    response.State.Value = "A";
+                //    response.State.Display = "Aktif";
+                //}
+                //if (response.State.Value == "CANCELLED")
+                //{
+                //    response.State.Value = "P";
+                //    response.State.Display = "Pasif";
+                //}
+                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
                 await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
                 #region released parts
          
@@ -1605,6 +1666,19 @@ TransferID varchar(MAX),
         {
             try
             {
+                var muadilPart = new MuadilPart
+                {
+                    TransferID = response.TransferID,
+                    Number = response.Number,
+                    Alternates = response.Alternates.Select(alternate => new Alternates2
+                    {
+                        AlternatePart = new AlternatePart2
+                        {
+                            Number = alternate.AlternatePart.Number,
+                        }
+                    }).ToList()
+                };
+
                 ApiService _apiService = new ApiService();
 
                 if (response.State.Value == "RELEASED")
@@ -1618,7 +1692,8 @@ TransferID varchar(MAX),
                     response.State.Display = "Pasif";
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+                var jsonData4 = JsonConvert.SerializeObject(muadilPart);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
 
                 if (response.State.Value == "A")
                 {
@@ -1654,6 +1729,18 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
         {
             try
             {
+                var muadilPart = new MuadilPart
+                {
+                    TransferID = response.TransferID,
+                    Number = response.Number,
+                    Alternates = response.Alternates.Select(alternate => new Alternates2
+                    {
+                        AlternatePart = new AlternatePart2
+                        {
+                            Number = alternate.AlternatePart.Number,
+                        }
+                    }).ToList()
+                };
 
                 ApiService _apiService = new ApiService();
 
@@ -1668,7 +1755,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                     response.State.Display = "Pasif";
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+                var jsonData4 = JsonConvert.SerializeObject(muadilPart);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
                 if (response.State.Value == "A")
                 {
                     response.State.Value = "RELEASED";
@@ -1702,6 +1790,18 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
             try
             {
 
+                var muadilPart = new MuadilPart
+                {
+                    TransferID = response.TransferID,
+                    Number = response.Number,
+                    Alternates = response.Alternates.Select(alternate => new Alternates2
+                    {
+                        AlternatePart = new AlternatePart2
+                        {
+                            Number = alternate.AlternatePart.Number,
+                        }
+                    }).ToList()
+                };
 
                 ApiService _apiService = new ApiService();
 
@@ -1722,9 +1822,9 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                     response.Alternates.SingleOrDefault().AlternatePart.State.Display = "Pasif";
                 }
                 var jsonData = JsonConvert.SerializeObject(response);
-                var jsonData2 = JsonConvert.SerializeObject(item.AlternatePart);
+                var jsonData2 = JsonConvert.SerializeObject(muadilPart);
 
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2);
 
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                 {
@@ -1759,6 +1859,19 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
             try
             {
 
+                var muadilPart = new MuadilPart
+                {
+                    TransferID = response.TransferID,
+                    Number = response.Number,
+                    Alternates = response.Alternates.Select(alternate => new Alternates2
+                    {
+                        AlternatePart = new AlternatePart2
+                        {
+                            Number = alternate.AlternatePart.Number,
+                        }
+                    }).ToList()
+                };
+
 
                 ApiService _apiService = new ApiService();
                 response.Alternates = response.Alternates
@@ -1778,8 +1891,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 }
 
                 var jsonData = JsonConvert.SerializeObject(response);
-                var jsonData2 = JsonConvert.SerializeObject(item.AlternatePart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData);
+                var jsonData2 = JsonConvert.SerializeObject(muadilPart);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2);
 
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                 {
@@ -1819,9 +1932,15 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
         {
             try
             {
+                var removePart = new RemovePart
+                {
+                    TransferID = response.TransferID,
+                    Number = response.Number,
+                };
                 ApiService _apiService = new ApiService();
                 var jsonData3 = JsonConvert.SerializeObject(response);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+                var jsonData4 = JsonConvert.SerializeObject(removePart);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
 
 
                 LogService logService = new LogService(_configuration);
@@ -1981,8 +2100,6 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
                     listBox1.Items.Add(displayString);
                     lblDataCount.Text = listBox1.Items.Count.ToString();
                 }
-
-
 
             }
             catch (Exception ex)
@@ -2287,8 +2404,12 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
                         {
 
                             // Format the string with selected properties
-                            string displayString = $"[{dataObject["TransferID"]}] - {dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]} ({dataObject["State"]["Display"]})";
+                            string displayString = $"[{dataObject["TransferID"]}] - {dataObject["ID"]}] {dataObject["Number"]} - {dataObject["Name"]}";
 
+                            if (dataObject["State"]?["Display"] != null)
+                            {
+                                displayString += $" ({dataObject["State"]["Display"]})";
+                            }
                             // Check if message exists
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("kaldýrýldý"))
                             {
