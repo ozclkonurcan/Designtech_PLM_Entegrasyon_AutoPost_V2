@@ -1666,18 +1666,20 @@ TransferID varchar(MAX),
         {
             try
             {
+
                 var muadilPart = new MuadilPart
                 {
-                    TransferID = response.TransferID,
                     Number = response.Number,
                     Alternates = response.Alternates.Select(alternate => new Alternates2
                     {
                         AlternatePart = new AlternatePart2
                         {
+                            TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
                         }
                     }).ToList()
                 };
+
 
                 ApiService _apiService = new ApiService();
 
@@ -1729,18 +1731,20 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
         {
             try
             {
+
                 var muadilPart = new MuadilPart
                 {
-                    TransferID = response.TransferID,
                     Number = response.Number,
                     Alternates = response.Alternates.Select(alternate => new Alternates2
                     {
                         AlternatePart = new AlternatePart2
                         {
+                            TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
                         }
                     }).ToList()
                 };
+
 
                 ApiService _apiService = new ApiService();
 
@@ -1790,18 +1794,20 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
             try
             {
 
+
                 var muadilPart = new MuadilPart
                 {
-                    TransferID = response.TransferID,
                     Number = response.Number,
                     Alternates = response.Alternates.Select(alternate => new Alternates2
                     {
                         AlternatePart = new AlternatePart2
                         {
+                            TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
                         }
                     }).ToList()
                 };
+
 
                 ApiService _apiService = new ApiService();
 
@@ -1861,12 +1867,12 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
                 var muadilPart = new MuadilPart
                 {
-                    TransferID = response.TransferID,
                     Number = response.Number,
                     Alternates = response.Alternates.Select(alternate => new Alternates2
                     {
                         AlternatePart = new AlternatePart2
                         {
+                            TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
                         }
                     }).ToList()
