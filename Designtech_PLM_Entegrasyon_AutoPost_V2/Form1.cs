@@ -929,6 +929,11 @@ TransferID varchar(MAX),
                             {
                                 await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
                             }
+
+                            if(sablonDataDurumu == "false" && state == "INWORK")
+                            {
+                                ProcessInworkAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+                            }
                         }
 
                     }
@@ -1360,6 +1365,192 @@ TransferID varchar(MAX),
                 notificatonSettings("Hata!" + ex.Message);
                 MessageBox.Show(ex.Message);
             }
+        
+        
+        }
+
+
+
+
+
+
+        private async Task ProcessInworkAsync(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string ServerName, string BasicUsername, string BasicPassword, DateTime anlikTarih, string sourceApi, string endPoint, int oldAlternateLinkCount, string sablonDataDurumu)
+        {
+
+            bool ilkCalistirmaProdMgmt = true;
+            bool ilkCalistirmaCADDocumentMgmt = true;
+            var sql = "";
+            var formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+            var formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
+
+            if (sourceApi.Contains("ProdMgmt"))
+            {
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+            }
+
+            if (sourceApi.Contains("CADDocumentMgmt"))
+            {
+               
+            
+                    sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+
+                
+            }
+
+
+
+
+
+            var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+
+
+
+
+
+
+            try
+            {
+                WindchillApiService windchillApiService = new WindchillApiService();
+                foreach (var partItem in resolvedItems)
+                {
+
+                    var json = "";
+                    if (sourceApi.Contains("ProdMgmt"))
+                    {
+                        json = await windchillApiService.GetApiData(ServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+                    }
+                    if (sourceApi.Contains("CADDocumentMgmt"))
+                    {
+                        json = await windchillApiService.GetApiData(ServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+                    }
+
+
+
+
+
+
+
+                    try
+                    {
+                        var response = JsonConvert.DeserializeObject<Part>(json);
+
+
+
+
+                        var turkishDateFormat2 = response.LastModified.ToString();
+                        var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+
+                        response.LastModified = Convert.ToDateTime(iso8601Date2);
+
+                        var existingLog = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+                            $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+                            new { idA2A2 = response.ID.Split(':')[2] });
+
+
+
+
+                        if (state != "ALTERNATE_RELEASED")
+                        {
+
+                            if (existingLog == null)
+                            {
+                                continue;
+                                //await InsertLogProcessInworkAsync(response, catalogValue, conn);
+
+                            }
+                            //else if (existingLog.updateStampA2 != partItem.updateStampA2)
+                            else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
+                            {
+                                await UpdateLogProcessInworkAsync(response, catalogValue, conn);
+
+                            }
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle the exception
+                    }
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                notificatonSettings("Hata!" + ex.Message);
+                MessageBox.Show(ex.Message);
+            }
+
+
+
+        }
+
+
+
+        #region ProcessInworkAsync-Insert and Update Function
+        private async Task InsertLogProcessInworkAsync(Part response, string catalogValue, SqlConnection conn)
+        {
+            try
+            {
+               
+
+
+                ApiService _apiService = new ApiService();
+
+
+
+                var jsonData3 = JsonConvert.SerializeObject(response);
+
+
+                await conn.ExecuteAsync(
+                    $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name], [WTPartNumber],[Version],[VersionID]) VALUES (@TransferID,@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber,@Version,@VersionID )",
+                    new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
+
+                LogService logService = new LogService(_configuration);
+               if (response.State.Value == "INWORK")
+                {
+                    logService.CreateJsonFileLog(jsonData3, "Parçaya devam ediliyor.");
+                }
+                
+            }
+            catch (Exception)
+            {
+
+            }
+
+
+        }
+
+        private async Task UpdateLogProcessInworkAsync(Part response, string catalogValue, SqlConnection conn)
+        {
+            try
+            {
+               
+
+                ApiService _apiService = new ApiService();
+                var jsonData3 = JsonConvert.SerializeObject(response);
+
+
+                await conn.ExecuteAsync(
+                    $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET [TransferID] = @TransferID, [ProcessTimestamp] = @ProcessTimestamp, [updateStampA2] = @updateStampA2, [statestate] = @statestate,[name] = @name , [WTPartNumber] = @WTPartNumber, [Version] = @Version, [VersionID] = @VersionID WHERE [idA2A2] = @idA2A2",
+                    new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
+
+                LogService logService = new LogService(_configuration);
+              if (response.State.Value == "INWORK")
+                {
+                    logService.CreateJsonFileLog(jsonData3, "Parçaya devam ediliyor.");
+                }
+               
+
+            }
+            catch (Exception)
+            {
+
+            }
+
         }
 
         #endregion
@@ -2506,3 +2697,4 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
         }
     }
 }
+#endregion
