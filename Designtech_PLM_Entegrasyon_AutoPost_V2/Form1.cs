@@ -30,6 +30,7 @@ using System.Net.Http.Headers;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel;
 using Microsoft.IdentityModel.Tokens;
 using System.Reflection;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -663,7 +664,6 @@ TransferID varchar(MAX),
             {
 
                 DateTime anlikTarih = DateTime.Today;
-                var anlikTarih2 = "2023-03-30";
 
 
                 string directoryPath = "Configuration";
@@ -925,14 +925,14 @@ TransferID varchar(MAX),
                             //}
                             #endregion
 
-                            if (sablonDataDurumu == "true")
+                            if (sablonDataDurumu == "true" && state != "INWORK")
                             {
                                 await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
                             }
 
-                            if(sablonDataDurumu == "false" && state == "INWORK")
+                            if(sablonDataDurumu == "true" && state == "INWORK")
                             {
-                                ProcessInworkAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+                                await ProcessInworkAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
                             }
                         }
 
@@ -1077,14 +1077,53 @@ TransferID varchar(MAX),
                       
                                 await InsertLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint);
 
-                        }
+                                if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED")
+                                {
+                                    await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+
+                                }
+
+                                if (response.EntegrasyonDurumu is null or not "Parça iptal oldu" && state == "CANCELLED")
+                                {
+                                    await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+                                }
+
+                            
+
+                            }
 
                         //else if (existingLog.updateStampA2 != partItem.updateStampA2)
                         else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
                         {
                             await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint);
 
-                        }
+
+                                if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED")
+                                {
+                                    await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+
+                                }
+
+                                if (response.EntegrasyonDurumu is null or not "Parça iptal oldu" && state == "CANCELLED")
+                                {
+                                    await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+                                }
+
+                             
+
+                            }
+
+
+
+                          
+
+                            //Sürekli versiyon anladýðýnda yeni parçalar çýkýyor bu parçalarda tetik aldýðý için sonsuz döngü oluyor 
+                            //checkOut ve checkIn yapmadan güncelleme iþlemi yapmamýz lazým bu yüzden bunu iptal ediyorum.
+
+
+
+
+
                         }
 
                         #region AlternateLinkVeriSayýsý
@@ -1208,7 +1247,7 @@ TransferID varchar(MAX),
                         }
                         // If LastUpdateTimestamp has not changed, do nothing
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // Handle the exception
                     }
@@ -1377,8 +1416,8 @@ TransferID varchar(MAX),
         private async Task ProcessInworkAsync(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string ServerName, string BasicUsername, string BasicPassword, DateTime anlikTarih, string sourceApi, string endPoint, int oldAlternateLinkCount, string sablonDataDurumu)
         {
 
-            bool ilkCalistirmaProdMgmt = true;
-            bool ilkCalistirmaCADDocumentMgmt = true;
+            //bool ilkCalistirmaProdMgmt = true;
+            //bool ilkCalistirmaCADDocumentMgmt = true;
             var sql = "";
             var formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
             var formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
@@ -1457,6 +1496,7 @@ TransferID varchar(MAX),
                             if (existingLog == null)
                             {
                                 continue;
+                     
                                 //await InsertLogProcessInworkAsync(response, catalogValue, conn);
 
                             }
@@ -1464,12 +1504,17 @@ TransferID varchar(MAX),
                             else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
                             {
                                 await UpdateLogProcessInworkAsync(response, catalogValue, conn);
+                                if (response.EntegrasyonDurumu is null or not "Parça devam ediyor" && state == "INWORK")
+                                {
+                                    await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+                                }
 
                             }
+                          
                         }
 
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // Handle the exception
                     }
@@ -1488,6 +1533,196 @@ TransferID varchar(MAX),
 
         }
 
+
+        #region Entegrasyon-Durum-Ayarlarý
+
+        private async Task EntegrasyonDurumCheckOut(long idA2A2,string state)
+        {
+            try
+            {
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+           
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+           
+
+                // (Önceki kodlar burada)
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var catalogValue = jsonObject["Catalog"].ToString();
+                var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+                var conn = new SqlConnection(connectionString);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+
+                var ServerName = jsonObject["ServerName"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+                WrsToken apiToken = await windchillApiService.GetApiToken(ServerName, BasicUsername, BasicPassword);
+
+
+                await windchillApiService.EntegrasyonDurumAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:"+idA2A2+ "')/PTC.ProdMgmt.CheckOut", BasicUsername,BasicPassword, apiToken.NonceValue, "{\r\n \"CheckOutNote\": \"\"\r\n}");
+
+                await EntegrasyonDurumUpdate(state, idA2A2);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private async Task EntegrasyonDurumUpdate(string state,long idA2A2)
+        {
+            try
+            {
+
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+
+
+                // (Önceki kodlar burada)
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var catalogValue = jsonObject["Catalog"].ToString();
+                var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+                var conn = new SqlConnection(connectionString);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+
+                var ServerName = jsonObject["ServerName"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+                WrsToken apiToken = await windchillApiService.GetApiToken(ServerName, BasicUsername, BasicPassword);
+
+                //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk'";
+                //var resolvedItems = await conn.QueryFirstAsync<dynamic>(sql);
+
+
+              
+
+                var message = "";
+
+                if(state == "RELEASED")
+                {
+                    var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
+                    var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
+                    //message = "{\r\n  \"EntegrasyonDurumu\": \"Entegregrasyon gerçekleþtirildi\"\r\n}";
+
+
+                    //DateTime currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre oldu\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+
+                    await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')", BasicUsername, BasicPassword, apiToken.NonceValue, "Parça entegre oldu",currentDate);
+                }
+                if(state == "CANCELLED")
+                {
+                    var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'CANCELLED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
+                    var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
+                    //message = "{\r\n  \"EntegrasyonDurumu\": \"Entegrasyon iptal edildi\"\r\n}";
+
+                    //var currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    //var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça iptal oldu\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+                    await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')", BasicUsername, BasicPassword, apiToken.NonceValue, "Parça iptal oldu",currentDate);
+                }
+                if(state == "INWORK")
+                {
+                    var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
+                    var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
+
+                    //var currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    //var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça devam ediyor\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+                    await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')", BasicUsername, BasicPassword, apiToken.NonceValue, "Parça devam ediyor",currentDate);
+                }
+
+                //await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')/PTC.ProdMgmt.CheckOut", BasicUsername, BasicPassword, apiToken.NonceValue, "{\r\n  \"EntegrasyonDurumu\": \"Entegre oldu1\"\r\n}");
+
+
+                await EntegrasyonDurumCheckIn(idA2A2);
+
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private async Task EntegrasyonDurumCheckIn(long idA2A2)
+        {
+            try
+            {
+                try
+                {
+                    WindchillApiService windchillApiService = new WindchillApiService();
+
+                    string directoryPath = "Configuration";
+                    string fileName = "appsettings.json";
+                    string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+
+
+                    if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                    {
+                        Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                    }
+
+
+
+                    // (Önceki kodlar burada)
+
+                    string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                    JObject jsonObject = JObject.Parse(jsonData);
+                    var catalogValue = jsonObject["Catalog"].ToString();
+                    var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+                    var conn = new SqlConnection(connectionString);
+                    var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+
+                    var ServerName = jsonObject["ServerName"].ToString();
+                    var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                    var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+                    WrsToken apiToken = await windchillApiService.GetApiToken(ServerName, BasicUsername, BasicPassword);
+
+
+                    await windchillApiService.EntegrasyonDurumAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:"+idA2A2+"')/PTC.ProdMgmt.CheckIn", BasicUsername, BasicPassword, apiToken.NonceValue, "{\r\n \"CheckInNote\": \"\"\r\n}");
+
+                }
+                catch (Exception)
+                {
+
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        #endregion
 
 
         #region ProcessInworkAsync-Insert and Update Function
@@ -1575,7 +1810,7 @@ TransferID varchar(MAX),
 
                 //MessageBox.Show($"PDF dosyasý ({pdfFileName}) gönderildi.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //MessageBox.Show($"Hata: {ex.Message}");
             }
@@ -1590,8 +1825,8 @@ TransferID varchar(MAX),
                 string fileName = "appsettings.json";
                 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
 
-                string directoryPath2 = "Configuration";
-                string fileName2 = "ApiSendDataSettings.json";
+                //string directoryPath2 = "Configuration";
+                //string fileName2 = "ApiSendDataSettings.json";
 
                 if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
                 {
@@ -2299,7 +2534,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //MessageBox.Show("Hata! JSON verisi ListBox'ta gösterilemedi: " + ex.Message);
             }
@@ -2362,7 +2597,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID,AnaParc
 
 
                 DateTime anlikTarih = DateTime.Today;
-                var anlikTarih2 = "2023-03-30";
+                //var anlikTarih2 = "2023-03-30";
 
 
                 string directoryPath = "Configuration";

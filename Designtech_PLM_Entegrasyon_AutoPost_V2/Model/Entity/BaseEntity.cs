@@ -7,23 +7,31 @@ using System.Threading.Tasks;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.Entity
 {
-    public class BaseEntity
+    public abstract class BaseEntity
     {
-        private string _transferID;
 
-        public string TransferID { get {
+        public BaseEntity()
+        {
+            TransferID = Guid.NewGuid().ToString();
+        }
 
-                if (_transferID.IsNullOrEmpty())
-                {
-                    _transferID = Guid.NewGuid().ToString();
-                }
-                    return _transferID;
-            
-            }
-            set {
-                _transferID = value;
-            }
-                
-          }
+        public string TransferID { get; set; }
+
+        //private string _transferID;
+
+        //public string TransferID { get {
+
+        //        if (_transferID.IsNullOrEmpty())
+        //        {
+        //            _transferID = Guid.NewGuid().ToString();
+        //        }
+        //            return _transferID;
+
+        //    }
+        //    set {
+        //        _transferID = value;
+        //    }
+
+        //  }
     }
 }

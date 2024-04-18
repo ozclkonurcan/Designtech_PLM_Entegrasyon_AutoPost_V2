@@ -34,7 +34,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string? Fai { get; set; }
 		public string? PLM { get; set; } = "E";
         public CLASSIFICATION? CLASSIFICATION { get; set; }
-		public List<Alternates>? Alternates { get; set; }
+        public string? EntegrasyonDurumu { get; set; }
+        public string? EntegrasyonTarihi { get; set; }
+        public List<Alternates>? Alternates { get; set; }
 
 
 		public DateTime? CreatedOn { get; set; }
