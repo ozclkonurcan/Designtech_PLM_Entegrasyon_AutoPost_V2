@@ -970,7 +970,7 @@ TransferID varchar(MAX),
                 if (ilkCalistirmaProdMgmt)
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    formattedTarih2 = DateTime.Today.AddDays(-7).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if(state == "ALTERNATE_RELEASED")
                     {
                     sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
@@ -1002,7 +1002,7 @@ TransferID varchar(MAX),
                 if (ilkCalistirmaCADDocumentMgmt)
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    formattedTarih2 = DateTime.Today.AddDays(-7).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
                     ilkCalistirmaCADDocumentMgmt = false;
                 }
@@ -1495,6 +1495,7 @@ TransferID varchar(MAX),
 
                             if (existingLog == null)
                             {
+
                                 continue;
                      
                                 //await InsertLogProcessInworkAsync(response, catalogValue, conn);
