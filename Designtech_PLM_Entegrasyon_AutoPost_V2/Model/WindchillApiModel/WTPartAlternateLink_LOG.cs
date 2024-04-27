@@ -9,7 +9,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel
 {
 	public record WTPartAlternateLink_LOG
 	{
-		[Key]
+        public string? AnaParcaID { get; set; }
+        public string? AnaParcaNumber { get; set; }
+        public string? AnaParcaName { get; set; }
+        public string? TransferID { get; set; }
+        [Key]
         public string ID { get; set; }
         public string? ObjectType { get; set; }
         public string? Name { get; set; }
@@ -21,8 +25,19 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel
 
     }
 
+    public record WTPartAlternateLink_LOG_Kontrol
+    {
+        public string? AnaParcaID { get; set; }
+        public string? AnaParcaNumber { get; set; }
+        public string? AnaParcaName { get; set; }
+        [Key]
+        public string ID { get; set; }
+        public string? ObjectType { get; set; }
+        public string? Name { get; set; }
+        public string? Number { get; set; }
+    }
 
-	public class WTPartAlternateLink
+    public class WTPartAlternateLink
 	{
 		public byte? AdministrativeLockIsNull { get; set; }
 		public string? TypeAdministrativeLock { get; set; }

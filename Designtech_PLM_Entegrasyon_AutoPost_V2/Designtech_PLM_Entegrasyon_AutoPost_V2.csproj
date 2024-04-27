@@ -38,6 +38,7 @@
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="SqlKata.Execution" Version="2.4.0" />
   </ItemGroup>
 
 	

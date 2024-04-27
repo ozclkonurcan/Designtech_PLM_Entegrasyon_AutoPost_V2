@@ -161,7 +161,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? MuhasebeKodu { get; set; } = "0000000";
 		public string? BirimAdi { get; set; }
 		public string? BirimKodu { get; set; }
-
+        public DateTime? LastModified { get; set; }
         public string? PlanlamaTipiKodu { get; set; } = "P";
         public string? Fai { get; set; }
         public string? PLM { get; set; } = "E";
