@@ -34,6 +34,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 using SqlKata.Execution;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Model;
 using Microsoft.Extensions.Primitives;
+using Azure;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -277,7 +278,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
       updateStampA2 datetime,
       ProcessTimestamp datetime,
  Version varchar(MAX),
- VersionID varchar(MAX)
+ VersionID varchar(MAX),
+ReviseDate datetime
     )";
 
             #region AlterneLinkLog için kullanýlacak sql komutu
@@ -861,14 +863,16 @@ TransferID varchar(MAX),
                             //    }
                             //}
 
-                           if (sablonDataDurumu == "true" && state != "INWORK")
+                            if (sablonDataDurumu == "true" && state != "INWORK")
                             {
                                 await ProcessStateAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu, API_ENDPOINT_ALTERNATE_PART, API_ENDPOINT_REMOVED, API_ENDPOINT_SEND_FILE);
+                                await ProcessReviseAsync(state, catalogValue, conn);
                             }
 
                             if (sablonDataDurumu == "true" && state == "INWORK")
                             {
                                 await ProcessInworkAsync(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, ServerName, BasicUsername, BasicPassword, anlikTarih, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+                                await ProcessReviseAsync(state, catalogValue, conn);
                             }
                         }
 
@@ -909,11 +913,11 @@ TransferID varchar(MAX),
                     formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if (state == "ALTERNATE_RELEASED")
                     {
-                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
                     }
                     else
                     {
-                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1  and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
                     }
                     ilkCalistirmaProdMgmt = false;
                 }
@@ -923,11 +927,11 @@ TransferID varchar(MAX),
                     formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if (state == "ALTERNATE_RELEASED")
                     {
-                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1  and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
                     }
                     else
                     {
-                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1  and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
                     }
                 }
 
@@ -958,7 +962,7 @@ TransferID varchar(MAX),
 
             var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
 
-
+            //var sql2 = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2],[versionIdA2versionInfo],[versionLevelA2versionInfo] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and [idA3masterReference] = {resolvedItems.idA3masterReference} and MAX([versionIdA2versionInfo])";
 
 
 
@@ -986,6 +990,9 @@ TransferID varchar(MAX),
 
 
 
+
+
+
                     try
                     {
                         var response = JsonConvert.DeserializeObject<Part>(json);
@@ -1001,6 +1008,8 @@ TransferID varchar(MAX),
                         var existingLog = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
                             $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
                             new { idA2A2 = response.ID.Split(':')[2] });
+
+
 
 
 
@@ -1027,6 +1036,11 @@ TransferID varchar(MAX),
                                 }
 
 
+                            
+
+
+
+
 
                             }
 
@@ -1047,9 +1061,13 @@ TransferID varchar(MAX),
                                     await EntegrasyonDurumUpdate(state, partItem.idA2A2);
                                 }
 
+
+                             
+
+
+
+
                             }
-
-
 
 
 
@@ -1058,9 +1076,8 @@ TransferID varchar(MAX),
 
 
 
-
-
                         }
+
 
                         #region AlternateLinkVeriSayýsý
                         var newAlternateLinkCount = (await conn.QueryAsync<dynamic>(
@@ -1167,11 +1184,11 @@ TransferID varchar(MAX),
                                  
                                  */
 
-                          
 
 
 
-                                if (item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null))
+
+                                if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null))
                                 {
                                     await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
                                 }
@@ -1210,8 +1227,7 @@ TransferID varchar(MAX),
 
 
 
-
-
+                    
 
                         //try
                         //{
@@ -1429,7 +1445,7 @@ TransferID varchar(MAX),
 
             if (sourceApi.Contains("ProdMgmt"))
             {
-                sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1  and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
             }
 
             //if (sourceApi.Contains("CADDocumentMgmt"))
@@ -1518,6 +1534,8 @@ TransferID varchar(MAX),
 
                             }
 
+
+
                         }
 
                     }
@@ -1540,6 +1558,111 @@ TransferID varchar(MAX),
 
         }
 
+
+
+
+
+        private async Task ProcessReviseAsync(string state, string catalogValue, SqlConnection conn)
+        {
+
+            var sql = "";
+            var formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+            var formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+
+
+
+           
+                sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1  and [idA3view] = '29526' and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+      
+
+            var resolvedItems = await conn.QueryAsync<dynamic>(sql, new { formattedTarih, formattedTarih2 });
+
+
+
+
+
+
+            try
+            {
+                WindchillApiService windchillApiService = new WindchillApiService();
+                foreach (var partItem in resolvedItems)
+                {
+                        if (state != "ALTERNATE_RELEASED")
+                        {
+
+                            #region WTPART Revizyon iþlemleri
+                            try
+                            {
+                                var sql2 = "";
+
+
+
+
+                                sql2 = $@"
+    SELECT
+        [idA2A2],
+        [idA3masterReference],
+        [statestate],
+        [updateStampA2],
+        [versionIdA2versionInfo],
+        [versionLevelA2versionInfo]
+    FROM
+        {catalogValue}.WTPart
+    WHERE
+        [statestate] = 'INWORK'
+        AND [latestiterationInfo] = 1
+        AND [idA3masterReference] = {partItem.idA3masterReference}
+        AND [versionIdA2versionInfo] != 'A'
+        AND (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)
+     
+";
+
+                                var revisedItems = await conn.QueryAsync<dynamic>(sql2, new { formattedTarih, formattedTarih2 });
+
+
+                                if (revisedItems.Count() != 0)
+                                {
+                                    foreach (var partRevisedItem in revisedItems)
+                                    {
+
+                                        var existingLog2 = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+                                $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2],[ReviseDate]  FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+                                new { idA2A2 = partRevisedItem.idA2A2 });
+                                        if (existingLog2 == null)
+                                        {
+                                            await EntegrasyonDurumRESET(partRevisedItem.statestate, partRevisedItem.idA2A2, partRevisedItem.updateStampA2);
+                                        }
+
+                                        if (existingLog2 != null && partRevisedItem.updateStampA2 != existingLog2.ReviseDate)
+                                        {
+
+                                            await EntegrasyonDurumRESET(partRevisedItem.statestate, partRevisedItem.idA2A2, partRevisedItem.updateStampA2);
+                                        }
+
+                                    }
+                                }
+                            }
+                            catch (Exception)
+                            {
+
+                                throw;
+                            }
+                            #endregion
+
+                        }
+
+                }
+
+
+
+            }
+            catch (Exception)
+            {
+            }
+
+
+
+        }
 
         #region Entegrasyon-Durum-Ayarlarý
 
@@ -1592,7 +1715,7 @@ TransferID varchar(MAX),
                 {
                     //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
                     //var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
-                
+
                     //message = "{\r\n  \"EntegrasyonDurumu\": \"Entegregrasyon gerçekleþtirildi\"\r\n}";
 
 
@@ -1651,10 +1774,10 @@ TransferID varchar(MAX),
                             });
 
 
-                      
+
 
                         // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1 )
+                        if (result == 1)
                         {
                             await conn.ExecuteAsync(
                                 $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
@@ -1687,11 +1810,11 @@ TransferID varchar(MAX),
                             });
 
 
-     
+
 
 
                         // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1 )
+                        if (result == 1)
                         {
                             await conn.ExecuteAsync(
                                 $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
@@ -1702,7 +1825,7 @@ TransferID varchar(MAX),
                     DateTime controlDate2 = Convert.ToDateTime(controlDate);
                     if (existingRecordTimeStamp != null)
                     {
-                    
+
 
                         // TimestampValue tablosunu güncelleyin
                         int result = await conn.ExecuteAsync(
@@ -1749,7 +1872,7 @@ TransferID varchar(MAX),
                     }
                     else
                     {
-                        
+
 
                         int result = await conn.ExecuteAsync(
     $"INSERT INTO [{catalogValue}].[TimestampValue] " +
@@ -1791,7 +1914,7 @@ TransferID varchar(MAX),
                 {
                     //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'CANCELLED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
                     //var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
-                
+
                     //message = "{\r\n  \"EntegrasyonDurumu\": \"Entegrasyon iptal edildi\"\r\n}";
 
                     //var currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
@@ -1847,7 +1970,7 @@ TransferID varchar(MAX),
                                 KodidA2A2
                             });
 
-                       
+
 
                         // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
                         if (result == 1)
@@ -1882,11 +2005,11 @@ TransferID varchar(MAX),
                                 value2 = "Parça iptal oldu"
                             });
 
-                        
+
 
 
                         // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1 )
+                        if (result == 1)
                         {
                             await conn.ExecuteAsync(
                                 $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
@@ -1965,7 +2088,7 @@ TransferID varchar(MAX),
         createStampA2 = DateTime.Now.Date,
         classnamekeyA4 = "wt.part.WTPart",
         classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
-        value =controlDate2,
+        value = controlDate2,
 
     });
 
@@ -1986,7 +2109,7 @@ TransferID varchar(MAX),
                 {
                     //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
                     //var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
-      
+
                     //var currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -2036,16 +2159,16 @@ TransferID varchar(MAX),
                                 createStampA2 = DateTime.Now.Date,
                                 classnamekeyA4 = "wt.part.WTPart",
                                 classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA DEVAM EDÝYOR",
-                                value2 = "Parça devam ediyor",
+                                value = "",
+                                value2 = "",
                                 KodidA2A2
                             });
 
                         // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                       
+
 
                         // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1 )
+                        if (result == 1)
                         {
                             await conn.ExecuteAsync(
                                 $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
@@ -2073,13 +2196,13 @@ TransferID varchar(MAX),
                                 createStampA2 = DateTime.Now.Date,
                                 classnamekeyA4 = "wt.part.WTPart",
                                 classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA DEVAM EDÝYOR",
-                                value2 = "Parça devam ediyor"
+                                value = "",
+                                value2 = ""
                             });
-                     
+
 
                         // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1 )
+                        if (result == 1)
                         {
                             await conn.ExecuteAsync(
                                 $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
@@ -2124,7 +2247,7 @@ TransferID varchar(MAX),
                                 createStampA2 = DateTime.Now.Date,
                                 classnamekeyA4 = "wt.part.WTPart",
                                 classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
-                                value =controlDate2,
+                                value = "",
                                 KodidA2A2
                             });
 
@@ -2158,7 +2281,7 @@ TransferID varchar(MAX),
         createStampA2 = DateTime.Now.Date,
         classnamekeyA4 = "wt.part.WTPart",
         classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
-        value = controlDate2,
+        value = "",
 
     });
 
@@ -2187,6 +2310,263 @@ TransferID varchar(MAX),
             }
         }
 
+        private async Task EntegrasyonDurumRESET(string state, long KodidA2A2,DateTime ReviseDate)
+        {
+            try
+            {
+
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+
+
+                // (Önceki kodlar burada)
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var catalogValue = jsonObject["Catalog"].ToString();
+                var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+                var conn = new SqlConnection(connectionString);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+
+                var ServerName = jsonObject["ServerName"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+                WrsToken apiToken = await windchillApiService.GetApiToken(ServerName, BasicUsername, BasicPassword);
+
+                //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk'";
+                //var resolvedItems = await conn.QueryFirstAsync<dynamic>(sql);
+
+
+                var IdSeq = $"SELECT [value] FROM {catalogValue}.id_sequence ORDER BY [value] DESC";
+                var resolvedIdSeq = await conn.QueryFirstOrDefaultAsync<dynamic>(IdSeq);
+                long respIdSeq = Convert.ToInt64(resolvedIdSeq.value) + 100;
+
+                var message = "";
+
+
+
+                if (state == "INWORK")
+                {
+                    //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'INWORK' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk' and idA3E2iterationInfo = {idA2A2}";
+                    //var resolvedItems = await conn.QueryFirstOrDefaultAsync<dynamic>(sql);
+
+                    //var currentDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+
+
+                    //var IdSeq = _plm.Query(catalogValue + ".id_sequence").OrderByDesc("value").FirstOrDefault();
+
+                    // Öncelikle, mevcut kaydý kontrol edin
+                    var existingRecord = await conn.QueryFirstOrDefaultAsync(
+                    $"SELECT * FROM [{catalogValue}].[StringValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = '28645936'",
+                    new { KodidA2A2 });
+                    var existingRecordTimeStamp = await conn.QueryFirstOrDefaultAsync(
+                   $"SELECT * FROM [{catalogValue}].[TimestampValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = '28645938'",
+                   new { KodidA2A2 });
+
+                    if (existingRecord != null)
+                    {
+                        // Mevcut bir kayýt varsa, güncelleme iþlemi yapýn
+                        int result = await conn.ExecuteAsync(
+                            $"UPDATE [{catalogValue}].[StringValue] " +
+                            "SET " +
+                            "[hierarchyIDA6] = @hierarchyIDA6, " +
+                            "[idA2A2] = @idA2A2, " +
+                            "[classnameA2A2] = @classnameA2A2, " +
+                            "[idA3A5] = @idA3A5, " +
+                            "[idA3A6] = @idA3A6, " +
+                            "[markForDeleteA2] = @markForDeleteA2, " +
+                            "[modifyStampA2] = @modifyStampA2, " +
+                            "[updateCountA2] = @updateCountA2, " +
+                            "[updateStampA2] = @updateStampA2, " +
+                            "[createStampA2] = @createStampA2, " +
+                            "[classnamekeyA4] = @classnamekeyA4, " +
+                            "[classnamekeyA6] = @classnamekeyA6, " +
+                            "[value] = @value, " +
+                            "[value2] = @value2 " +
+                            "WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = '28645936'",
+                            new
+                            {
+                                hierarchyIDA6 = "7058085483721066086",
+                                idA2A2 = respIdSeq,
+                                classnameA2A2 = "wt.iba.value.StringValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(28645936),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                                value = "",
+                                value2 = "",
+                                KodidA2A2
+                            });
+
+                        // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+
+
+                        // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+                    else
+                    {
+                        // Mevcut bir kayýt yoksa, yeni bir kayýt ekleyin
+                        int result = await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[StringValue] " +
+                            "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) " +
+                            "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value, @value2)",
+                            new
+                            {
+                                hierarchyIDA6 = "7058085483721066086",
+                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                                idA3A4 = Convert.ToInt64(KodidA2A2),
+                                classnameA2A2 = "wt.iba.value.StringValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(28645936),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                                value = "",
+                                value2 = ""
+                            });
+
+
+                        // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+
+                    var controlDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                    DateTime controlDate2 = Convert.ToDateTime(controlDate);
+                    if (existingRecordTimeStamp != null)
+                    {
+
+
+                        // TimestampValue tablosunu güncelleyin
+                        int result = await conn.ExecuteAsync(
+                            $"UPDATE [{catalogValue}].[TimestampValue] " +
+                            "SET " +
+                            "[hierarchyIDA6] = @hierarchyIDA6, " +
+                            "[idA2A2] = @idA2A2, " +
+                            "[classnameA2A2] = @classnameA2A2, " +
+                            "[idA3A5] = @idA3A5, " +
+                            "[idA3A6] = @idA3A6, " +
+                            "[markForDeleteA2] = @markForDeleteA2, " +
+                            "[modifyStampA2] = @modifyStampA2, " +
+                            "[updateCountA2] = @updateCountA2, " +
+                            "[updateStampA2] = @updateStampA2, " +
+                            "[createStampA2] = @createStampA2, " +
+                            "[classnamekeyA4] = @classnamekeyA4, " +
+                            "[classnamekeyA6] = @classnamekeyA6, " +
+                            "[value] = @value " +
+                            "WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = '28645938'",
+                            new
+                            {
+                                hierarchyIDA6 = "-148878178526147486",
+                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                                classnameA2A2 = "wt.iba.value.TimestampValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(28645938),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+                                value = "",
+                                KodidA2A2
+                            });
+
+                        // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+                    else
+                    {
+
+
+                        int result = await conn.ExecuteAsync(
+    $"INSERT INTO [{catalogValue}].[TimestampValue] " +
+    "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) " +
+    "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value)",
+    new
+    {
+        hierarchyIDA6 = "-148878178526147486",
+        idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+        idA3A4 = Convert.ToInt64(KodidA2A2),
+        classnameA2A2 = "wt.iba.value.TimestampValue",
+        idA3A5 = 0,
+        idA3A6 = Convert.ToInt64(28645938),
+        markForDeleteA2 = 0,
+        modifyStampA2 = DateTime.Now.Date,
+        updateCountA2 = 1,
+        updateStampA2 = DateTime.Now.Date,
+        createStampA2 = DateTime.Now.Date,
+        classnamekeyA4 = "wt.part.WTPart",
+        classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+        value = "",
+
+    });
+
+
+                        // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+
+
+
+
+                    await conn.ExecuteAsync(
+         $"UPDATE [{catalogValue}].[Change_Notice_LogTable] SET  [ReviseDate] = @ReviseDate WHERE [idA2A2] = @idA2A2",
+                    new { idA2A2  = KodidA2A2, ReviseDate = ReviseDate });
+
+                    //var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça devam ediyor\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+                    //await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')", BasicUsername, BasicPassword, apiToken.NonceValue, "Parça devam ediyor",currentDate);
+                }
+
+                //await windchillApiService.EntegrasyonDurumUpdateAPI(ServerName, "ProdMgmt/Parts('OR:wt.part.WTPart:" + resolvedItems.idA2A2 + "')/PTC.ProdMgmt.CheckOut", BasicUsername, BasicPassword, apiToken.NonceValue, "{\r\n  \"EntegrasyonDurumu\": \"Entegre oldu1\"\r\n}");
+
+
+
+            }
+            catch (Exception)
+            {
+            }
+        }
+
 
         #endregion
 
@@ -2196,20 +2576,11 @@ TransferID varchar(MAX),
         {
             try
             {
-
-
-
                 ApiService _apiService = new ApiService();
-
-
-
                 var jsonData3 = JsonConvert.SerializeObject(response);
-
-
                 await conn.ExecuteAsync(
-                    $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name], [WTPartNumber],[Version],[VersionID]) VALUES (@TransferID,@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber,@Version,@VersionID )",
-                    new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
-
+                $"INSERT INTO [{catalogValue}].[Change_Notice_LogTable] ([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2],[statestate], [name], [WTPartNumber],[Version],[VersionID]) VALUES (@TransferID,@idA2A2, @ProcessTimestamp, @updateStampA2,@statestate, @name, @WTPartNumber,@Version,@VersionID )",
+                new { TransferID = response.TransferID, idA2A2 = response.ID.Split(':')[2], ProcessTimestamp = DateTime.UtcNow, updateStampA2 = response.LastModified, statestate = response.State.Value, name = response.Name, WTPartNumber = response.Number, Version = response.Version, VersionID = response.VersionID });
                 LogService logService = new LogService(_configuration);
                 if (response.State.Value == "INWORK")
                 {
@@ -2745,43 +3116,43 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
 
 
-        //        if (existingRecord != null)
-        //        {
-        //            // Kayýt güncellemesi
-        //            await conn.ExecuteAsync(
-        //                $@"
-        //UPDATE [{catalogValue}].[WTPartAlternateLink_LOG]
-        //SET [updateStampA2] = @updateStampA2,
-        //    [modifyStampA2] = @modifyStampA2,
-        //    [ProcessTimestamp] = @ProcessTimestamp,
-        //    [state] = @state
-        //WHERE [AnaParcaTransferID] = @AnaParcaTransferID
-        //AND [AnaParcaID] = @AnaParcaID
-        //AND [AnaParcaNumber] = @AnaParcaNumber
-        //AND [AnaParcaName] = @AnaParcaName
-        //AND [TransferID] = @TransferID
-        //AND [ID] = @ID
-        //AND [ObjectType] = @ObjectType
-        //AND [Name] = @Name
-        //AND [Number] = @Number",
-        //                new
-        //                {
-        //                    updateStampA2 = item.LastModified,
-        //                    modifyStampA2 = item.LastModified,
-        //                    ProcessTimestamp = item.LastModified,
-        //                    state = item.AlternatePart.State.Value,
-        //                    AnaParcaTransferID = response.TransferID,
-        //                    AnaParcaID = response.ID,
-        //                    AnaParcaNumber = response.Number,
-        //                    AnaParcaName = response.Name,
-        //                    TransferID = item.AlternatePart.TransferID,
-        //                    ID = item.AlternatePart.ID.Split(':')[2],
-        //                    ObjectType = item.ObjectType,
-        //                    Name = item.AlternatePart.Name,
-        //                    Number = item.AlternatePart.Number
-        //                });
-        //        }
-                if(existingRecord == null)
+                //        if (existingRecord != null)
+                //        {
+                //            // Kayýt güncellemesi
+                //            await conn.ExecuteAsync(
+                //                $@"
+                //UPDATE [{catalogValue}].[WTPartAlternateLink_LOG]
+                //SET [updateStampA2] = @updateStampA2,
+                //    [modifyStampA2] = @modifyStampA2,
+                //    [ProcessTimestamp] = @ProcessTimestamp,
+                //    [state] = @state
+                //WHERE [AnaParcaTransferID] = @AnaParcaTransferID
+                //AND [AnaParcaID] = @AnaParcaID
+                //AND [AnaParcaNumber] = @AnaParcaNumber
+                //AND [AnaParcaName] = @AnaParcaName
+                //AND [TransferID] = @TransferID
+                //AND [ID] = @ID
+                //AND [ObjectType] = @ObjectType
+                //AND [Name] = @Name
+                //AND [Number] = @Number",
+                //                new
+                //                {
+                //                    updateStampA2 = item.LastModified,
+                //                    modifyStampA2 = item.LastModified,
+                //                    ProcessTimestamp = item.LastModified,
+                //                    state = item.AlternatePart.State.Value,
+                //                    AnaParcaTransferID = response.TransferID,
+                //                    AnaParcaID = response.ID,
+                //                    AnaParcaNumber = response.Number,
+                //                    AnaParcaName = response.Name,
+                //                    TransferID = item.AlternatePart.TransferID,
+                //                    ID = item.AlternatePart.ID.Split(':')[2],
+                //                    ObjectType = item.ObjectType,
+                //                    Name = item.AlternatePart.Name,
+                //                    Number = item.AlternatePart.Number
+                //                });
+                //        }
+                if (existingRecord == null)
                 {
 
 
@@ -2849,7 +3220,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 //new { modifyStampA2 = controlTime });
 
 
-   
+
 
             }
             catch (Exception)
@@ -2919,14 +3290,29 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
                 await conn.ExecuteAsync(
 $"UPDATE [{catalogValue}].[WTPartAlternateLink_LOG] SET [AnaParcaTransferID] = @AnaParcaTransferID,[AnaParcaID] = @AnaParcaID,[AnaParcaNumber] = @AnaParcaNumber,[AnaParcaName] = @AnaParcaName, [TransferID] = @TransferID, [ID] = @ID,[ObjectType] = @ObjectType,[Name] = @Name, [Number] = @Number,[updateStampA2] = @updateStampA2, [modifyStampA2] = @modifyStampA2, [ProcessTimestamp] = @ProcessTimestamp , [state] = @state WHERE ID = {item.AlternatePart.ID.Split(':')[2]} ",
-new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, TransferID = item.AlternatePart.TransferID, ID = item.AlternatePart.ID.Split(':')[2], ObjectType = item.ObjectType, Name = item.AlternatePart.Name, Number = item.AlternatePart.Number, updateStampA2 = item.LastModified, modifyStampA2 = item.LastModified, ProcessTimestamp = item.LastModified
-, state = item.AlternatePart.State.Value });
+new
+{
+    AnaParcaTransferID = response.TransferID,
+    AnaParcaID = response.ID,
+    AnaParcaNumber = response.Number,
+    AnaParcaName = response.Name,
+    TransferID = item.AlternatePart.TransferID,
+    ID = item.AlternatePart.ID.Split(':')[2],
+    ObjectType = item.ObjectType,
+    Name = item.AlternatePart.Name,
+    Number = item.AlternatePart.Number,
+    updateStampA2 = item.LastModified,
+    modifyStampA2 = item.LastModified,
+    ProcessTimestamp = item.LastModified
+,
+    state = item.AlternatePart.State.Value
+});
 
 
 
-//                await conn.ExecuteAsync(
-//$"UPDATE [{catalogValue}].[WTPartAlternateLink] SET [modifyStampA2] = @modifyStampA2 WHERE idA2A2 = {item.ID.Split(':')[2]} ",
-//new { modifyStampA2 = controlTime.AddHours(3) });
+                //                await conn.ExecuteAsync(
+                //$"UPDATE [{catalogValue}].[WTPartAlternateLink] SET [modifyStampA2] = @modifyStampA2 WHERE idA2A2 = {item.ID.Split(':')[2]} ",
+                //new { modifyStampA2 = controlTime.AddHours(3) });
 
                 //                await conn.ExecuteAsync(
                 //$"UPDATE [{catalogValue}].[WTPart] SET [modifyStampA2] = @modifyStampA2 WHERE idA2A2 = {item.AlternatePart.ID.Split(':')[2]} ",

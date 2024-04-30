@@ -14,5 +14,6 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ViewModel
         public string? name { get; set; }
         public string? WTPartNumber { get; set; }
         public DateTime updateStampA2 { get; set; }
+        public DateTime ReviseDate { get; set; }
     }
 }
