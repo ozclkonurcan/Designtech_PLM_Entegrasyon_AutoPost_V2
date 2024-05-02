@@ -70,8 +70,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         [Key]
         public string? Number { get; set; }
         public State? State { get; set; }
+    }
+    public class AnaPartCancelledLOG : BaseEntity
+    {
 
-
+        [Key]
+        public string? Number { get; set; }
+        public string? Name { get; set; }
+        public State? State { get; set; }
     }
     public class MuadilPart : BaseEntity
     {
