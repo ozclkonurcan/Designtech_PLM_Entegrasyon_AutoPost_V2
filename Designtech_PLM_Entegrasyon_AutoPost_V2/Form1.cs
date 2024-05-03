@@ -484,8 +484,8 @@ TransferID varchar(MAX),
                     // Ýlgili verileri çek ve kullanýcýya göster
                     txtShowServerName.Text = jsonObject["ServerName"].ToString();
                     txtShowCatalog.Text = jsonObject["Catalog"].ToString();
-                    txtShowWindchillServerName.Text = jsonObject["ServerName"].ToString();
-                    txtShowWindchillUserName.Text = jsonObject["Catalog"].ToString();
+                    txtShowWindchillServerName.Text = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
+                    txtShowWindchillUserName.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
 
                     txtWindchillApi.Text = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
                     txtBasicUsername.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
