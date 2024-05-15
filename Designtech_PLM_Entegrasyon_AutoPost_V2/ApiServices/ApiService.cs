@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Designtech_PLM_Entegrasyon_AutoPost.Helper;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,15 +24,16 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
     {
 
         private readonly IConfiguration _configuration;
-        public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent)
+        public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent,string LogJsonContent)
         {
+                var errorContent = "";
             try
             {
 
 
-                using (var client = new HttpClient())
+				using (var client = new HttpClient())
                 {
-        client.Timeout = Timeout.InfiniteTimeSpan;
+                    client.Timeout = Timeout.InfiniteTimeSpan;
                     //var request = new HttpRequestMessage(HttpMethod.Post, $"{apiURL}/{endpoint}");
                     var request = new HttpRequestMessage(HttpMethod.Post, $"{apiFullUrl}/{endpoint}");
                     var content = new StringContent(jsonContent.ToString(), Encoding.UTF8, "application/json");
@@ -47,26 +49,27 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                     else
                     {
                         // Günlük için yanıt içeriğini kaydet
-                        var errorContent = await response.Content.ReadAsStringAsync();
+                        errorContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Hata Yanıt İçeriği: {errorContent}");
-                        throw new HttpRequestException($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu");
+						MessageBox.Show($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu. Hata Mesajı : {errorContent}", "API HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+						throw new HttpRequestException($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu");
                     }
                 }
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
             {
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(jsonContent,ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
-                    MessageBox.Show("API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!");
+                logService.CreateJsonFileLog(LogJsonContent, ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
+				MessageBox.Show($"API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 throw;
             }
             catch (Exception ex)
             {
-                var message = ex is ArgumentException ? ex.Message : "Beklenmeyen bir hata oluştu";
+                var message = ex is ArgumentException ? ex.Message :" Hata mesajı : "+ ex.Message;
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(jsonContent, "HATA " + "Parça gönderilmedi - ('"+message+"') - " + apiFullUrl +"/"+ endpoint);
-                MessageBox.Show($"Hata: {message}");
-                throw;
+                logService.CreateJsonFileLog(LogJsonContent,"Parça gönderilmedi  - UYGULAMA HATASI - ('"+ message +"') - API HATASI ('"+ errorContent + "') - " + apiFullUrl +"/"+ endpoint);
+				MessageBox.Show($"Hata:  {message} ", "UYGULAMA HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				throw;
             }
         }
          

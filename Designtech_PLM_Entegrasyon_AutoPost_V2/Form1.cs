@@ -35,6 +35,7 @@ using SqlKata.Execution;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Model;
 using Microsoft.Extensions.Primitives;
 using Azure;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -150,7 +151,16 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
                 if (rbServerChoose.Checked)
                 {
-                    connectionString = $"Persist Security Info=False;User ID={txtKullaniciAdi.Text};Password={txtParola.Text};Initial Catalog={txtDatabaseAdi.Text};Server={txtServerName.Text};TrustServerCertificate=True";
+                    string serverWithPort = "";
+                    if (string.IsNullOrEmpty(txtSqlServerPortNumber.Text))
+                    {
+                        serverWithPort = $"{txtServerName.Text}";
+                    }
+                    else
+                    {
+                        serverWithPort = $"{txtServerName.Text}:{txtSqlServerPortNumber.Text}";
+                    }
+                    connectionString = $"Persist Security Info=False;User ID={txtKullaniciAdi.Text};Password={txtParola.Text};Initial Catalog={txtDatabaseAdi.Text};Server={serverWithPort};TrustServerCertificate=True";
                 }
                 else if (rbLocalChoose.Checked)
                 {
@@ -191,7 +201,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
                     // Yeni veriyi JSON nesnesine ekle veya güncelle
-                    var catalogValue = jsonObject["Catalog"].ToString();
+                    var catalogValue = jsonObject["DatabaseSchema"].ToString();
                     // Tablo varsa kontrol et
                     var tableExists = TableExists($"[{catalogValue}].Change_Notice_LogTable", connectionString);
                     //var tableExistsLOG = TableExists($"[{catalogValue}].WTPartAlternateLink_LOG", connectionString);
@@ -267,7 +277,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
             // Yeni veriyi JSON nesnesine ekle veya güncelle
-            var scheman = jsonObject["Catalog"].ToString();
+            var scheman = jsonObject["DatabaseSchema"].ToString();
 
             string createTableSql = @"
     CREATE TABLE " + scheman + @".Change_Notice_LogTable (
@@ -378,6 +388,9 @@ TransferID varchar(MAX),
         }
 
 
+
+
+
         private void SaveConnectionString(string connectionString)
         {
             try
@@ -408,6 +421,7 @@ TransferID varchar(MAX),
                     jsonObject = new JObject
                     {
                         ["Catalog"] = "",
+                        ["DatabaseSchema"] = "",
                         ["ServerName"] = "",
                         ["KullaniciAdi"] = "",
                         ["Parola"] = "",
@@ -442,6 +456,7 @@ TransferID varchar(MAX),
 
                 // Yeni veriyi JSON nesnesine ekle veya güncelle
                 jsonObject["Catalog"] = txtDatabaseAdi.Text;
+                jsonObject["DatabaseSchema"] = txtSqlSchemaName.Text;
                 jsonObject["ServerName"] = txtServerName.Text;
                 jsonObject["APIConnectionINFO"]["WindchillServerName"] = txtWindchillApi.Text;
                 jsonObject["KullaniciAdi"] = txtKullaniciAdi.Text;
@@ -484,8 +499,11 @@ TransferID varchar(MAX),
                     // Ýlgili verileri çek ve kullanýcýya göster
                     txtShowServerName.Text = jsonObject["ServerName"].ToString();
                     txtShowCatalog.Text = jsonObject["Catalog"].ToString();
+                    txtSqlSchemaName.Text = jsonObject["DatabaseSchema"].ToString();
                     txtShowWindchillServerName.Text = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
+                    txtSqlSchemaName.Text = jsonObject["DatabaseSchema"].ToString();
                     txtShowWindchillUserName.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                    txtShowSqlSchemaName.Text = jsonObject["DatabaseSchema"].ToString();
 
                     txtWindchillApi.Text = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
                     txtBasicUsername.Text = jsonObject["APIConnectionINFO"]["Username"].ToString();
@@ -577,6 +595,7 @@ TransferID varchar(MAX),
 
 
                         ["Catalog"] = "",
+                        ["DatabaseSchema"] = "",
                         ["ServerName"] = "",
                         ["KullaniciAdi"] = "",
                         ["Parola"] = "",
@@ -615,6 +634,7 @@ TransferID varchar(MAX),
                 jsonObject["APIConnectionINFO"]["WindchillServerName"] = txtWindchillApi.Text;
                 jsonObject["APIConnectionINFO"]["Username"] = txtBasicUsername.Text;
                 jsonObject["APIConnectionINFO"]["Password"] = txtBasicPassword.Text;
+
 
 
                 var WindchillServerName = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
@@ -773,7 +793,7 @@ TransferID varchar(MAX),
                 string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
 
                 JObject jsonObject = JObject.Parse(jsonData);
-                var catalogValue = jsonObject["Catalog"].ToString();
+                var catalogValue = jsonObject["DatabaseSchema"].ToString();
                 var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
                 var conn = new SqlConnection(connectionString);
 
@@ -830,7 +850,8 @@ TransferID varchar(MAX),
                     string apiSendJsonData = File.Exists(filePath2) ? File.ReadAllText(filePath2) : string.Empty;
 
                     JObject jsonObject = JObject.Parse(jsonData);
-                    var catalogValue = jsonObject["Catalog"].ToString();
+
+                    var catalogValue = jsonObject["DatabaseSchema"].ToString();
                     var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
                     var conn = new SqlConnection(connectionString);
                     var apiURL = jsonObject["APIConnectionINFO"]["ApiURL"].ToString();
@@ -1092,11 +1113,11 @@ TransferID varchar(MAX),
                             var alternateParcaControl = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
                      $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
                      new { idA2A2 = item.AlternatePart.ID.Split(':')[2] });
-                            alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value);
+                            alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value );
                         }
 
 
-                        if (response.State.Value == "RELEASED" && response.Alternates != null && state == "ALTERNATE_RELEASED" && alternatePartControlBoolType)
+                        if (response.State.Value == "RELEASED" && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && alternatePartControlBoolType)
                         {
 
                             foreach (var item in response.Alternates)
@@ -1192,7 +1213,7 @@ TransferID varchar(MAX),
 
 
 
-                                if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null))
+                                if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null) )
                                 {
                                     await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
                                 }
@@ -1699,7 +1720,7 @@ TransferID varchar(MAX),
 
                 string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
                 JObject jsonObject = JObject.Parse(jsonData);
-                var catalogValue = jsonObject["Catalog"].ToString();
+                var catalogValue = jsonObject["DatabaseSchema"].ToString();
                 var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
                 var conn = new SqlConnection(connectionString);
                 var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
@@ -2357,7 +2378,7 @@ TransferID varchar(MAX),
 
                 string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
                 JObject jsonObject = JObject.Parse(jsonData);
-                var catalogValue = jsonObject["Catalog"].ToString();
+                var catalogValue = jsonObject["DatabaseSchema"].ToString();
                 var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
                 var conn = new SqlConnection(connectionString);
                 var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
@@ -2832,9 +2853,9 @@ TransferID varchar(MAX),
 
 
 
-                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+				//var jsonData3 = JsonConvert.SerializeObject(anaPart);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
 
 
 
@@ -2972,18 +2993,19 @@ TransferID varchar(MAX),
 
                 ApiService _apiService = new ApiService();
 
-                //if (response.State.Value == "RELEASED")
-                //{
-                //    response.State.Value = "A";
-                //    response.State.Display = "Aktif";
-                //}
-                //if (response.State.Value == "CANCELLED")
-                //{
-                //    response.State.Value = "P";
-                //    response.State.Display = "Pasif";
-                //}
-                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3);
+				//if (response.State.Value == "RELEASED")
+				//{
+				//    response.State.Value = "A";
+				//    response.State.Display = "Aktif";
+				//}
+				//if (response.State.Value == "CANCELLED")
+				//{
+				//    response.State.Value = "P";
+				//    response.State.Display = "Pasif";
+				//}
+				//var jsonData3 = JsonConvert.SerializeObject(anaPart);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
 
 
                 if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED")
@@ -3094,7 +3116,8 @@ TransferID varchar(MAX),
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(muadilPart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
 
                 if (response.State.Value == "A")
                 {
@@ -3159,7 +3182,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(muadilPart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
                 if (response.State.Value == "A")
                 {
                     response.State.Value = "RELEASED";
@@ -3291,8 +3315,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 if (existingRecord == null)
                 {
 
-
-                    await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2);
+					var LogJsonData = JsonConvert.SerializeObject(response);
+					await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
 
                     if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                     {
@@ -3403,7 +3427,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
                 var jsonData = JsonConvert.SerializeObject(response);
                 var jsonData2 = JsonConvert.SerializeObject(muadilPart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
 
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                 {
@@ -3482,7 +3507,8 @@ new
                 ApiService _apiService = new ApiService();
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(removePart);
-                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4);
+				var LogJsonData = JsonConvert.SerializeObject(response);
+				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
 
 
                 LogService logService = new LogService(_configuration);
@@ -3653,7 +3679,8 @@ new
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            lblDataCount.Text = listBox1.Items.Count.ToString();
+
+			lblDataCount.Text = listBox1.Items.Count.ToString();
         }
         // Her yeni item eklendiðinde
 
@@ -3941,7 +3968,7 @@ new
                         {
 
                             // Format the string with selected properties
-                            string displayString = $"[{dataObject["TransferID"]}] -  {dataObject["Number"]} - {dataObject["Name"]}";
+                            string displayString = $"[ {dataObject["Version"]} ] -  {dataObject["Number"]} - {dataObject["Name"]}";
 
                             if (dataObject["State"]?["Display"] != null)
                             {
@@ -4037,6 +4064,11 @@ new
         }
 
         private void label5_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label6_Click(object sender, EventArgs e)
         {
 
         }
