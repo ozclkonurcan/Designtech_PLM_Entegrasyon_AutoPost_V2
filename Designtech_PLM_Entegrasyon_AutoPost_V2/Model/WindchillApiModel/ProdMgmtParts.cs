@@ -1,4 +1,5 @@
 ﻿using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.Entity;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -45,6 +46,37 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? VersionID { get; set; }
 	}
 
+    public class Creator
+    {
+        [Key]
+        public string? ID { get; set; }
+        public string? Identity { get; set; }
+        public string? Name { get; set; }
+    }
+    public class WTUsers
+    {
+        [JsonProperty("value")]
+        public List<User> Users { get; set; }
+    }
+
+    public class User
+    {
+
+        [JsonProperty("ID")]
+        public string ID { get; set; }
+
+        [JsonProperty("Name")]
+        public string Name { get; set; }
+
+        [JsonProperty("EMail")]
+        public string EMail { get; set; }
+
+        [JsonProperty("FullName")]
+        public string FullName { get; set; }
+
+    }
+
+
     public class AnaPart : BaseEntity
     {
 
@@ -58,7 +90,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string? BirimKodu { get; set; }
 
         public string? PlanlamaTipiKodu { get; set; } = "P";
-        public string? Fai { get; set; }
+        public string? Fai { get; set; } = "H";
         public string? PLM { get; set; } = "E";
         public CLASSIFICATION? CLASSIFICATION { get; set; }
 
@@ -90,7 +122,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
     {
 
         public string? Number { get; set; }
-
+        public string? MuadilPartNumber { get; set; }
     }
 
     #region CLASSTIFICATION CLASS
@@ -110,7 +142,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 			}
 		}
 
-		public string ClassificationHierarchy { get; set; }
+        public string ClassificationHierarchy { get; set; } = "NULL parça";
 	}
 
 
@@ -198,6 +230,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 
         [Key]
         public string? Number { get; set; }
+        public bool IsCancel { get; set; }
 
     }
     #endregion

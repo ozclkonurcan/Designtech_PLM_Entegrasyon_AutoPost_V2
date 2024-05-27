@@ -1,6 +1,8 @@
 ﻿using Azure;
 using Designtech_PLM_Entegrasyon_AutoPost.Helper;
+using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -20,8 +22,21 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
         public static List<string> JsonVeriListesi { get; set; } = new List<string>();
     }
 
+    public class ApiErrorResponse
+    {
+        public bool success { get; set; }
+        public string message { get; set; }
+        // Diğer gerekli özellikler
+    }
+    
+
     public class ApiService
     {
+        private async Task<ApiErrorResponse> DeserializeResponse(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApiErrorResponse>(content); // Json.NET kullanılıyor.
+        }
 
         private readonly IConfiguration _configuration;
         public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent,string LogJsonContent)
@@ -43,15 +58,30 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 
                     if (response.IsSuccessStatusCode)
                     {
+                        var apiResponse = await DeserializeResponse(response);
                         VeriDepo.JsonVeriListesi.Add("");
-                        return await response.Content.ReadAsStringAsync();
+
+                        if (apiResponse.success == true)
+                        {
+                            VeriDepo.JsonVeriListesi.Add("");
+                            return await response.Content.ReadAsStringAsync();
+
+                        }
+                        else
+                        {
+                            // Başarısız durum işleme alınacak
+                            errorContent =$"API başarısız yanıt: {apiResponse.message}";
+
+                            throw new HttpRequestException($"API başarısız yanıt: {apiResponse.message}");
+                        }
                     }
                     else
                     {
                         // Günlük için yanıt içeriğini kaydet
                         errorContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Hata Yanıt İçeriği: {errorContent}");
-						MessageBox.Show($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu. Hata Mesajı : {errorContent}", "API HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        
+						//MessageBox.Show($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu. Hata Mesajı : {errorContent}", "API HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
 						throw new HttpRequestException($"HTTP isteği, durum kodu {response.StatusCode} ile başarısız oldu");
                     }
                 }
@@ -59,16 +89,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
             {
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(LogJsonContent, ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
-				MessageBox.Show($"API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                logService.CreateJsonFileLogError(LogJsonContent, ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
+				//MessageBox.Show($"API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 throw;
             }
             catch (Exception ex)
             {
                 var message = ex is ArgumentException ? ex.Message :" Hata mesajı : "+ ex.Message;
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(LogJsonContent,"Parça gönderilmedi  - UYGULAMA HATASI - ('"+ message +"') - API HATASI ('"+ errorContent + "') - " + apiFullUrl +"/"+ endpoint);
-				MessageBox.Show($"Hata:  {message} ", "UYGULAMA HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                logService.CreateJsonFileLogError(LogJsonContent, "Parça gönderilmedi  - UYGULAMA HATASI - ('"+ message +"') - API HATASI ('"+ errorContent + "') - " + apiFullUrl +"/"+ endpoint);
+				//MessageBox.Show($"Hata:  {message} ", "UYGULAMA HATASI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
 				throw;
             }
         }

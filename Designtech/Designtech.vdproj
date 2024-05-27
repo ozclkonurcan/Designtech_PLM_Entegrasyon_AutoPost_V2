@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_4B1A3C7AABAB413AAC6B4F1FBF7EC850"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_85B939F8729E45FFB8E7FF0F6B06FC8A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -160,6 +166,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4B1A3C7AABAB413AAC6B4F1FBF7EC850"
+            {
+            "SourcePath" = "8:..\\Designtech_PLM_Entegrasyon_AutoPost_V2\\bin\\Debug\\net8.0-windows\\Configuration\\EmailController.json"
+            "TargetName" = "8:EmailController.json"
+            "Tag" = "8:"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_85B939F8729E45FFB8E7FF0F6B06FC8A"
             {
             "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\contentLogo.ico"
@@ -219,7 +245,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_92DDC59D76444C5EA2D96A599D12304E"
             {
-            "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:C:\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
@@ -289,15 +315,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Designtech"
-        "ProductCode" = "8:{9CBC100B-4EAB-418D-B651-69E0F5235D6F}"
-        "PackageCode" = "8:{C51814F9-25F5-475E-9193-E4CDF46D025B}"
+        "ProductCode" = "8:{3C012522-CA61-4382-8522-01DD11206BF1}"
+        "PackageCode" = "8:{84A09726-ABAE-4BC7-A9CC-1EE16AF208BE}"
         "UpgradeCode" = "8:{96F1B4BB-B66F-4A2B-80D6-F04A058480BF}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.8.0"
+        "ProductVersion" = "8:1.8.2"
         "Manufacturer" = "8:Designtech"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"

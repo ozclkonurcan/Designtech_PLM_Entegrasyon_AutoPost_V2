@@ -36,6 +36,9 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Model;
 using Microsoft.Extensions.Primitives;
 using Azure;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Text.RegularExpressions;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -48,6 +51,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
         private bool _isRunning;
         private readonly HttpClient _httpClient;
         public QueryFactory _plm;
+
+
+
         public Form1(ApiService apiService, IDbConnection db, IConfiguration configuration)
         {
             conn = db;
@@ -388,6 +394,118 @@ TransferID varchar(MAX),
         }
 
 
+        private void EmailControlString(WTUsers emailControlString)
+        {
+            try
+            {
+
+                string directoryPath = "Configuration";
+                string fileName = "EmailController.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+                // Klasör yoksa oluþtur
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+                // Dosya varsa oku
+                string jsonData = "";
+                if (System.IO.File.Exists(filePath))
+                {
+                    jsonData = File.ReadAllText(filePath);
+                }
+
+                // JSON verisini kontrol et ve gerekirse düzenle
+                JObject jsonObject;
+                if (string.IsNullOrWhiteSpace(jsonData))
+                {
+                    // JSON verisi boþsa yeni bir nesne oluþtur
+                    jsonObject = new JObject
+                    {
+                        ["FromEmail"] = "",
+                        ["FromEmailPassword"] = "",
+                        ["PortNumber"] = "",
+                        ["EmmilClearSettings"] = new JObject
+                        {
+                            ["ClearHours"] = 1,
+                        },
+
+                        ["EmailList"] = new JArray()
+                    };
+                }
+                else
+                {
+                    // JSON verisi mevcutsa, onu bir nesneye çevir
+                    jsonObject = JObject.Parse(jsonData);
+                }
+
+                // EmailList dizisine kullanýcýlarý ekle
+                JArray emailList = (JArray)jsonObject["EmailList"];
+                foreach (var user in emailControlString.Users)
+                {
+                    var existingUser = emailList.FirstOrDefault(u => (string)u["ID"] == user.ID);
+                    if (existingUser != null)
+                    {
+                        existingUser["Name"] = user.Name;
+                        existingUser["EMail"] = user.EMail;
+                        existingUser["FullName"] = user.FullName;
+                    }
+                    else
+                    {
+                        // Ayný ID'ye sahip bir kullanýcý yoksa, yeni kullanýcý olarak ekle
+                        JObject newUser = new JObject
+                        {
+                            ["ID"] = user.ID,
+                            ["Name"] = user.Name,
+                            ["EMail"] = user.EMail,
+                            ["FullName"] = user.FullName,
+                            ["Durum"] = false // Varsayýlan olarak Durum false olarak ayarlanabilir
+                        };
+                        emailList.Add(newUser);
+                    }
+
+                    //// Eðer ayný ID'ye sahip bir kullanýcý zaten varsa, eklemeyi atla
+                    //if (emailList.Any(u => (string)u["ID"] == user.ID))
+                    //{
+                    //    continue;
+                    //}
+
+                    //JObject newUser = new JObject
+                    //{
+                    //    ["ID"] = user.ID,
+                    //    ["Name"] = user.Name,
+                    //    ["EMail"] = user.EMail,
+                    //    ["FullName"] = user.FullName,
+                    //    ["Durum"] = false // Varsayýlan olarak Durum false olarak ayarlanabilir
+                    //};
+                    //emailList.Add(newUser);
+                }
+
+                // JSON dosyasýndaki kullanýcýlarý kontrol et ve eþleþmeyenleri kaldýr
+                foreach (var email in emailList.ToList())
+                {
+                    // JSON'da olan bir kullanýcý ID'si, API'den gelen kullanýcýlar listesinde yoksa, kaldýr
+                    if (!emailControlString.Users.Any(u => u.ID == (string)email["ID"]))
+                    {
+                        email.Remove();
+                    }
+                }
+
+                // JSON nesnesini dosyaya geri yaz
+                File.WriteAllText(filePath, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
+
+
+            }
+            catch (Exception ex)
+            {
+                notificatonSettings("HATA" + ex.Message);
+                MessageBox.Show("HATA !", ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+
+
 
 
 
@@ -408,7 +526,7 @@ TransferID varchar(MAX),
 
                 // Dosya varsa oku
                 string jsonData = "";
-                if (File.Exists(filePath))
+                if (System.IO.File.Exists(filePath))
                 {
                     jsonData = File.ReadAllText(filePath);
                 }
@@ -894,7 +1012,7 @@ TransferID varchar(MAX),
 
                             if (sourceApi.Contains("ProdMgmt") && sablonDataDurumu == "true")
                             {
-                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART")
+                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED")
                                 {
                                     apiAdres = item["api_adres"].ToString();
                                     anaKaynak = item["ana_kaynak"].ToString();
@@ -905,7 +1023,7 @@ TransferID varchar(MAX),
 
                             //else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
                             //{
-                            //    if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART")
+                            //    if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART" || state == "SEND_FILE" || state == "CADSTOK")
                             //    {
                             //        apiAdres = item["api_adres"].ToString();
                             //        anaKaynak = item["ana_kaynak"].ToString();
@@ -991,20 +1109,12 @@ TransferID varchar(MAX),
 
             //if (sourceApi.Contains("CADDocumentMgmt"))
             //{
-            //    if (ilkCalistirmaCADDocumentMgmt)
-            //    {
-            //        formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-            //        formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-            //        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
-            //        ilkCalistirmaCADDocumentMgmt = false;
-            //    }
-            //    else
-            //    {
-            //        formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-            //        formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-            //        sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
 
-            //    }
+            //    formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+            //    formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+            //    sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
+
+
             //}
 
 
@@ -1018,6 +1128,7 @@ TransferID varchar(MAX),
 
 
 
+            WTUsers globalUserEmail = new WTUsers();
 
             try
             {
@@ -1026,16 +1137,21 @@ TransferID varchar(MAX),
                 {
 
                     var json = "";
+                    var cadJSON = "";
+                    var jsonWTUSER = "";
+                    var cadAssociationsJSON = "";
                     if (sourceApi.Contains("ProdMgmt"))
                     {
                         json = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.idA2A2}')?$expand=Alternates($expand=AlternatePart)", BasicUsername, BasicPassword, CSRF_NONCE);
+                        jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName,$"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
                     //if (sourceApi.Contains("CADDocumentMgmt"))
                     //{
-                    //    json = await windchillApiService.GetApiData(ServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+                    //    cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
+                    //    cadAssociationsJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
                     //}
 
-                    //var json2 = await windchillApiService.GetApiData(ServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.idA2A2}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+                    //var cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
 
 
 
@@ -1047,90 +1163,97 @@ TransferID varchar(MAX),
 
                     try
                     {
-                        var response = JsonConvert.DeserializeObject<Part>(json);
-
-
-
-
-                        var turkishDateFormat2 = response.LastModified.ToString();
-                        var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-
-                        response.LastModified = Convert.ToDateTime(iso8601Date2);
-
-                        var existingLog = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
-                            $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-                            new { idA2A2 = response.ID.Split(':')[2] });
-
-
-
-
-
-
-                        if (state != "ALTERNATE_RELEASED")
+                        if (sourceApi.Contains("ProdMgmt"))
                         {
+                            var response = JsonConvert.DeserializeObject<Part>(json);
+                            var responseCreator = JsonConvert.DeserializeObject<WTUsers>(jsonWTUSER);
+                            EmailControlString(responseCreator);
+                            globalUserEmail = responseCreator;
+                            var turkishDateFormat2 = response.LastModified.ToString();
+                            var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
+                         
+                            response.LastModified = Convert.ToDateTime(iso8601Date2);
 
-                            if (existingLog == null)
+                            var existingLog = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
+                                $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+                                new { idA2A2 = response.ID.Split(':')[2] });
+
+
+
+
+
+
+                            if (state != "ALTERNATE_RELEASED")
                             {
 
-                                await InsertLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint, state, partItem.idA2A2);
+                                if (existingLog == null)
+                                {
+
+                                    await InsertLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint, state, partItem.idA2A2);
+
+
+                                }
+
+                                //else if (existingLog.updateStampA2 != partItem.updateStampA2)
+                                else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
+                                {
+                                    await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint, state, partItem.idA2A2);
+
+                                }
+
+
+
+                                //Sürekli versiyon anladýðýnda yeni parçalar çýkýyor bu parçalarda tetik aldýðý için sonsuz döngü oluyor 
+                                //checkOut ve checkIn yapmadan güncelleme iþlemi yapmamýz lazým bu yüzden bunu iptal ediyorum.
+
 
 
                             }
 
-                            //else if (existingLog.updateStampA2 != partItem.updateStampA2)
-                            else if ((existingLog.statestate != response.State.Value) || (existingLog.updateStampA2 != response.LastModified))
-                            {
-                                await UpdateLogAndPostDataAsync(response, catalogValue, conn, apiFullUrl, apiURL, endPoint, state, partItem.idA2A2);
 
-                            }
-
-
-
-                            //Sürekli versiyon anladýðýnda yeni parçalar çýkýyor bu parçalarda tetik aldýðý için sonsuz döngü oluyor 
-                            //checkOut ve checkIn yapmadan güncelleme iþlemi yapmamýz lazým bu yüzden bunu iptal ediyorum.
+                            #region AlternateLinkVeriSayýsý
+                            var newAlternateLinkCount = (await conn.QueryAsync<dynamic>(
+                            $"SELECT * FROM [{catalogValue}].[WTPartAlternateLink]")).ToList();
+                            int newAlternateLinkVeriSayisi = newAlternateLinkCount.Count();
 
 
 
-                        }
+                            #endregion
 
 
-                        #region AlternateLinkVeriSayýsý
-                        var newAlternateLinkCount = (await conn.QueryAsync<dynamic>(
-                        $"SELECT * FROM [{catalogValue}].[WTPartAlternateLink]")).ToList();
-                        int newAlternateLinkVeriSayisi = newAlternateLinkCount.Count();
+                            //Bunu yapmamýzýn sebebii muadil parça eklenmeden önce eðer muadil parçacanýn ana parçasý önce gönderilmez ise onu göndermeyi saðlamak
 
-
-
-                        #endregion
-
-
-                        //Bunu yapmamýzýn sebebii muadil parça eklenmeden önce eðer muadil parçacanýn ana parçasý önce gönderilmez ise onu göndermeyi saðlamak
-
-                        bool alternatePartControlBoolType = false;
-
-                        foreach (var item in response.Alternates)
-                        {
-                            var alternateParcaControl = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
-                     $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
-                     new { idA2A2 = item.AlternatePart.ID.Split(':')[2] });
-                            alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value );
-                        }
-
-
-                        if (response.State.Value == "RELEASED" && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && alternatePartControlBoolType)
-                        {
+                            bool alternatePartControlBoolType = false;
+                            bool alternatePartControlBoolType2 = false;
 
                             foreach (var item in response.Alternates)
                             {
+                                var alternateParcaControl = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
+                         $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
+                         new { idA2A2 = item.AlternatePart.ID.Split(':')[2] });
+                                alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value);
+
+                                var alternateParcaControl2 = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
+                         $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [WTPartNumber] = @WTPartNumber",
+                         new { WTPartNumber = item.AlternatePart.Number });
+                                alternatePartControlBoolType2 = alternateParcaControl2.Any(x => x.statestate == item.AlternatePart.State.Value);
+                            }
 
 
-                                //var alternateLinkLogs = await conn.QueryFirstOrDefaultAsync<WTPartAlternateLink_LOG>(
-                                //$"SELECT * FROM [{catalogValue}].[WTPartAlternateLink_LOG] WHERE [AnaParcaID] = @AnaParcaID,[AnaParcaNumber] = @AnaParcaNumber,[AnaParcaName] = @AnaParcaName,[ID] = @ID, [Name] = @Name,[Number] = @Number",
-                                //new { AnaParcaID= response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, ID = item.AlternatePart.ID.Split(':')[2],Name = item.AlternatePart.Name,Number = item.AlternatePart.Number });
+                            if (response.State.Value == "RELEASED" && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && (alternatePartControlBoolType || alternatePartControlBoolType2))
+                            {
+
+                                foreach (var item in response.Alternates)
+                                {
 
 
-                                var alternateLinkLogs = await conn.QueryFirstOrDefaultAsync<WTPartAlternateLink_LOG>(
-                                $@"
+                                    //var alternateLinkLogs = await conn.QueryFirstOrDefaultAsync<WTPartAlternateLink_LOG>(
+                                    //$"SELECT * FROM [{catalogValue}].[WTPartAlternateLink_LOG] WHERE [AnaParcaID] = @AnaParcaID,[AnaParcaNumber] = @AnaParcaNumber,[AnaParcaName] = @AnaParcaName,[ID] = @ID, [Name] = @Name,[Number] = @Number",
+                                    //new { AnaParcaID= response.ID, AnaParcaNumber = response.Number, AnaParcaName = response.Name, ID = item.AlternatePart.ID.Split(':')[2],Name = item.AlternatePart.Name,Number = item.AlternatePart.Number });
+
+
+                                    var alternateLinkLogs = await conn.QueryFirstOrDefaultAsync<WTPartAlternateLink_LOG>(
+                                    $@"
     SELECT *
     FROM [{catalogValue}].[WTPartAlternateLink_LOG]
     WHERE [AnaParcaID] = @AnaParcaID
@@ -1139,38 +1262,38 @@ TransferID varchar(MAX),
     AND [ID] = @ID
     AND [Name] = @Name
     AND [Number] = @Number",
-                                new
-                                {
-                                    AnaParcaID = response.ID,
-                                    AnaParcaNumber = response.Number,
-                                    AnaParcaName = response.Name,
-                                    ID = item.AlternatePart.ID.Split(':')[2],
-                                    Name = item.AlternatePart.Name,
-                                    Number = item.AlternatePart.Number
-                                });
+                                    new
+                                    {
+                                        AnaParcaID = response.ID,
+                                        AnaParcaNumber = response.Number,
+                                        AnaParcaName = response.Name,
+                                        ID = item.AlternatePart.ID.Split(':')[2],
+                                        Name = item.AlternatePart.Name,
+                                        Number = item.AlternatePart.Number
+                                    });
 
 
 
-                                //AlternateLinkde bulunan sayýlarda uyuþmazlýk var ise tekrar post edilicek veriler birisndee çakýþma olabilir.
+                                    //AlternateLinkde bulunan sayýlarda uyuþmazlýk var ise tekrar post edilicek veriler birisndee çakýþma olabilir.
 
-                                if (newAlternateLinkVeriSayisi < oldAlternateLinkCount)
-                                {
-                                    int fark = oldAlternateLinkCount - newAlternateLinkVeriSayisi;
-                                    oldAlternateLinkCount -= fark;
-                                }
-                                else if (newAlternateLinkVeriSayisi > oldAlternateLinkCount)
-                                {
-                                    int fark = newAlternateLinkVeriSayisi - oldAlternateLinkCount;
-                                    oldAlternateLinkCount += fark;
-                                }
-                                //AlternateLinkde bulunan sayýlarda uyuþmazlýk var ise tekrar post edilicek veriler birisndee çakýþma olabilir.
+                                    if (newAlternateLinkVeriSayisi < oldAlternateLinkCount)
+                                    {
+                                        int fark = oldAlternateLinkCount - newAlternateLinkVeriSayisi;
+                                        oldAlternateLinkCount -= fark;
+                                    }
+                                    else if (newAlternateLinkVeriSayisi > oldAlternateLinkCount)
+                                    {
+                                        int fark = newAlternateLinkVeriSayisi - oldAlternateLinkCount;
+                                        oldAlternateLinkCount += fark;
+                                    }
+                                    //AlternateLinkde bulunan sayýlarda uyuþmazlýk var ise tekrar post edilicek veriler birisndee çakýþma olabilir.
 
 
-                                var kekw = new Part
-                                {
+                                    var kekw = new Part
+                                    {
 
-                                    BirimAdi = response.BirimAdi,
-                                    Alternates = new List<Alternates>
+                                        BirimAdi = response.BirimAdi,
+                                        Alternates = new List<Alternates>
                                     {
                                         new Alternates
                                         {
@@ -1181,107 +1304,155 @@ TransferID varchar(MAX),
                                         ObjectType = item.ObjectType,
                                         }
                                     },
-                                    BirimKodu = response.BirimKodu,
-                                    CLASSIFICATION = response.CLASSIFICATION,
-                                    CreatedOn = response.CreatedOn,
-                                    Description = response.Description,
-                                    ID = response.ID,
-                                    LastModified = response.LastModified,
-                                    MuhasebeAdi = response.MuhasebeAdi,
-                                    //MuhasebeKodu = response.MuhasebeKodu,
-                                    Name = response.Name,
-                                    Number = response.Number,
-                                    State = response.State,
-                                    Version = response.Version,
-                                    VersionID = response.VersionID
+                                        BirimKodu = response.BirimKodu,
+                                        CLASSIFICATION = response.CLASSIFICATION,
+                                        CreatedOn = response.CreatedOn,
+                                        Description = response.Description,
+                                        ID = response.ID,
+                                        LastModified = response.LastModified,
+                                        MuhasebeAdi = response.MuhasebeAdi,
+                                        //MuhasebeKodu = response.MuhasebeKodu,
+                                        Name = response.Name,
+                                        Number = response.Number,
+                                        State = response.State,
+                                        Version = response.Version,
+                                        VersionID = response.VersionID
 
-                                };
-
-
-
-
-                                // Tarih ve saat karþýlaþtýrmasý
-
-                                /*
-                                 
-                                Kontrol yapýcaz bu kontrol de eðer ana parça boþ muadil parça bilgisi dolu ise yeni muadil olarak ekleyeceðiz yani ana parça boþtan kastýmýz ana parça log tablosunda yer almayacak ama number deðeri yer alacak bu durumda baþka parça entegre olmuþ muadil parça olacak
-                                tam tersi durumunda ana parça log tablosunda mevcut ise o zaman güncelleme yapacak
-                                 
-                                 */
+                                    };
 
 
 
 
+                                    // Tarih ve saat karþýlaþtýrmasý
 
-                                if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null) )
-                                {
-                                    await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    /*
+
+									Kontrol yapýcaz bu kontrol de eðer ana parça boþ muadil parça bilgisi dolu ise yeni muadil olarak ekleyeceðiz yani ana parça boþtan kastýmýz ana parça log tablosunda yer almayacak ama number deðeri yer alacak bu durumda baþka parça entegre olmuþ muadil parça olacak
+									tam tersi durumunda ana parça log tablosunda mevcut ise o zaman güncelleme yapacak
+
+									 */
+
+
+
+
+
+                                    if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null))
+                                    {
+                                        await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    }
+                                    //else if (item.AlternatePart.State.Value == "RELEASED" && (item.LastModified != alternateLinkLogs.ProcessTimestamp) && (alternateLinkLogs.AnaParcaNumber != null && alternateLinkLogs.Number != null))
+                                    //{
+                                    //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    //}
+
+                                    //}else if (item.AlternatePart.State.Value == "RELEASED" && (item.AlternatePart.LastModified.Value.Date != alternateLinkLogs.ProcessTimestamp.Date && item.AlternatePart.LastModified.Value.Hour != alternateLinkLogs.ProcessTimestamp.Hour && item.AlternatePart.LastModified.Value.Minute != alternateLinkLogs.ProcessTimestamp.Minute))
+                                    //    {
+                                    //        await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    //    }
+
+                                    //if(alternateLinkLogs != null)
+                                    //{
+                                    //    DateTime lastModified = Convert.ToDateTime(item.AlternatePart.LastModified);
+                                    //    DateTime processTimestamp = alternateLinkLogs.ProcessTimestamp;
+
+                                    //    // Tarih ve saati karþýlaþtýrmak için saniye ve daha küçük zaman birimlerini göz ardý etme
+                                    //    DateTime roundedLastModified = new DateTime(lastModified.Year, lastModified.Month, lastModified.Day, lastModified.Hour, lastModified.Minute,  0);
+                                    //    DateTime roundedProcessTimestamp = new DateTime(processTimestamp.Year, processTimestamp.Month, processTimestamp.Day, processTimestamp.Hour, processTimestamp.Minute, 0);
+                                    //    roundedProcessTimestamp = roundedProcessTimestamp.AddHours(3);
+                                    //    if (item.AlternatePart.State.Value == "RELEASED" && roundedLastModified != roundedProcessTimestamp)
+                                    //{
+                                    //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    //}
+                                    //}
+                                    //else if (item.AlternatePart.State.Value == "RELEASED" && (item.AlternatePart.LastModified != alternateLinkLogs.ProcessTimestamp))
+                                    //{
+                                    //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                    //    //await RELEASED_AlternatesUpdateLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, "ALTERNATE_RELEASED");
+                                    //}
+
                                 }
-                                //else if (item.AlternatePart.State.Value == "RELEASED" && (item.LastModified != alternateLinkLogs.ProcessTimestamp) && (alternateLinkLogs.AnaParcaNumber != null && alternateLinkLogs.Number != null))
-                                //{
-                                //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-                                //}
-
-                                //}else if (item.AlternatePart.State.Value == "RELEASED" && (item.AlternatePart.LastModified.Value.Date != alternateLinkLogs.ProcessTimestamp.Date && item.AlternatePart.LastModified.Value.Hour != alternateLinkLogs.ProcessTimestamp.Hour && item.AlternatePart.LastModified.Value.Minute != alternateLinkLogs.ProcessTimestamp.Minute))
-                                //    {
-                                //        await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-                                //    }
-
-                                //if(alternateLinkLogs != null)
-                                //{
-                                //    DateTime lastModified = Convert.ToDateTime(item.AlternatePart.LastModified);
-                                //    DateTime processTimestamp = alternateLinkLogs.ProcessTimestamp;
-
-                                //    // Tarih ve saati karþýlaþtýrmak için saniye ve daha küçük zaman birimlerini göz ardý etme
-                                //    DateTime roundedLastModified = new DateTime(lastModified.Year, lastModified.Month, lastModified.Day, lastModified.Hour, lastModified.Minute,  0);
-                                //    DateTime roundedProcessTimestamp = new DateTime(processTimestamp.Year, processTimestamp.Month, processTimestamp.Day, processTimestamp.Hour, processTimestamp.Minute, 0);
-                                //    roundedProcessTimestamp = roundedProcessTimestamp.AddHours(3);
-                                //    if (item.AlternatePart.State.Value == "RELEASED" && roundedLastModified != roundedProcessTimestamp)
-                                //{
-                                //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-                                //}
-                                //}
-                                //else if (item.AlternatePart.State.Value == "RELEASED" && (item.AlternatePart.LastModified != alternateLinkLogs.ProcessTimestamp))
-                                //{
-                                //    await RELEASED_AlternatesUpdateLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
-                                //    //await RELEASED_AlternatesUpdateLogAndPostDataAsync(response, item, catalogValue, conn, apiFullUrl, apiURL, "ALTERNATE_RELEASED");
-                                //}
-
                             }
+
                         }
-
-
-
-
-
-                        //try
+                        
+                        
+                        //if (sourceApi.Contains("CADDocumentMgmt"))
                         //{
-
-                        //    if (!json2.Contains("Response status code does not indicate success: 404 (404)."))
+                        //    var CADResponse = JsonConvert.DeserializeObject<TeknikResim>(cadJSON);
+                        //    string partCode = "";
+                        //    if (cadAssociationsJSON != null)
                         //    {
-                        //        var responsePDF = JsonConvert.DeserializeObject<AdditionalFileValue>(json2);
-                        //        if (responsePDF.Value.Count > 0)
+                        //    var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                        //        if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
+                        //        {
+                        //            var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                        //        string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                        //        Regex regex = new Regex(pattern);
+                        //        Match match = regex.Match(CADAssociations);
+
+                        //        if (match.Success)
+                        //        {
+                        //             partCode = match.Groups[1].Value;
+                  
+                        //        }
+                            
+                        //   }
+
+                        //    }
+
+                        //    try
+                        //    {
+
+                        //        if (cadJSON != null || cadJSON != "")
                         //        {
 
-                        //            var pdfSettings = responsePDF.Value.FirstOrDefault().AdditionalFiles.FirstOrDefault();
-                        //            if (pdfSettings is not null)
+                        //            if (CADResponse.Attachments != null && CADResponse.Attachments.Count > 0)
                         //            {
-                        //                var pdfUrl = pdfSettings.URL;
-                        //                var pdfFileName = pdfSettings.FileName;
-                        //                await SendPdfToCustomerApiAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, API_ENDPOINT_SEND_FILE);
+
+                        //                //var selectedAttachment = CADResponse.Attachments.FirstOrDefault(a => a.Content != null && a.Content.Label != null && a.Content.Label.Contains(CADResponse.Number));
+                        //                var selectedAttachment = CADResponse.Attachments.FirstOrDefault(a =>
+                        //                a.Content != null &&
+                        //                a.Content.Label != null &&
+                        //                a.Content.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                        //            );
+
+                        //                if (selectedAttachment != null)
+                        //                {
+
+                        //                    //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
+                        //                    if (selectedAttachment is not null)
+                        //                    {
+                        //                        var pdfUrl = selectedAttachment.Content.URL;
+                        //                        var pdfFileName = selectedAttachment.Content.Label;
+                        //                        await SendPdfToCustomerFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
+                        //                    }
+                        //                }
                         //            }
+
+
                         //        }
 
                         //    }
-                        //}
-                        //catch (Exception)
-                        //{
+                        //    catch (Exception)
+                        //    {
 
+                        //    }
+                        //    // If LastUpdateTimestamp has not changed, do nothing
                         //}
-                        // If LastUpdateTimestamp has not changed, do nothing
+
+
+
+
+
+
+
+
+
+
                     }
                     catch (Exception)
                     {
+                        continue;
                         // Handle the exception
                     }
                 }
@@ -1360,7 +1531,7 @@ TransferID varchar(MAX),
                     var deletedData = AlternateLinkLogDatas.Except(AlternateLinkDatas, new WTPartAlternateLinkComparer1());
 
                     // Eðer silinen veriler varsa, bu verileri iþleyin
-                    if (deletedData.Any() && state == "REMOVED_PART" && sablonDataDurumu == "true")
+                    if (deletedData.Any() && state == "ALTERNATE_RELEASED" && sablonDataDurumu == "true")
                     {
                         foreach (var item in deletedData)
                         {
@@ -2354,6 +2525,261 @@ TransferID varchar(MAX),
             }
         }
 
+        private async Task EntegrasyonHataDurumUpdate(long KodidA2A2)
+        {
+            try
+            {
+
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+
+
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+
+
+                // (Önceki kodlar burada)
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var catalogValue = jsonObject["DatabaseSchema"].ToString();
+                var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+                var conn = new SqlConnection(connectionString);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+
+                var ServerName = jsonObject["ServerName"].ToString();
+                var WindchillServerName = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+
+                WrsToken apiToken = await windchillApiService.GetApiToken(WindchillServerName, BasicUsername, BasicPassword);
+
+                //var sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and statecheckoutInfo = 'wrk'";
+                //var resolvedItems = await conn.QueryFirstAsync<dynamic>(sql);
+
+
+                var IdSeq = $"SELECT [value] FROM {catalogValue}.id_sequence ORDER BY [value] DESC";
+                var resolvedIdSeq = await conn.QueryFirstOrDefaultAsync<dynamic>(IdSeq);
+                long respIdSeq = Convert.ToInt64(resolvedIdSeq.value) + 100;
+
+                var message = "";
+                var existingRecordStringDefinitionSeq = $"SELECT * FROM [{catalogValue}].[StringDefinition] WHERE [displayName] = 'Entegrasyon Durumu'";
+                var existingRecordStringDefinition = await conn.QueryFirstOrDefaultAsync<dynamic>(existingRecordStringDefinitionSeq);
+
+                var existingRecordTimestampDefinitionSeq = $"SELECT * FROM [{catalogValue}].[TimestampDefinition] WHERE [displayName] = 'Entegrasyon Tarihi'";
+                var existingRecordTimestampDefinition = await conn.QueryFirstOrDefaultAsync<dynamic>(existingRecordTimestampDefinitionSeq);
+
+             
+                   
+                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+                    var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre edilmedi\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+
+
+
+
+
+
+
+
+                    // Öncelikle, mevcut kaydý kontrol edin
+                    var existingRecord = await conn.QueryFirstOrDefaultAsync(
+                 $"SELECT * FROM [{catalogValue}].[StringValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
+                 new { KodidA2A2 });
+                    var existingRecordTimeStamp = await conn.QueryFirstOrDefaultAsync(
+                   $"SELECT * FROM [{catalogValue}].[TimestampValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
+                   new { KodidA2A2 });
+
+
+
+
+                    if (existingRecord != null)
+                    {
+                        // Mevcut bir kayýt varsa, güncelleme iþlemi yapýn
+                        int result = await conn.ExecuteAsync(
+                            $"UPDATE [{catalogValue}].[StringValue] " +
+                            "SET " +
+                            "[hierarchyIDA6] = @hierarchyIDA6, " +
+                            "[idA2A2] = @idA2A2, " +
+                            "[classnameA2A2] = @classnameA2A2, " +
+                            "[idA3A5] = @idA3A5, " +
+                            "[idA3A6] = @idA3A6, " +
+                            "[markForDeleteA2] = @markForDeleteA2, " +
+                            "[modifyStampA2] = @modifyStampA2, " +
+                            "[updateCountA2] = @updateCountA2, " +
+                            "[updateStampA2] = @updateStampA2, " +
+                            "[createStampA2] = @createStampA2, " +
+                            "[classnamekeyA4] = @classnamekeyA4, " +
+                            "[classnamekeyA6] = @classnamekeyA6, " +
+                            "[value] = @value, " +
+                            "[value2] = @value2 " +
+                            $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
+                            new
+                            {
+                                hierarchyIDA6 = "7058085483721066086",
+                                idA2A2 = respIdSeq,
+                                classnameA2A2 = "wt.iba.value.StringValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                                value = "PARÇA ENTEGRE EDÝLMEDÝ",
+                                value2 = "Parça entegre edilmedi",
+                                KodidA2A2
+                            });
+
+
+
+
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+                    else
+                    {
+                        // Mevcut bir kayýt yoksa, yeni bir kayýt ekleyin
+                        int result = await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[StringValue] " +
+                            "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) " +
+                            "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value, @value2)",
+                            new
+                            {
+                                hierarchyIDA6 = "7058085483721066086",
+                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                                idA3A4 = Convert.ToInt64(KodidA2A2),
+                                classnameA2A2 = "wt.iba.value.StringValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                                value = "PARÇA ENTEGRE EDÝLMEDÝ",
+                                value2 = "Parça entegre edilmedi"
+                            });
+
+
+
+
+
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+
+                    var controlDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                    DateTime controlDate2 = Convert.ToDateTime(controlDate);
+                    if (existingRecordTimeStamp != null)
+                    {
+
+
+                        // TimestampValue tablosunu güncelleyin
+                        int result = await conn.ExecuteAsync(
+                            $"UPDATE [{catalogValue}].[TimestampValue] " +
+                            "SET " +
+                            "[hierarchyIDA6] = @hierarchyIDA6, " +
+                            "[idA2A2] = @idA2A2, " +
+                            "[classnameA2A2] = @classnameA2A2, " +
+                            "[idA3A5] = @idA3A5, " +
+                            "[idA3A6] = @idA3A6, " +
+                            "[markForDeleteA2] = @markForDeleteA2, " +
+                            "[modifyStampA2] = @modifyStampA2, " +
+                            "[updateCountA2] = @updateCountA2, " +
+                            "[updateStampA2] = @updateStampA2, " +
+                            "[createStampA2] = @createStampA2, " +
+                            "[classnamekeyA4] = @classnamekeyA4, " +
+                            "[classnamekeyA6] = @classnamekeyA6, " +
+                            "[value] = @value " +
+                            $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
+                            new
+                            {
+                                hierarchyIDA6 = "-148878178526147486",
+                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                                classnameA2A2 = "wt.iba.value.TimestampValue",
+                                idA3A5 = 0,
+                                idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
+                                markForDeleteA2 = 0,
+                                modifyStampA2 = DateTime.Now.Date,
+                                updateCountA2 = 1,
+                                updateStampA2 = DateTime.Now.Date,
+                                createStampA2 = DateTime.Now.Date,
+                                classnamekeyA4 = "wt.part.WTPart",
+                                classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+                                value = controlDate2,
+                                KodidA2A2
+                            });
+
+                        // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+                    else
+                    {
+
+
+                        int result = await conn.ExecuteAsync(
+    $"INSERT INTO [{catalogValue}].[TimestampValue] " +
+    "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) " +
+    "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value)",
+    new
+    {
+        hierarchyIDA6 = "-148878178526147486",
+        idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+        idA3A4 = Convert.ToInt64(KodidA2A2),
+        classnameA2A2 = "wt.iba.value.TimestampValue",
+        idA3A5 = 0,
+        idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
+        markForDeleteA2 = 0,
+        modifyStampA2 = DateTime.Now.Date,
+        updateCountA2 = 1,
+        updateStampA2 = DateTime.Now.Date,
+        createStampA2 = DateTime.Now.Date,
+        classnamekeyA4 = "wt.part.WTPart",
+        classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+        value = controlDate2,
+
+    });
+
+
+                        // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                        if (result == 1)
+                        {
+                            await conn.ExecuteAsync(
+                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                        }
+                    }
+
+
+             
+
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         private async Task EntegrasyonDurumRESET(string state, long KodidA2A2, DateTime ReviseDate)
         {
             try
@@ -2680,19 +3106,162 @@ TransferID varchar(MAX),
         #region PDF Download Settings
 
 
-        private async Task SendPdfToCustomerApiAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string API_ENDPOINT_SEND_FILE)
+        private async Task SendPdfToCustomerFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, TeknikResim CADResponse, string stateType,string partCode,WTUsers userEmail)
         {
             try
             {
-                // PDF dosyasýný indir
-                byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
+                if (stateType == "CADSTOK")
+                {
+                    var CADViewResponse = new TeknikResimViewModel
+                    {
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = "",
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        State = CADResponse.State,
+                    };
 
-                //  Api Endpoint
-                string customerApiEndpoint = apiFullUrl + "/" + API_ENDPOINT_SEND_FILE;
-                //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
+                    CADViewResponse.State.Value = "50";
 
-                // PDF dosyasýný müþteri API'sine gönder
-                await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint);
+                    ApiService _apiService = new ApiService();
+
+
+
+                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+
+                }
+                if (stateType == "CAD_WTPART_ILISKI")
+                {
+
+                }
+                if (stateType == "SEND_FILE")
+                {
+
+                    var partName = "";
+                    var partNumber = "";
+
+                    if (partCode != null || partCode != "")
+                    {
+
+                    var SQL_WTPart = $"SELECT [idA3masterReference] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+                    var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
+                    var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+                    var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+
+
+                        partName = resolvedItems_SQL_WTPartMaster.name;
+                        partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                    }
+
+
+
+
+                    //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
+                    //{
+                    //    partName = resolvedItems_SQL_WTPartMaster.name;
+                    //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                    //}
+                    //else
+                    //{
+                    //    partName = "Name deðer bulunamadý";
+                    //    partNumber = "Number deðeri bulunamadý";
+                    //}
+
+                    var CADViewResponseContentInfo = new TeknikResimViewModel
+                    {
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = "",
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        State = CADResponse.State,
+                        cADContent = new CADContent
+                        {
+                            FileData = await DownloadPdfAsync(pdfUrl),
+                            Name = pdfFileName
+                        },
+                        dAD_WTPART_Iliþki = new CAD_WTPART_Iliþki
+                        {
+
+                            RelatedPartName = partName,
+                            RelatedPartNumber = partNumber
+                        }
+
+                    };
+                    CADViewResponseContentInfo.State.Value = "50";
+
+                    // PDF dosyasýný indir
+                    //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
+
+                    //  Api Endpoint
+                    //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
+                    //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
+
+                    // PDF dosyasýný müþteri API'sine gönder
+
+                    ApiService _apiService = new ApiService();
+
+
+
+                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                    LogService logService = new LogService(_configuration);
+
+                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+                    //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
+                }
+
+
+
+                try
+                {
+
+
+                    await conn.ExecuteAsync($@"
+        DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
+
+                }
+                catch (Exception ex)
+                {
+                    // Hata mesajýný veya hata günlüðünü kaydedin
+                    //Console.WriteLine($"Hata: {ex.Message}");
+                    var CADViewResponseContentInfo = new TeknikResimViewModel
+                    {
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = "",
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        State = CADResponse.State,
+                        cADContent = new CADContent
+                        {
+                            FileData = await DownloadPdfAsync(pdfUrl),
+                            Name = pdfFileName
+                        }
+
+                    };
+                    CADViewResponseContentInfo.State.Value = "50";
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                    LogService logService = new LogService(_configuration);
+
+                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+                }
+                finally
+                {
+                    // Baðlantýyý kapatýn
+                    conn.Close();
+                }
 
                 //MessageBox.Show($"PDF dosyasý ({pdfFileName}) gönderildi.");
             }
@@ -2756,7 +3325,7 @@ TransferID varchar(MAX),
         }
 
 
-        private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint)
+        private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint, CADContent CADViewResponseContentInfo)
         {
             try
             {
@@ -2795,6 +3364,15 @@ TransferID varchar(MAX),
                 var anaPart = new AnaPart();
                 var anaPartCancelled = new AnaPartCancelled();
                 var jsonData3 = "";
+                if (response.CLASSIFICATION == null)
+                {
+                    response.CLASSIFICATION = new CLASSIFICATION
+                    {
+                        ClfNodeHierarchyDisplayName = "NULL"
+                    };
+                }
+
+
                 if (response.State.Value == "RELEASED")
                 {
                     response.State.Value = "A";
@@ -2803,7 +3381,7 @@ TransferID varchar(MAX),
                     {
                         Number = response.Number,
                         Name = response.Name,
-                        Fai = response.Fai,
+                        Fai = "H",
                         MuhasebeKodu = "0000000",
                         PlanlamaTipiKodu = "P",
                         PLM = "E",
@@ -2835,7 +3413,7 @@ TransferID varchar(MAX),
                     {
                         Number = response.Number,
                         Name = response.Name,
-                        Fai = response.Fai,
+                        Fai = "H",
                         MuhasebeKodu = "0000000",
                         PlanlamaTipiKodu = "P",
                         PLM = "E",
@@ -2853,9 +3431,9 @@ TransferID varchar(MAX),
 
 
 
-				//var jsonData3 = JsonConvert.SerializeObject(anaPart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
+                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
 
 
 
@@ -2872,7 +3450,7 @@ TransferID varchar(MAX),
                     //await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
                 }
 
-
+              
 
 
                 if (response.State.Value == "A")
@@ -2893,7 +3471,7 @@ TransferID varchar(MAX),
                 LogService logService = new LogService(_configuration);
                 if (response.State.Value == "RELEASED")
                 {
-                    logService.CreateJsonFileLog(jsonData3, "Parça gönderildi.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parça gönderildi.");
 
                 }
                 else if (response.State.Value == "CANCELLED")
@@ -2908,12 +3486,12 @@ TransferID varchar(MAX),
 
                     };
                     var jsonData4 = JsonConvert.SerializeObject(anaPartCancelledLOG);
-                    logService.CreateJsonFileLog(jsonData4, "Parça iptal edildi.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parça iptal edildi.");
 
                 }
                 else
                 {
-                    logService.CreateJsonFileLog(jsonData3, "Parçaya devam ediliyor.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parçaya devam ediliyor.");
 
                 }
 
@@ -2924,7 +3502,11 @@ TransferID varchar(MAX),
             }
             catch (Exception)
             {
-
+                if (response.EntegrasyonDurumu is null or not "Parça entegre edilmedi")
+                {
+                    await EntegrasyonHataDurumUpdate(partItemIdA2A2);
+                    //await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
+                }
             }
 
 
@@ -2938,6 +3520,17 @@ TransferID varchar(MAX),
                 var anaPartLOG = new AnaPart();
                 var anaPartCancelled = new AnaPartCancelled();
                 var jsonData3 = "";
+                 //string faiValue = string.IsNullOrEmpty(response.Fai) ? "H" : response.Fai;
+
+                if(response.CLASSIFICATION == null)
+                {
+                    response.CLASSIFICATION = new CLASSIFICATION
+                    {
+                        ClfNodeHierarchyDisplayName = "NULL"
+                    };
+                }
+              
+
                 if (response.State.Value == "RELEASED")
                 {
                     response.State.Value = "A";
@@ -2946,7 +3539,7 @@ TransferID varchar(MAX),
                     {
                         Number = response.Number,
                         Name = response.Name,
-                        Fai = response.Fai,
+                        Fai = "H",
                         MuhasebeKodu = "0000000",
                         PlanlamaTipiKodu = "P",
                         PLM = "E",
@@ -2954,7 +3547,7 @@ TransferID varchar(MAX),
                         TransferID = response.TransferID,
                         Description = response.Description,
                         BirimKodu = response.BirimKodu,
-                        CLASSIFICATION = response.CLASSIFICATION
+                        CLASSIFICATION = response.CLASSIFICATION,
                     };
                     jsonData3 = JsonConvert.SerializeObject(anaPart);
                 }
@@ -2978,7 +3571,7 @@ TransferID varchar(MAX),
                     {
                         Number = response.Number,
                         Name = response.Name,
-                        Fai = response.Fai,
+                        Fai = "H",
                         MuhasebeKodu = "0000000",
                         PlanlamaTipiKodu = "P",
                         PLM = "E",
@@ -2993,19 +3586,19 @@ TransferID varchar(MAX),
 
                 ApiService _apiService = new ApiService();
 
-				//if (response.State.Value == "RELEASED")
-				//{
-				//    response.State.Value = "A";
-				//    response.State.Display = "Aktif";
-				//}
-				//if (response.State.Value == "CANCELLED")
-				//{
-				//    response.State.Value = "P";
-				//    response.State.Display = "Pasif";
-				//}
-				//var jsonData3 = JsonConvert.SerializeObject(anaPart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
+                //if (response.State.Value == "RELEASED")
+                //{
+                //    response.State.Value = "A";
+                //    response.State.Display = "Aktif";
+                //}
+                //if (response.State.Value == "CANCELLED")
+                //{
+                //    response.State.Value = "P";
+                //    response.State.Display = "Pasif";
+                //}
+                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData3, LogJsonData);
 
 
                 if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED")
@@ -3047,7 +3640,7 @@ TransferID varchar(MAX),
                 LogService logService = new LogService(_configuration);
                 if (response.State.Value == "RELEASED")
                 {
-                    logService.CreateJsonFileLog(jsonData3, "Parça gönderildi.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parça gönderildi.");
 
                 }
                 else if (response.State.Value == "CANCELLED")
@@ -3062,11 +3655,11 @@ TransferID varchar(MAX),
 
                     };
                     var jsonData4 = JsonConvert.SerializeObject(anaPartCancelledLOG);
-                    logService.CreateJsonFileLog(jsonData4, "Parça iptal edildi.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parça iptal edildi.");
                 }
                 else
                 {
-                    logService.CreateJsonFileLog(jsonData3, "Parçaya devam ediliyor.");
+                    logService.CreateJsonFileLog(LogJsonData, "Parçaya devam ediliyor.");
 
                 }
 
@@ -3076,7 +3669,10 @@ TransferID varchar(MAX),
             }
             catch (Exception)
             {
-
+                if (response.EntegrasyonDurumu is null or not "Parça entegre edilmedi")
+                {
+                    await EntegrasyonHataDurumUpdate(partItemIdA2A2);
+                }
             }
 
         }
@@ -3116,8 +3712,8 @@ TransferID varchar(MAX),
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(muadilPart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
 
                 if (response.State.Value == "A")
                 {
@@ -3182,8 +3778,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 }
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(muadilPart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
                 if (response.State.Value == "A")
                 {
                     response.State.Value = "RELEASED";
@@ -3227,6 +3823,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                         {
                             TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
+                            IsCancel = true
                         }
                     }).ToList()
                 };
@@ -3315,8 +3912,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 if (existingRecord == null)
                 {
 
-					var LogJsonData = JsonConvert.SerializeObject(response);
-					await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
+                    var LogJsonData = JsonConvert.SerializeObject(response);
+                    await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
 
                     if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                     {
@@ -3354,7 +3951,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                             state = item.AlternatePart.State.Value
                         });
                     LogService logService = new LogService(_configuration);
-                    logService.CreateJsonFileLog(jsonData, "Muadil parça gönderildi.");
+                    logService.CreateJsonFileLog(jsonData, $"Ana parça: {response.Number} - Muadil parça: {item.AlternatePart.Number} ile iliþkilendirildi. ");
                 }
 
                 #endregion
@@ -3403,6 +4000,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                         {
                             TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
+                            IsCancel = true
                         }
                     }).ToList()
                 };
@@ -3427,8 +4025,8 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
                 var jsonData = JsonConvert.SerializeObject(response);
                 var jsonData2 = JsonConvert.SerializeObject(muadilPart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData2, LogJsonData);
 
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "A")
                 {
@@ -3480,7 +4078,7 @@ new
                 //new { modifyStampA2 = controlTime });
 
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(jsonData, "Muadil parça gönderildi.");
+                logService.CreateJsonFileLog(jsonData, $"Ana parça: {response.Number} - Muadil parça: {item.AlternatePart.Number} ile iliþkilendirildi. ");
 
             }
             catch (Exception)
@@ -3499,25 +4097,34 @@ new
         {
             try
             {
-                var removePart = new RemovePart
+
+                var removePart = new MuadilPart
                 {
-                    TransferID = response.TransferID,
                     Number = response.Number,
+                    Alternates = response.Alternates.Select(alternate => new Alternates2
+                    {
+                        AlternatePart = new AlternatePart2
+                        {
+                            TransferID = alternate.AlternatePart.TransferID,
+                            Number = alternate.AlternatePart.Number,
+                            IsCancel = false
+                        }
+                    }).ToList()
                 };
+             
                 ApiService _apiService = new ApiService();
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(removePart);
-				var LogJsonData = JsonConvert.SerializeObject(response);
-				await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
+                var LogJsonData = JsonConvert.SerializeObject(response);
+                await _apiService.PostDataAsync(apiFullUrl, apiURL, apiEndpoint, jsonData4, LogJsonData);
 
 
                 LogService logService = new LogService(_configuration);
-                logService.CreateJsonFileLog(jsonData3, "Muadil parça kaldýrýldý.");
+                logService.CreateJsonFileLog(jsonData3, $"Ana parça: {response.Number} - Muadil parça: {removePart.Alternates.FirstOrDefault().AlternatePart.Number} muadil iliþkisi kaldýrýldý.");
 
             }
             catch (Exception)
             {
-
             }
 
 
@@ -3680,7 +4287,7 @@ new
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
-			lblDataCount.Text = listBox1.Items.Count.ToString();
+            lblDataCount.Text = listBox1.Items.Count.ToString();
         }
         // Her yeni item eklendiðinde
 
@@ -3966,23 +4573,40 @@ new
 
                         foreach (JObject dataObject in dataArray)
                         {
-
-                            // Format the string with selected properties
-                            string displayString = $"[ {dataObject["Version"]} ] -  {dataObject["Number"]} - {dataObject["Name"]}";
-
+                            var displayStringSTATE = "";
                             if (dataObject["State"]?["Display"] != null)
                             {
-                                displayString += $" ({dataObject["State"]["Display"]})";
+                                 displayStringSTATE = $" ({dataObject["State"]["Display"]})";
+                                if(displayStringSTATE == " (Aktif)")
+                                {
+                                    displayStringSTATE = " (Released)";
+                                }
+                                if (displayStringSTATE == " (Pasif)")
+                                {
+                                    displayStringSTATE = " (Cancelled)";
+                                }
                             }
+                            // Format the string with selected properties
+                            string displayString = $"{dataObject["Number"]} - {dataObject["Version"]} - {dataObject["Name"]}";
+
+                        
                             // Check if message exists
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("kaldýrýldý"))
                             {
                                 //displayString += $" - {dataObject["Mesaj"]}";
                                 displayString = displayString.Replace(dataObject["State"]["Display"].ToString(), null);
                             }
+                            if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("Muadil parça"))
+                            {
+                                //displayString += $" - {dataObject["Mesaj"]}";
+                                displayString = displayString.Replace(dataObject["Number"].ToString()+" - ", null);
+                                displayString = displayString.Replace(dataObject["Name"].ToString(), null);
+                                displayString = displayString.Replace(dataObject["Version"].ToString()+" - ", null);
+                              
+                            }
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()))
                             {
-                                displayString += $" - {dataObject["Mesaj"]}";
+                                displayString += $" {dataObject["Mesaj"]}";
                             }
 
                             displayString += $" - {dataObject["islemTarihi"]}";
