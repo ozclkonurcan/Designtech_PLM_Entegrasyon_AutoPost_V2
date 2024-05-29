@@ -570,7 +570,7 @@
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Designtech PLM Entegrasyon v1.8.2";
+            Text = "Designtech PLM Entegrasyon v1.8.3";
             FormClosing += Form1_FormClosing_1;
             FormClosed += Form1_FormClosed;
             Load += Form1_Load;

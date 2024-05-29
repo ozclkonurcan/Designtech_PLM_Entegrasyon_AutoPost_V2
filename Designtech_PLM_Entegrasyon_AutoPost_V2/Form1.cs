@@ -1463,9 +1463,6 @@ TransferID varchar(MAX),
                 {
 
 
-
-                    //AlternateLink Silininen verileri bulma için karþýlaþtýrma yapýlan foksiyon
-
                     // WTPartAlternateLink tablosundaki tüm verileri al
                     var AlternateLinkDatas = await conn.QueryAsync<WTPartAlternateLink>($"SELECT * FROM [{catalogValue}].[WTPartAlternateLink]");
 
@@ -1478,53 +1475,92 @@ TransferID varchar(MAX),
                     // Eðer yeni eklenen veriler varsa, bu verileri ekleyin
                     if (newAddedData.Any())
                     {
+                        foreach (var item in newAddedData)
+                        {
+                            var wtpartAlternatePart = await conn.QueryFirstOrDefaultAsync<dynamic>(
+           $@"
+    SELECT * 
+    FROM [{catalogValue}].[WTPart] 
+    WHERE [idA3MasterReference] = @idA3MasterReference 
+    AND latestiterationInfo = '1' 
+    AND statestate = 'RELEASED'
+    AND versionIdA2versionInfo = (
+        SELECT MAX(versionIdA2versionInfo) 
+        FROM [{catalogValue}].[WTPart]
+        WHERE [idA3MasterReference] = @idA3MasterReference
+    )",
+           new { idA3MasterReference = item.IdA3B5 });
 
 
-
-
-                        // Yeni eklenen verileri WTPartAlternateLink_ControlLog tablosuna ekleyin
-                        await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[WTPartAlternateLink_ControlLog] (
-            AdministrativeLockIsNull, 
-            TypeAdministrativeLock, 
-            ClassNameKeyDomainRef, 
-            IdA3DomainRef, 
-            InheritedDomain, 
-            ReplacementType, 
-            ClassNameKeyRoleAObjectRef, 
-            IdA3A5, 
-            ClassNameKeyRoleBObjectRef, 
-            IdA3B5, 
-            SecurityLabels, 
-            CreateStampA2, 
-            MarkForDeleteA2, 
-            ModifyStampA2, 
-            ClassNameA2A2, 
-            IdA2A2, 
-            UpdateCountA2, 
-            UpdateStampA2
-        ) 
-        VALUES (
-            @AdministrativeLockIsNull, 
-            @TypeAdministrativeLock, 
-            @ClassNameKeyDomainRef, 
-            @IdA3DomainRef, 
-            @InheritedDomain, 
-            @ReplacementType, 
-            @ClassNameKeyRoleAObjectRef, 
-            @IdA3A5, 
-            @ClassNameKeyRoleBObjectRef, 
-            @IdA3B5, 
-            @SecurityLabels, 
-            @CreateStampA2, 
-            @MarkForDeleteA2, 
-            @ModifyStampA2, 
-            @ClassNameA2A2, 
-            @IdA2A2, 
-            @UpdateCountA2, 
-            @UpdateStampA2
-        )", newAddedData);
+                            // Parçanýn RELEASED durumda olup olmadýðýný kontrol edin
+                            if (wtpartAlternatePart != null && wtpartAlternatePart.statestate == "RELEASED")
+                            {
+                                // Yeni eklenen verileri WTPartAlternateLink_ControlLog tablosuna ekleyin
+                                await conn.ExecuteAsync($@"
+                INSERT INTO [{catalogValue}].[WTPartAlternateLink_ControlLog] (
+                    AdministrativeLockIsNull, 
+                    TypeAdministrativeLock, 
+                    ClassNameKeyDomainRef, 
+                    IdA3DomainRef, 
+                    InheritedDomain, 
+                    ReplacementType, 
+                    ClassNameKeyRoleAObjectRef, 
+                    IdA3A5, 
+                    ClassNameKeyRoleBObjectRef, 
+                    IdA3B5, 
+                    SecurityLabels, 
+                    CreateStampA2, 
+                    MarkForDeleteA2, 
+                    ModifyStampA2, 
+                    ClassNameA2A2, 
+                    IdA2A2, 
+                    UpdateCountA2, 
+                    UpdateStampA2
+                ) 
+                VALUES (
+                    @AdministrativeLockIsNull, 
+                    @TypeAdministrativeLock, 
+                    @ClassNameKeyDomainRef, 
+                    @IdA3DomainRef, 
+                    @InheritedDomain, 
+                    @ReplacementType, 
+                    @ClassNameKeyRoleAObjectRef, 
+                    @IdA3A5, 
+                    @ClassNameKeyRoleBObjectRef, 
+                    @IdA3B5, 
+                    @SecurityLabels, 
+                    @CreateStampA2, 
+                    @MarkForDeleteA2, 
+                    @ModifyStampA2, 
+                    @ClassNameA2A2, 
+                    @IdA2A2, 
+                    @UpdateCountA2, 
+                    @UpdateStampA2
+                )", new
+                                {
+                                    item.AdministrativeLockIsNull,
+                                    item.TypeAdministrativeLock,
+                                    item.ClassNameKeyDomainRef,
+                                    item.IdA3DomainRef,
+                                    item.InheritedDomain,
+                                    item.ReplacementType,
+                                    item.ClassNameKeyRoleAObjectRef,
+                                    item.IdA3A5,
+                                    item.ClassNameKeyRoleBObjectRef,
+                                    item.IdA3B5,
+                                    item.SecurityLabels,
+                                    item.CreateStampA2,
+                                    item.MarkForDeleteA2,
+                                    item.ModifyStampA2,
+                                    item.ClassNameA2A2,
+                                    item.IdA2A2,
+                                    item.UpdateCountA2,
+                                    item.UpdateStampA2
+                                });
+                            }
+                        }
                     }
+
 
 
                     // Silinen verileri kontrol et
@@ -1544,8 +1580,14 @@ TransferID varchar(MAX),
             $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
             new { idA3MasterReference = item.IdA3B5 }));
 
+                                           var wtparControlLog = (await conn.QueryFirstOrDefaultAsync<dynamic>(
+            $"SELECT * FROM [{catalogValue}].[WTPartAlternateLink_ControlLog] WHERE [IdA3A5] = @IdA3A5 and [IdA3B5] = @IdA3B5",
+            new { IdA3A5 = item.IdA3A5, IdA3B5 = item.IdA3B5 }));
 
-                            var wtpartMasterAlternatePart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
+
+                            if (wtparControlLog != null)
+                            {
+                                var wtpartMasterAlternatePart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
                             $"SELECT * FROM [{catalogValue}].[WTPartMaster] WHERE [idA2A2] = @idA2A2",
                             new { idA2A2 = item.IdA3B5 }));
 
@@ -1556,9 +1598,9 @@ TransferID varchar(MAX),
 
 
                             removedResponse.Alternates = new List<Alternates>();
-
-                            // Check if wtpartMasterAlternatePart is not null
-                            if (wtpartMasterAlternatePart != null)
+                        
+                                // Check if wtpartMasterAlternatePart is not null
+                                if (wtpartMasterAlternatePart != null)
                             {
                                 // Create a single Alternates object with necessary data
                                 // (Include all required fields)
@@ -1570,6 +1612,11 @@ TransferID varchar(MAX),
                                         ID = "OR:wt.part.WTPart:" + wtpartMasterAlternatePart.idA2A2,
                                         Name = wtpartMasterAlternatePart.name,
                                         Number = wtpartMasterAlternatePart.WTPartNumber,
+                                        State = new Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel.State
+                                        {
+                                            // State sýnýfýna ait diðer alanlarý doldurun
+                                            Value = wtpartAlternatePart.statestate,
+                                        }
                                         // Add other required fields (State, MuhasebeKodu, MuhasebeAdi, etc.)
                                     }
                                 };
@@ -1586,7 +1633,11 @@ TransferID varchar(MAX),
 
                             await conn.ExecuteAsync($@"
 				DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
-				WHERE IdA2A2 IN @Ids", new { Ids = deletedData.Select(d => d.IdA2A2).ToArray() });
+				 WHERE [IdA3A5] = @IdA3A5 and [IdA3B5] = @IdA3B5", new { IdA3A5 = item.IdA3A5, IdA3B5 = item.IdA3B5 });
+
+                            //                        await conn.ExecuteAsync($@"
+                            //DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
+                            //WHERE IdA2A2 IN @Ids", new { Ids = deletedData.Select(d => d.IdA2A2).ToArray() });
 
                             //                        await conn.ExecuteAsync($@"
                             //DELETE FROM [{catalogValue}].[WTPartAlternateLink_LOG]
@@ -1601,10 +1652,10 @@ TransferID varchar(MAX),
                          Numbers = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray()
                      });
 
+                            }
 
                         }
                     }
-
 
                     //AlternateLink Silininen verileri bulma için karþýlaþtýrma yapýlan foksiyon
 
@@ -1619,7 +1670,6 @@ TransferID varchar(MAX),
                 notificatonSettings("Hata!" + ex.Message);
                 MessageBox.Show(ex.Message);
             }
-
 
         }
 
@@ -2579,7 +2629,7 @@ TransferID varchar(MAX),
              
                    
                     var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
-                    var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre edilmedi\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+                    var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre edilemedi\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
 
 
 
@@ -2634,8 +2684,8 @@ TransferID varchar(MAX),
                                 createStampA2 = DateTime.Now.Date,
                                 classnamekeyA4 = "wt.part.WTPart",
                                 classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA ENTEGRE EDÝLMEDÝ",
-                                value2 = "Parça entegre edilmedi",
+                                value = "PARÇA ENTEGRE EDÝLEMEDÝ",
+                                value2 = "Parça entegre edilemedi",
                                 KodidA2A2
                             });
 
@@ -2670,8 +2720,8 @@ TransferID varchar(MAX),
                                 createStampA2 = DateTime.Now.Date,
                                 classnamekeyA4 = "wt.part.WTPart",
                                 classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA ENTEGRE EDÝLMEDÝ",
-                                value2 = "Parça entegre edilmedi"
+                                value = "PARÇA ENTEGRE EDÝLEMEDÝ",
+                                value2 = "Parça entegre edilemedi"
                             });
 
 
@@ -3502,7 +3552,7 @@ TransferID varchar(MAX),
             }
             catch (Exception)
             {
-                if (response.EntegrasyonDurumu is null or not "Parça entegre edilmedi")
+                if (response.EntegrasyonDurumu is null or not "Parça entegre edilemedi")
                 {
                     await EntegrasyonHataDurumUpdate(partItemIdA2A2);
                     //await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
@@ -3669,7 +3719,7 @@ TransferID varchar(MAX),
             }
             catch (Exception)
             {
-                if (response.EntegrasyonDurumu is null or not "Parça entegre edilmedi")
+                if (response.EntegrasyonDurumu is null or not "Parça entegre edilemedi")
                 {
                     await EntegrasyonHataDurumUpdate(partItemIdA2A2);
                 }
@@ -4121,6 +4171,7 @@ new
 
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLog(jsonData3, $"Ana parça: {response.Number} - Muadil parça: {removePart.Alternates.FirstOrDefault().AlternatePart.Number} muadil iliþkisi kaldýrýldý.");
+                
 
             }
             catch (Exception)
