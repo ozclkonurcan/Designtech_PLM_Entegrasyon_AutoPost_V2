@@ -230,7 +230,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 
         [Key]
         public string? Number { get; set; }
-        public bool IsCancel { get; set; }
+        public bool isCancel { get; set; }
 
     }
     #endregion

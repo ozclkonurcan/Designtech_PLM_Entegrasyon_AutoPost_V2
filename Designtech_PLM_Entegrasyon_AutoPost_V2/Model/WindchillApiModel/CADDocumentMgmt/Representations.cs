@@ -6,20 +6,7 @@ using System.Threading.Tasks;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocumentMgmt
 {
-	public class AdditionalFile
-	{
-		public string URL { get; set; }
-		public string Label { get; set; }
-		public int FileSize { get; set; }
-		public string MimeType { get; set; }
-		public string Format { get; set; }
-		public string ID { get; set; }
-		public string FileName { get; set; }
-		public DateTime LastModified { get; set; }
-		public DateTime CreatedOn { get; set; }
-		public string Description { get; set; }
-		public string Comments { get; set; }
-	}
+
 
 	public class CreoViewURL
 	{

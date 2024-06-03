@@ -39,6 +39,23 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Text.RegularExpressions;
 using static System.Net.WebRequestMethods;
 using File = System.IO.File;
+using System.Drawing.Drawing2D;
+using System.Drawing;
+using System.Drawing.Imaging;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas;
+using iText.Kernel.Font;
+using iText.Kernel.Geom;
+using Path = System.IO.Path;
+using iText.IO.Font.Constants;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using IronOcr;
+using Tesseract;
+using static Humanizer.In;
+using PdfSharp.Pdf;
+using PdfiumViewer;
+using PdfDocument = PdfiumViewer.PdfDocument;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -1107,15 +1124,15 @@ TransferID varchar(MAX),
 
             }
 
-            //if (sourceApi.Contains("CADDocumentMgmt"))
-            //{
+            if (sourceApi.Contains("CADDocumentMgmt"))
+            {
 
-            //    formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-            //    formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-            //    sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
+                formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
 
 
-            //}
+            }
 
 
 
@@ -1138,6 +1155,7 @@ TransferID varchar(MAX),
 
                     var json = "";
                     var cadJSON = "";
+                    var cadJSON2 = "";
                     var jsonWTUSER = "";
                     var cadAssociationsJSON = "";
                     if (sourceApi.Contains("ProdMgmt"))
@@ -1145,13 +1163,13 @@ TransferID varchar(MAX),
                         json = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.idA2A2}')?$expand=Alternates($expand=AlternatePart)", BasicUsername, BasicPassword, CSRF_NONCE);
                         jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName,$"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
-                    //if (sourceApi.Contains("CADDocumentMgmt"))
-                    //{
-                    //    cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
-                    //    cadAssociationsJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
-                    //}
+                    if (sourceApi.Contains("CADDocumentMgmt"))
+                    {
+                        cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
+                        cadAssociationsJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
+                     cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+                    }
 
-                    //var cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')/Representations", BasicUsername, BasicPassword, CSRF_NONCE);
 
 
 
@@ -1374,8 +1392,71 @@ TransferID varchar(MAX),
                             }
 
                         }
-                        
-                        
+                        if (sourceApi.Contains("CADDocumentMgmt"))
+                        {
+                            var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
+                            string partCode = "";
+                            if (cadAssociationsJSON != null)
+                            {
+                                var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                                if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
+                                {
+                                    var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                                    string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                                    Regex regex = new Regex(pattern);
+                                    Match match = regex.Match(CADAssociations);
+
+                                    if (match.Success)
+                                    {
+                                        partCode = match.Groups[1].Value;
+
+                                    }
+
+                                }
+
+                            }
+
+                            try
+                            {
+
+                                if (cadJSON2 != null || cadJSON2 != "")
+                                {
+
+                                    var representation = CADResponse.Representations.SingleOrDefault();
+                                    if (representation != null)
+                                    {
+                                        if (representation.AdditionalFiles != null && representation.AdditionalFiles.Count > 0)
+                                        {
+
+                                            foreach (var item in CADResponse.Representations.SingleOrDefault().AdditionalFiles)
+                                        {
+
+                                        if (item != null)
+                                        {
+
+                                            //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
+                                            if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF"))
+                                            {
+                                                var pdfUrl = item.URL;
+                                                var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
+                                                await SendPdfToCustomerFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
+                                            }
+                                        }
+                                        }
+                                    }
+                                    }
+
+
+                                }
+
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                            // If LastUpdateTimestamp has not changed, do nothing
+                        }
+
                         //if (sourceApi.Contains("CADDocumentMgmt"))
                         //{
                         //    var CADResponse = JsonConvert.DeserializeObject<TeknikResim>(cadJSON);
@@ -1393,9 +1474,9 @@ TransferID varchar(MAX),
                         //        if (match.Success)
                         //        {
                         //             partCode = match.Groups[1].Value;
-                  
+
                         //        }
-                            
+
                         //   }
 
                         //    }
@@ -1696,14 +1777,14 @@ TransferID varchar(MAX),
                 sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = '{state}' and [latestiterationInfo] = 1  and [idA3view] =  {resolvedViewKod.idA2A2}  and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
             }
 
-            //if (sourceApi.Contains("CADDocumentMgmt"))
-            //{
+            if (sourceApi.Contains("CADDocumentMgmt"))
+            {
 
 
-            //    sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
+                sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.EPMDocument WHERE [statestate] = '{state}' and [latestiterationInfo] = 1 and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
 
 
-            //}
+            }
 
 
 
@@ -1728,10 +1809,10 @@ TransferID varchar(MAX),
                         json = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
 
-                    //if (sourceApi.Contains("CADDocumentMgmt"))
-                    //{
-                    //    json = await windchillApiService.GetApiData(ServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
-                    //}
+                    if (sourceApi.Contains("CADDocumentMgmt"))
+                    {
+                        json = await windchillApiService.GetApiData(ServerName, $"{sourceApi + partItem.idA2A2}')", BasicUsername, BasicPassword, CSRF_NONCE);
+                    }
 
 
 
@@ -3156,7 +3237,7 @@ TransferID varchar(MAX),
         #region PDF Download Settings
 
 
-        private async Task SendPdfToCustomerFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, TeknikResim CADResponse, string stateType,string partCode,WTUsers userEmail)
+        private async Task SendPdfToCustomerFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, RootObject CADResponse, string stateType,string partCode)
         {
             try
             {
@@ -3234,6 +3315,7 @@ TransferID varchar(MAX),
                         State = CADResponse.State,
                         cADContent = new CADContent
                         {
+                            //FileData = await DownloadPdfAsync(pdfUrl),
                             FileData = await DownloadPdfAsync(pdfUrl),
                             Name = pdfFileName
                         },
@@ -3320,15 +3402,61 @@ TransferID varchar(MAX),
                 //MessageBox.Show($"Hata: {ex.Message}");
             }
         }
+
+        private async Task DownloadAndSavePdfAsync(string pdfUrl)
+        {
+            try
+            {
+                // HttpClient oluþtur
+                using var httpClient = new HttpClient();
+
+                // PDF'yi indir
+                using (var response = await httpClient.GetAsync(pdfUrl))
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        // Dosya adýný URL'den al
+                        var fileName = Path.GetFileName(pdfUrl);
+
+                        // PDF dosyasýný belirtilen dizine kaydet
+                        string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
+                        string savePath = Path.Combine(saveDirectory, fileName);
+
+                        // Klasör yoksa oluþtur
+                        if (!Directory.Exists(saveDirectory))
+                        {
+                            Directory.CreateDirectory(saveDirectory);
+                        }
+
+                        using (var fileStream = new FileStream(savePath, FileMode.Create))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+                    }
+                    else
+                    {
+                        // Hata durumunu ele al
+                        throw new Exception($"PDF indirme baþarýsýz. StatusCode: {response.StatusCode}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Hata durumunu ele al 
+                throw new Exception($"PDF indirme hatasý: {ex.Message}");
+            }
+        }
+
+
         private async Task<byte[]> DownloadPdfAsync(string pdfUrl)
         {
             try
             {
 
-
                 string directoryPath = "Configuration";
-                string fileName = "appsettings.json";
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+                string fileName2 = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);   
+                
 
                 //string directoryPath2 = "Configuration";
                 //string fileName2 = "ApiSendDataSettings.json";
@@ -3356,8 +3484,110 @@ TransferID varchar(MAX),
                 _httpClient1.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
                 using (var response = await _httpClient1.GetAsync(pdfUrl))
                 {
+                    //if (response.IsSuccessStatusCode)
+                    //{
+                    //    var dosyaAdi = Path.GetFileName(new Uri(pdfUrl).LocalPath);
+
+                    //    // PDF dosyasýný belirtilen dizine kaydet
+                    //    string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
+                    //    string savePath = Path.Combine(saveDirectory, dosyaAdi);
+
+                    //    // Klasör yoksa oluþtur
+                    //    if (!Directory.Exists(saveDirectory))
+                    //    {
+                    //        Directory.CreateDirectory(saveDirectory);
+                    //    }
+
+
+
+
+
+
+                    //    var Ocr = new IronTesseract();
+                    //    using (var Input = new OcrInput(savePath)) 
+                    //    {
+
+                    //        var Result = Ocr.Read(Input);
+                    //        var pageContent = Result.Text;
+
+                    //        // Sayfa numarasýný ayýkla
+                    //        Match pageMatch = Regex.Match(pageContent, @"SHEET\s+(\d+)\s+OF\s+(\d+)");
+                    //        if (pageMatch.Success)
+                    //        {
+                    //            int sheetNumber = int.Parse(pageMatch.Groups[1].Value);
+                    //            int totalSheets = int.Parse(pageMatch.Groups[2].Value);
+
+                    //            Console.WriteLine($"Sheet {sheetNumber} of {totalSheets}");
+                    //        }
+                    //    }
+
+
+
+                    //    return await response.Content.ReadAsByteArrayAsync();
+                    //}
+
+
                     if (response.IsSuccessStatusCode)
                     {
+                        var dosyaAdi = Path.GetFileName(new Uri(pdfUrl).LocalPath);
+
+                        // PDF dosyasýný belirtilen dizine kaydet
+                        string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
+                        string savePath = Path.Combine(saveDirectory, dosyaAdi);
+
+                        // Klasör yoksa oluþtur
+                        if (!Directory.Exists(saveDirectory))
+                        {
+                            Directory.CreateDirectory(saveDirectory);
+                        }
+
+                        // PDF dosyasýný kaydet
+                        await using (var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write))
+                        {
+                            await response.Content.CopyToAsync(fileStream);
+                        }
+
+
+                        byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+                        var stream = new MemoryStream(bytes);
+                        //PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
+                        // PDF dosyasýný oku
+                        using (var pdfDocument = PdfiumViewer.PdfDocument.Load(stream))
+                        {
+                            // Tüm sayfalar için OCR iþlemi yap
+                            for (int i = 0; i < pdfDocument.PageCount; i++)
+                            {
+                                using (var page = pdfDocument.Render(i, 300, 300, true))
+                                {
+                                    using (var bitmap = new Bitmap(page))
+                                    {
+                                        // OCR iþlemi
+                                        using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
+                                        {
+                                            using (var img = BitmapToPixConverter.Convert(bitmap))
+                                            {
+                                                using (var tesseractPage = engine.Process(img))
+                                                {
+                                                    var text = tesseractPage.GetText();
+
+                                                    // Sayfa numarasýný ayýkla
+
+                                                    Match pageMatch = Regex.Match(text, @"SHEET\s+([0-9]+)\s+OF\s+([0-9]+)", RegexOptions.IgnoreCase);
+                                                    if (pageMatch.Success)
+                                                    {
+                                                        int sheetNumber = int.Parse(pageMatch.Groups[1].Value);
+                                                        int totalSheets = int.Parse(pageMatch.Groups[2].Value);
+
+                                                        Console.WriteLine($"Sheet {sheetNumber} of {totalSheets}");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         return await response.Content.ReadAsByteArrayAsync();
                     }
                     else
@@ -3375,7 +3605,21 @@ TransferID varchar(MAX),
         }
 
 
-        private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint, CADContent CADViewResponseContentInfo)
+    
+
+    public static class BitmapToPixConverter
+    {
+        public static Pix Convert(Bitmap bitmap)
+        {
+            var tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".bmp");
+            bitmap.Save(tempFile);
+            var pix = Pix.LoadFromFile(tempFile);
+            File.Delete(tempFile);
+            return pix;
+        }
+    }
+
+    private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint, CADContent CADViewResponseContentInfo)
         {
             try
             {
@@ -3873,7 +4117,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                         {
                             TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
-                            IsCancel = true
+                            isCancel = false
                         }
                     }).ToList()
                 };
@@ -4050,7 +4294,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                         {
                             TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
-                            IsCancel = true
+                            isCancel = false
                         }
                     }).ToList()
                 };
@@ -4157,7 +4401,7 @@ new
                         {
                             TransferID = alternate.AlternatePart.TransferID,
                             Number = alternate.AlternatePart.Number,
-                            IsCancel = false
+                            isCancel = true
                         }
                     }).ToList()
                 };
