@@ -54,8 +54,12 @@ using IronOcr;
 using Tesseract;
 using static Humanizer.In;
 using PdfSharp.Pdf;
-using PdfiumViewer;
+using PdfiumViewer; 
 using PdfDocument = PdfiumViewer.PdfDocument;
+using IronPdf.Pages;
+using PdfSharp.Drawing;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Vision.V1;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -1038,16 +1042,16 @@ TransferID varchar(MAX),
                                 }
                             }
 
-                            //else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
-                            //{
-                            //    if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART" || state == "SEND_FILE" || state == "CADSTOK")
-                            //    {
-                            //        apiAdres = item["api_adres"].ToString();
-                            //        anaKaynak = item["ana_kaynak"].ToString();
-                            //        endPoint = item["alt_endpoint"].ToString();
-                            //        apiFullUrl = apiAdres + "/" + anaKaynak;
-                            //    }
-                            //}
+                            else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
+                            {
+                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART" || state == "SEND_FILE" || state == "CADSTOK")
+                                {
+                                    apiAdres = item["api_adres"].ToString();
+                                    anaKaynak = item["ana_kaynak"].ToString();
+                                    endPoint = item["alt_endpoint"].ToString();
+                                    apiFullUrl = apiAdres + "/" + anaKaynak;
+                                }
+                            }
 
                             if (sablonDataDurumu == "true" && state != "INWORK")
                             {
@@ -1097,6 +1101,7 @@ TransferID varchar(MAX),
                 if (ilkCalistirmaProdMgmt)
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                    //formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if (state == "ALTERNATE_RELEASED")
                     {
@@ -1243,22 +1248,58 @@ TransferID varchar(MAX),
 
                             bool alternatePartControlBoolType = false;
                             bool alternatePartControlBoolType2 = false;
+                            bool alternatePartStateControlBoolType1 = false;
+                            bool alternatePartStateControlBoolType2 = false;
 
                             foreach (var item in response.Alternates)
                             {
                                 var alternateParcaControl = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
                          $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [idA2A2] = @idA2A2",
                          new { idA2A2 = item.AlternatePart.ID.Split(':')[2] });
-                                alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value);
+                                alternatePartControlBoolType = alternateParcaControl.Any(x => x.statestate == item.AlternatePart.State.Value || item.AlternatePart.State.Value == "INWORK");
 
                                 var alternateParcaControl2 = await conn.QueryAsync<WTChangeOrder2MasterViewModel>(
                          $"SELECT [idA2A2],[statestate], [ProcessTimestamp], [updateStampA2] FROM [{catalogValue}].[Change_Notice_LogTable] WHERE [WTPartNumber] = @WTPartNumber",
                          new { WTPartNumber = item.AlternatePart.Number });
-                                alternatePartControlBoolType2 = alternateParcaControl2.Any(x => x.statestate == item.AlternatePart.State.Value);
+                                alternatePartControlBoolType2 = alternateParcaControl2.Any(x => x.statestate == item.AlternatePart.State.Value || item.AlternatePart.State.Value == "INWORK");
                             }
 
 
-                            if (response.State.Value == "RELEASED" && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && (alternatePartControlBoolType || alternatePartControlBoolType2))
+                            var alternateStateControl1 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
+                                $"SELECT [idA2A2], [statestate], [idA3masterReference], [updateStampA2] FROM [{catalogValue}].[WTPart] WHERE [idA2A2] = @idA2A2",
+                                new { idA2A2 = response.ID.Split(':')[2] });
+
+                            var idA3masterReference = alternateStateControl1.idA3masterReference;
+
+                            var alternateStateControl2 = await conn.QueryAsync<AlternateStateConntrolClass>(
+                                $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3masterReference] = @idA3masterReference AND latestiterationInfo = 1 AND statecheckoutInfo = 'c/i'",
+                                new { idA3masterReference });
+
+                            var alternateStateControl3 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
+                                @"SELECT * 
+      FROM [PLM1].[PLM1].[WTPart] 
+      WHERE idA3masterReference = @idA3masterReference
+        AND statecheckoutInfo = 'c/i' 
+        AND latestiterationInfo = 1 
+        AND versionIdA2versionInfo = (
+            SELECT MAX(versionIdA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+            WHERE idA3masterReference = @idA3masterReference
+        )
+        AND versionLevelA2versionInfo = (
+            SELECT MAX(versionLevelA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+            WHERE idA3masterReference = @idA3masterReference
+        )",
+                                new { idA3masterReference });
+
+
+                            alternatePartStateControlBoolType1 = alternateStateControl2.Any(x => x.statestate == "RELEASED") && alternateStateControl3.statestate != "CANCELLED";
+
+
+
+                            //if (response.State.Value == "RELEASED" && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && (alternatePartControlBoolType || alternatePartControlBoolType2))                           
+                            if (alternatePartStateControlBoolType1 && response.Alternates != null && response.Alternates.Count != 0 && state == "ALTERNATE_RELEASED" && (alternatePartControlBoolType || alternatePartControlBoolType2))
                             {
 
                                 foreach (var item in response.Alternates)
@@ -1351,10 +1392,41 @@ TransferID varchar(MAX),
 									 */
 
 
+                                    var alternateStateControl4 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
+                       $"SELECT [idA2A2], [statestate], [idA3masterReference], [updateStampA2] FROM [{catalogValue}].[WTPart] WHERE [idA2A2] = @idA2A2",
+                       new { idA2A2 = item.AlternatePart.ID.Split(':')[2] });
+
+                                    var idA3masterReference2 = alternateStateControl4.idA3masterReference;
+
+                                    var alternateStateControl5 = await conn.QueryAsync<AlternateStateConntrolClass>(
+                                        $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3masterReference] = @idA3masterReference2 AND latestiterationInfo = 1 AND statecheckoutInfo = 'c/i'",
+                                        new { idA3masterReference2 });
+
+                                    var alternateStateControl6 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
+                                        @"SELECT * 
+      FROM [PLM1].[PLM1].[WTPart] 
+      WHERE idA3masterReference = @idA3masterReference2
+        AND statecheckoutInfo = 'c/i' 
+        AND latestiterationInfo = 1 
+        AND versionIdA2versionInfo = (
+            SELECT MAX(versionIdA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+            WHERE idA3masterReference = @idA3masterReference2
+        )
+        AND versionLevelA2versionInfo = (
+            SELECT MAX(versionLevelA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+            WHERE idA3masterReference = @idA3masterReference2
+        )",
+                                        new { idA3masterReference2 });
+
+
+                                    //alternatePartStateControlBoolType2 = alternateStateControl2.Any(x => x.statestate == "RELEASED") && alternateStateControl3.statestate != "CANCELLED";
+                                    alternatePartStateControlBoolType2 = alternateStateControl5.Any(x => x.statestate == "RELEASED") && alternateStateControl6.statestate != "CANCELLED";
 
 
 
-                                    if (response.State.Value == "RELEASED" && item.AlternatePart.State.Value == "RELEASED" && (alternateLinkLogs == null))
+                                    if (alternatePartStateControlBoolType1 && alternatePartStateControlBoolType2 && (item.AlternatePart.State.Value == "RELEASED" || item.AlternatePart.State.Value == "INWORK") && (alternateLinkLogs == null))
                                     {
                                         await RELEASED_AlternatesInsertLogAndPostDataAsync(kekw, item, catalogValue, conn, apiFullUrl, apiURL, endPoint);
                                     }
@@ -1399,9 +1471,13 @@ TransferID varchar(MAX),
                             if (cadAssociationsJSON != null)
                             {
                                 var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
-                                if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
+                                if (CADAssociationsResponse != null && CADAssociationsResponse.Value != null && CADAssociationsResponse.Value.Count > 0)
                                 {
-                                    var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                                    var firstAssociation = CADAssociationsResponse.Value.SingleOrDefault();
+                                    if (firstAssociation != null && firstAssociation.ID != null)
+                                    {
+
+                                        var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
                                     string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
                                     Regex regex = new Regex(pattern);
                                     Match match = regex.Match(CADAssociations);
@@ -1410,6 +1486,7 @@ TransferID varchar(MAX),
                                     {
                                         partCode = match.Groups[1].Value;
 
+                                    }
                                     }
 
                                 }
@@ -1422,27 +1499,34 @@ TransferID varchar(MAX),
                                 if (cadJSON2 != null || cadJSON2 != "")
                                 {
 
-                                    var representation = CADResponse.Representations.SingleOrDefault();
+                                    //var representation = CADResponse.Representations;
+
+                                    foreach (var representation in CADResponse.Representations)
+                                    {
+
+
                                     if (representation != null)
                                     {
                                         if (representation.AdditionalFiles != null && representation.AdditionalFiles.Count > 0)
                                         {
 
-                                            foreach (var item in CADResponse.Representations.SingleOrDefault().AdditionalFiles)
+                                            foreach (var item in representation.AdditionalFiles)
                                         {
 
                                         if (item != null)
                                         {
 
                                             //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
-                                            if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF"))
+                                            if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF") || item.Format == "PDF")
                                             {
                                                 var pdfUrl = item.URL;
-                                                var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
+                                                //var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
+                                                var pdfFileName = item.Label;
                                                 await SendPdfToCustomerFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
                                             }
                                         }
                                         }
+                                    }
                                     }
                                     }
 
@@ -1558,23 +1642,49 @@ TransferID varchar(MAX),
                     {
                         foreach (var item in newAddedData)
                         {
-                            var wtpartAlternatePart = await conn.QueryFirstOrDefaultAsync<dynamic>(
-           $@"
-    SELECT * 
-    FROM [{catalogValue}].[WTPart] 
-    WHERE [idA3MasterReference] = @idA3MasterReference 
-    AND latestiterationInfo = '1' 
-    AND statestate = 'RELEASED'
-    AND versionIdA2versionInfo = (
-        SELECT MAX(versionIdA2versionInfo) 
-        FROM [{catalogValue}].[WTPart]
-        WHERE [idA3MasterReference] = @idA3MasterReference
-    )",
-           new { idA3MasterReference = item.IdA3B5 });
+                            //                        var wtpartAlternatePart = await conn.QuerySingleAsync<dynamic>(
+                            //       $@"
+                            //SELECT * 
+                            //FROM [{catalogValue}].[WTPart] 
+                            //WHERE [idA3MasterReference] = @idA3MasterReference 
+                            //AND latestiterationInfo = '1' 
+                            //AND statestate = 'RELEASED'
+                            //AND versionIdA2versionInfo = (
+                            //    SELECT MAX(versionIdA2versionInfo) 
+                            //    FROM [{catalogValue}].[WTPart]
+                            //    WHERE [idA3MasterReference] = @idA3MasterReference
+                            //)",
+                            //       new { idA3MasterReference = item.IdA3B5 });
+
+                            var wtpartAlternatePart = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
+                                     @"SELECT * 
+      FROM [PLM1].[PLM1].[WTPart] 
+     WHERE [idA3MasterReference] = @idA3MasterReference
+        AND statecheckoutInfo = 'c/i' 
+        AND latestiterationInfo = 1 
+        AND versionIdA2versionInfo = (
+            SELECT MAX(versionIdA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+           WHERE [idA3MasterReference] = @idA3MasterReference
+        )
+        AND versionLevelA2versionInfo = (
+            SELECT MAX(versionLevelA2versionInfo) 
+            FROM [PLM1].[PLM1].[WTPart]
+            WHERE [idA3MasterReference] = @idA3MasterReference
+        )",
+                                    new { idA3MasterReference = item.IdA3B5 });
+
+
+
+
+                            var wtpartStateControl = await conn.QueryAsync<dynamic>(
+                                $@"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference AND latestiterationInfo = '1'"
+                                , new { idA3MasterReference = item.IdA3B5 });
 
 
                             // Parçanýn RELEASED durumda olup olmadýðýný kontrol edin
-                            if (wtpartAlternatePart != null && wtpartAlternatePart.statestate == "RELEASED")
+                            //if (wtpartAlternatePart != null && wtpartAlternatePart.statestate == "RELEASED" )
+                            if (wtpartStateControl != null  && wtpartStateControl.Any(x => x.statestate == "RELEASED") && wtpartAlternatePart.statestate != "CANCELLED")
                             {
                                 // Yeni eklenen verileri WTPartAlternateLink_ControlLog tablosuna ekleyin
                                 await conn.ExecuteAsync($@"
@@ -1656,6 +1766,7 @@ TransferID varchar(MAX),
                             var wtpart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
             $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
             new { idA3MasterReference = item.IdA3A5 }));
+
 
                             var wtpartAlternatePart = (await conn.QueryFirstOrDefaultAsync<dynamic>(
             $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
@@ -3452,12 +3563,25 @@ TransferID varchar(MAX),
         {
             try
             {
+                //pdfUrl = "http://plm-1.designtech.com/Windchill/servlet/WindchillAuthGW/com.ptc.windchill.enterprise.wvs.saveWVSObject.utils.SaveWVSObjectHelper/saveWVSObject/PDF_P-00000119327_prt.pdf?annotations=true&oid=OR%3Awt.content.ApplicationData%3A107583206&fileType=pdf&u8=1";
 
                 string directoryPath = "Configuration";
                 string fileName2 = "appsettings.json";
-                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);   
-                
+                string fileName3 = "scanpdf-425313-50117e72a809.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);
+                string filePathPDFScan = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName3);
+                byte[] pdfBytes;
 
+
+                string jsonFilePath = filePathPDFScan;
+                GoogleCredential credential = GoogleCredential.FromFile(jsonFilePath);
+
+                // Vision API istemcisini oluþturun
+                var clientBuilder = new ImageAnnotatorClientBuilder
+                {
+                    CredentialsPath = jsonFilePath
+                };
+                var client = clientBuilder.Build();
                 //string directoryPath2 = "Configuration";
                 //string fileName2 = "ApiSendDataSettings.json";
 
@@ -3484,48 +3608,7 @@ TransferID varchar(MAX),
                 _httpClient1.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
                 using (var response = await _httpClient1.GetAsync(pdfUrl))
                 {
-                    //if (response.IsSuccessStatusCode)
-                    //{
-                    //    var dosyaAdi = Path.GetFileName(new Uri(pdfUrl).LocalPath);
-
-                    //    // PDF dosyasýný belirtilen dizine kaydet
-                    //    string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
-                    //    string savePath = Path.Combine(saveDirectory, dosyaAdi);
-
-                    //    // Klasör yoksa oluþtur
-                    //    if (!Directory.Exists(saveDirectory))
-                    //    {
-                    //        Directory.CreateDirectory(saveDirectory);
-                    //    }
-
-
-
-
-
-
-                    //    var Ocr = new IronTesseract();
-                    //    using (var Input = new OcrInput(savePath)) 
-                    //    {
-
-                    //        var Result = Ocr.Read(Input);
-                    //        var pageContent = Result.Text;
-
-                    //        // Sayfa numarasýný ayýkla
-                    //        Match pageMatch = Regex.Match(pageContent, @"SHEET\s+(\d+)\s+OF\s+(\d+)");
-                    //        if (pageMatch.Success)
-                    //        {
-                    //            int sheetNumber = int.Parse(pageMatch.Groups[1].Value);
-                    //            int totalSheets = int.Parse(pageMatch.Groups[2].Value);
-
-                    //            Console.WriteLine($"Sheet {sheetNumber} of {totalSheets}");
-                    //        }
-                    //    }
-
-
-
-                    //    return await response.Content.ReadAsByteArrayAsync();
-                    //}
-
+                  
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -3551,44 +3634,124 @@ TransferID varchar(MAX),
                         byte[] bytes = await response.Content.ReadAsByteArrayAsync();
                         var stream = new MemoryStream(bytes);
                         //PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
-                        // PDF dosyasýný oku
+                    
+                        // PDF'yi yükle
+                    
                         using (var pdfDocument = PdfiumViewer.PdfDocument.Load(stream))
                         {
-                            // Tüm sayfalar için OCR iþlemi yap
-                            for (int i = 0; i < pdfDocument.PageCount; i++)
+                            // Toplam sayfa sayýsýný belirle
+                            int totalPages = pdfDocument.PageCount;
+
+                            // Sayfalarý iþle
+                            List<Tuple<int, string, Bitmap>> sayfaBilgileri = new List<Tuple<int, string, Bitmap>>();
+                            for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
                             {
-                                using (var page = pdfDocument.Render(i, 300, 300, true))
+                                // Sayfayý resim olarak dönüþtür
+                                Bitmap pageImage = ConvertPdfPageToImage(pdfDocument, pageIndex);
+
+
+
+
+                                System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(689, 550, 114, 14);
+
+                                Bitmap croppedImage = CropImage(pageImage, cropArea);
+
+                                // PNG formatýna dönüþtür ve kaydet
+                                string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"croppedImage-{pageIndex}-.png");
+                                croppedImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+
+                                // Görüntü iþleme
+                                //Bitmap processedImage = PreprocessImage(croppedImage);
+
+                                //Kýrpýlmýþ bölgeyi OCR ile tarat
+                                string ocrResult = PerformOcr(croppedImage);
+                                string sheetInfo = ExtractSheetInfo(ocrResult);
+
+                                // Sayfa bilgisini çýkar
+                                //string sheetInfo = ExtractSheetInfo(ocrResult);
+
+                             
+                                // Sayfa bilgisini ve resmi listeye ekle
+                                sayfaBilgileri.Add(Tuple.Create(pageIndex + 1, sheetInfo, pageImage));
+                            
+
+                                //// Belleði temizle
+                                croppedImage.Dispose();
+                            }
+
+                            // Sayfalarý sheet numarasýna göre sýrala
+                            sayfaBilgileri.Sort((a, b) =>
+                            {
+                                // Boþ dize kontrolü ekleyerek güvenli dönüþüm yapýn
+                                string[] aParts = a.Item2.Split(' ');
+                                string[] bParts = b.Item2.Split(' ');
+
+                                if (aParts.Length > 0 && bParts.Length > 0)
                                 {
-                                    using (var bitmap = new Bitmap(page))
+                                    if (int.TryParse(aParts[0], out int aNumber) && int.TryParse(bParts[0], out int bNumber))
                                     {
-                                        // OCR iþlemi
-                                        using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
-                                        {
-                                            using (var img = BitmapToPixConverter.Convert(bitmap))
-                                            {
-                                                using (var tesseractPage = engine.Process(img))
-                                                {
-                                                    var text = tesseractPage.GetText();
-
-                                                    // Sayfa numarasýný ayýkla
-
-                                                    Match pageMatch = Regex.Match(text, @"SHEET\s+([0-9]+)\s+OF\s+([0-9]+)", RegexOptions.IgnoreCase);
-                                                    if (pageMatch.Success)
-                                                    {
-                                                        int sheetNumber = int.Parse(pageMatch.Groups[1].Value);
-                                                        int totalSheets = int.Parse(pageMatch.Groups[2].Value);
-
-                                                        Console.WriteLine($"Sheet {sheetNumber} of {totalSheets}");
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        return aNumber - bNumber;
                                     }
                                 }
+
+                                // Varsayýlan olarak sýralamada deðiþiklik yapmayýn
+                                return 0;
+                            });
+
+                            //// Sayfalarý sheet numarasýna göre sýrala
+                            //sayfaBilgileri.Sort((a, b) => int.Parse(a.Item2.Split(' ')[0]) - int.Parse(b.Item2.Split(' ')[0]));
+
+
+                            // Yeni PDF oluþtur
+                            using (PdfSharp.Pdf.PdfDocument newPdfDocument = new PdfSharp.Pdf.PdfDocument())
+                            {
+                                foreach (var sayfaBilgisi in sayfaBilgileri)
+                                {
+                                    Bitmap pageImage = sayfaBilgisi.Item3;
+                                    PdfSharp.Pdf.PdfPage pdfPage = newPdfDocument.AddPage();
+                                    pdfPage.Width = XUnit.FromPoint(pageImage.Width);
+                                    pdfPage.Height = XUnit.FromPoint(pageImage.Height);
+
+                                    using (XGraphics gfx = XGraphics.FromPdfPage(pdfPage))
+                                    {
+                                        using (MemoryStream ms = new MemoryStream())
+                                        {
+                                            pageImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                                            XImage xImage = XImage.FromStream(ms);
+                                            //gfx.DrawImage(xImage, 0, 0);
+
+                                            // Görüntüyü tam sayfa boyutuna sýðdýrmak için `DrawImage` kullanýn
+                                            gfx.DrawImage(xImage, 0, 0, pdfPage.Width, pdfPage.Height);
+                                        }
+                                    }
+
+                                    // Belleði temizle
+                                    pageImage.Dispose();
+                                }
+
+                                // Yeni PDF'yi kaydet
+                                using (MemoryStream ms = new MemoryStream())
+                                {
+                                    newPdfDocument.Save(ms, false);
+                                    pdfBytes = ms.ToArray();
+
+                                    // pdfBytes adlý byte dizisini API'ye gönderin
+                                }
+                                //newPdfDocument.Save(outputPdfPath);
+                                Console.WriteLine("PDF baþarýyla sýralandý ve kaydedildi.");
                             }
+
                         }
 
-                        return await response.Content.ReadAsByteArrayAsync();
+
+                        var content2 = new ByteArrayContent(pdfBytes);
+
+                        // Dosya adýný Content-Disposition baþlýðýna ekleyin
+                        content2.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                        {
+                            FileName = dosyaAdi // Orijinal dosya adýný kullanýn
+                        };
+                        return pdfBytes;
                     }
                     else
                     {
@@ -3605,21 +3768,291 @@ TransferID varchar(MAX),
         }
 
 
-    
 
-    public static class BitmapToPixConverter
-    {
-        public static Pix Convert(Bitmap bitmap)
+
+        #region PDF SIRALI YAPMA AYARLARI VS.
+        private static Bitmap ResizeImage(Bitmap image, int width, int height)
         {
-            var tempFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".bmp");
-            bitmap.Save(tempFile);
-            var pix = Pix.LoadFromFile(tempFile);
-            File.Delete(tempFile);
-            return pix;
+            Bitmap resizedImage = new Bitmap(width, height);
+            using (Graphics g = Graphics.FromImage(resizedImage))
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.DrawImage(image, 0, 0, width, height);
+            }
+            return resizedImage;
         }
-    }
+        public static Bitmap ConvertPdfPageToImage(PdfiumViewer.PdfDocument pdfDocument, int pageIndex)
+        {
+            using (var page = pdfDocument.Render(pageIndex, 600, 600, true))
+            {
+                return new Bitmap(page);
+            }
+        }
 
-    private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint, CADContent CADViewResponseContentInfo)
+        public static Bitmap CropImage(Bitmap source, System.Drawing.Rectangle cropArea)
+        {
+            Bitmap croppedImage = new Bitmap(cropArea.Width, cropArea.Height);
+
+            using (Graphics g = Graphics.FromImage(croppedImage))
+            {
+                g.DrawImage(source, new System.Drawing.Rectangle(0, 0, cropArea.Width, cropArea.Height), cropArea, GraphicsUnit.Pixel);
+            }
+
+            return croppedImage;
+        }
+
+
+
+        // Görüntü ön iþleme: Gri tonlama, binaryzasyon, kontrast artýrma
+        private static Bitmap PreprocessImage(Bitmap image)
+        {
+            // Gri tonlamaya çevirme
+            Bitmap grayImage = new Bitmap(image.Width, image.Height);
+            using (Graphics g = Graphics.FromImage(grayImage))
+            {
+                ColorMatrix colorMatrix = new ColorMatrix(new float[][]
+                {
+                new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
+                new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
+                new float[] { 0, 0, 0, 1, 0 },
+                new float[] { 0, 0, 0, 0, 1 }
+                });
+
+                ImageAttributes attributes = new ImageAttributes();
+                attributes.SetColorMatrix(colorMatrix);
+
+                g.DrawImage(image, new System.Drawing.Rectangle(0, 0, image.Width, image.Height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, attributes);
+            }
+
+            // Kontrast artýrma ve binaryzasyon
+            for (int y = 0; y < grayImage.Height; y++)
+            {
+                for (int x = 0; x < grayImage.Width; x++)
+                {
+                    Color pixelColor = grayImage.GetPixel(x, y);
+                    int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+                    Color newColor = (grayValue > 128) ? Color.White : Color.Black;
+                    grayImage.SetPixel(x, y, newColor);
+                }
+            }
+
+            return grayImage;
+        }
+
+        public static Bitmap AdjustContrast(Bitmap image, double contrast)
+        {
+            // Kontrastý ayarlamak için bir formül
+            // Deðer 1'den büyükse kontrast artar, 1'den küçükse azalýr. 
+            double factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+            Bitmap contrastImage = new Bitmap(image.Width, image.Height);
+
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    Color c = image.GetPixel(x, y);
+                    int r = (int)Math.Min(Math.Max((c.R - 128) * factor + 128, 0), 255);
+                    int g = (int)Math.Min(Math.Max((c.G - 128) * factor + 128, 0), 255);
+                    int b = (int)Math.Min(Math.Max((c.B - 128) * factor + 128, 0), 255);
+                    contrastImage.SetPixel(x, y, Color.FromArgb(r, g, b));
+                }
+            }
+
+            return contrastImage;
+        }
+        public static Bitmap GrayscaleImage(Bitmap image)
+        {
+            Bitmap grayImage = new Bitmap(image.Width, image.Height);
+
+            using (Graphics g = Graphics.FromImage(grayImage))
+            {
+                // Gri tonlama
+                ColorMatrix colorMatrix = new ColorMatrix(
+                    new float[][]
+                    {
+                        new float[] { 0.3f, 0.3f, 0.3f, 0, 0 },
+                        new float[] { 0.59f, 0.59f, 0.59f, 0, 0 },
+                        new float[] { 0.11f, 0.11f, 0.11f, 0, 0 },
+                        new float[] { 0, 0, 0, 1, 0 },
+                        new float[] { 0, 0, 0, 0, 1 }
+                    });
+
+                ImageAttributes attributes = new ImageAttributes();
+                attributes.SetColorMatrix(colorMatrix);
+
+                g.DrawImage(image, new System.Drawing.Rectangle(0, 0, image.Width, image.Height),
+                    0, 0, image.Width, image.Height, GraphicsUnit.Pixel, attributes);
+            }
+
+            return grayImage;
+        }
+
+        public static Bitmap ApplyConvolutionFilter(Bitmap source, double[,] kernel)
+        {
+            Bitmap result = new Bitmap(source.Width, source.Height);
+
+            int kernelWidth = kernel.GetLength(1);
+            int kernelHeight = kernel.GetLength(0);
+            int kernelHalfWidth = kernelWidth / 2;
+            int kernelHalfHeight = kernelHeight / 2;
+
+            for (int y = kernelHalfHeight; y < source.Height - kernelHalfHeight; y++)
+            {
+                for (int x = kernelHalfWidth; x < source.Width - kernelHalfWidth; x++)
+                {
+                    double blue = 0.0, green = 0.0, red = 0.0;
+
+                    for (int filterY = 0; filterY < kernelHeight; filterY++)
+                    {
+                        for (int filterX = 0; filterX < kernelWidth; filterX++)
+                        {
+                            int calcX = x + filterX - kernelHalfWidth;
+                            int calcY = y + filterY - kernelHalfHeight;
+
+                            if (calcX >= 0 && calcX < source.Width && calcY >= 0 && calcY < source.Height)
+                            {
+                                Color sourcePixel = source.GetPixel(calcX, calcY);
+                                blue += (double)(sourcePixel.B) * kernel[filterY, filterX];
+                                green += (double)(sourcePixel.G) * kernel[filterY, filterX];
+                                red += (double)(sourcePixel.R) * kernel[filterY, filterX];
+                            }
+                        }
+                    }
+
+                    int resultR = (int)Math.Min(Math.Max((int)red, 0), 255);
+                    int resultG = (int)Math.Min(Math.Max((int)green, 0), 255);
+                    int resultB = (int)Math.Min(Math.Max((int)blue, 0), 255);
+
+                    result.SetPixel(x, y, Color.FromArgb(resultR, resultG, resultB));
+                }
+            }
+
+            return result;
+        }
+
+        public static Bitmap ThresholdImage(Bitmap image)
+        {
+            Bitmap thresholdImage = new Bitmap(image.Width, image.Height);
+
+            for (int y = 0; y < image.Height; y++)
+            {
+                for (int x = 0; x < image.Width; x++)
+                {
+                    Color c = image.GetPixel(x, y);
+                    byte gray = (byte)(0.3 * c.R + 0.59 * c.G + 0.11 * c.B);
+                    byte threshold = gray > 128 ? (byte)255 : (byte)0;
+                    thresholdImage.SetPixel(x, y, Color.FromArgb(threshold, threshold, threshold));
+                }
+            }
+
+            return thresholdImage;
+        }
+
+        public static string PerformOcr(Bitmap image)
+        {
+            string resultText = string.Empty;
+
+            // Görüntüyü ölçeklendir
+            Bitmap resizedImage = ResizeImage(image, image.Width * 10, image.Height * 10); // 10 kat büyütme
+
+            // Görüntü ön iþleme adýmý
+            Bitmap preprocessedImage = PreprocessImage(resizedImage);
+
+            // Tesseract OCR motorunu Ýngilizce dil desteðiyle baþlat ve sadece sayýlarý taný
+            using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
+            {
+                // Tesseract'ý sadece sayýlarý tanýyacak þekilde ayarla
+                //engine.SetVariable("tessedit_char_whitelist", "0123456789");
+
+                using (var img = BitmapToPixConverter(preprocessedImage))
+                {
+                    using (var page = engine.Process(img))
+                    {
+                        resultText = page.GetText();
+                    }
+                }
+            }
+
+            // OCR sonucunu düzelt
+            resultText = CorrectOcrResult(resultText);
+
+            return resultText;
+        }
+
+        private static string CorrectOcrResult(string ocrResult)
+        {
+            // Gerekirse burada ek düzeltmeler yapabilirsiniz
+            return ocrResult.Trim();
+        }
+
+
+        public static string ExtractSheetInfo(string ocrResult)
+        {
+            try
+            {
+
+
+                string sheetInfo = "";
+
+                // OCR sonucunu temizle
+                string cleanedOcrResult = ocrResult.Replace("\n", " ").Replace("\r", " ").Replace("\\", " ");
+                cleanedOcrResult = Regex.Replace(cleanedOcrResult, @"\s+", " "); // Fazla boþluklarý tek bir boþluk ile deðiþtir
+                cleanedOcrResult = Regex.Replace(cleanedOcrResult, @"[^a-zA-Z0-9\s]", ""); // Alfabetik ve sayýsal olmayan karakterleri kaldýr
+                cleanedOcrResult = cleanedOcrResult.Trim(); // Baþýndaki ve sonundaki boþluklarý kaldýr
+
+                // Temizlenmiþ metni kontrol edelim
+                Console.WriteLine("Temizlenmiþ OCR Sonucu: " + cleanedOcrResult);
+
+                // "SHEET" ile baþlayan ve "OF" veya "0F" ile biten kýsmý bul
+                string[] parts = cleanedOcrResult.Split(new string[] { "SHEET ", "SHEET", "sHEET", "1SHEET" }, StringSplitOptions.None);
+
+                // Ýlgilendiðimiz kýsým ikinci elemandýr (SHEET'ten sonraki)
+                if (parts.Length > 1)
+                {
+                    string sheetPart = parts[1].Trim();
+                    // "OF" veya "0F" ile biten kýsmý ayýr
+                    string[] sheetNumbers = sheetPart.Split(new string[] { "OF", "0F", "or" }, StringSplitOptions.None);
+
+                    if (sheetNumbers.Length > 1)
+                    {
+                        string sheetNumber = sheetNumbers[0].Trim();
+                        string totalSheets = sheetNumbers[1].Trim();
+
+                        // Ýstenen çýktýyý oluþtur
+                        sheetInfo = sheetNumber;
+                        //sheetInfo = $"SHEET {sheetNumber}";
+                        //sheetInfo = $"SHEET {sheetNumber} OF {totalSheets}";
+                    }
+                }
+
+                return sheetInfo;
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show("HATA : " + ex.Message);
+                return "err";
+            }
+        }
+
+        private static Pix BitmapToPixConverter(Bitmap image)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                image.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+                memoryStream.Position = 0;
+                return Pix.LoadFromMemory(memoryStream.ToArray());
+            }
+        }
+
+        #endregion
+
+
+
+
+
+        private async Task SendPdfToCustomerApiAsync(byte[] pdfBytes, string pdfFileName, string customerApiEndpoint, CADContent CADViewResponseContentInfo)
         {
             try
             {
@@ -4126,10 +4559,13 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                 ApiService _apiService = new ApiService();
 
 
-                response.Alternates = response.Alternates
-                    .Where(x => x.AlternatePart.State.Value == "RELEASED")
-                    .ToList();
+                //response.Alternates = response.Alternates
+                //    .Where(x => x.AlternatePart.State.Value == "RELEASED")
+                //    .ToList();
 
+                response.Alternates = response.Alternates
+               .Where(x => (x.AlternatePart.State.Value == "RELEASED" || x.AlternatePart.State.Value == "INWORK"))
+               .ToList();
 
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "RELEASED")
                 {
@@ -4137,6 +4573,11 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
                     response.Alternates.SingleOrDefault().AlternatePart.State.Display = "Aktif";
                 }
                 if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "CANCELLED")
+                {
+                    response.Alternates.SingleOrDefault().AlternatePart.State.Value = "P";
+                    response.Alternates.SingleOrDefault().AlternatePart.State.Display = "Pasif";
+                }
+                if (response.Alternates.SingleOrDefault().AlternatePart.State.Value == "INWORK")
                 {
                     response.Alternates.SingleOrDefault().AlternatePart.State.Value = "P";
                     response.Alternates.SingleOrDefault().AlternatePart.State.Display = "Pasif";
@@ -4302,7 +4743,7 @@ new { AnaParcaTransferID = response.TransferID, AnaParcaID = response.ID, AnaPar
 
                 ApiService _apiService = new ApiService();
                 response.Alternates = response.Alternates
-                    .Where(x => x.AlternatePart.State.Value == "RELEASED")
+                    .Where(x => (x.AlternatePart.State.Value == "RELEASED" || x.AlternatePart.State.Value == "INWORK"))
                     .ToList();
 
 

@@ -193,6 +193,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? Number { get; set; }
 		public string? Name { get; set; }
 		public string? Description { get; set; }
+		public string? Version { get; set; }
 		public State? State { get; set; }
 
 		public string? MuhasebeAdi { get; set; }
