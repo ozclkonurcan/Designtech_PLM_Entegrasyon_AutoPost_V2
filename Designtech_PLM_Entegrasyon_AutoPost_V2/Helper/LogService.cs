@@ -152,11 +152,23 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                 // Hata mesajı varsa ve daha önce eklenmişse eski logu bul ve kaldır
                 if (!string.IsNullOrEmpty(message))
                 {
-                    var existingErrorLog = dataArray.FirstOrDefault(log => log["Mesaj"] != null && log["Mesaj"].ToString() == message && log["ID"].ToString() == responseDataArray.ID && log["Number"].ToString() == responseDataArray.Number && log["Version"].ToString() == responseDataArray.Version);
+
+                    var existingErrorLog = dataArray
+    .FirstOrDefault(log => (log["Mesaj"]?.ToString() ?? "") == (message ?? "") &&
+                           (log["ID"]?.ToString() ?? "") == (responseDataArray?.ID ?? "") &&
+                           (log["Number"]?.ToString() ?? "") == (responseDataArray?.Number ?? "") &&
+                           (log["Version"]?.ToString() ?? "") == (responseDataArray?.Version ?? ""));
+
                     if (existingErrorLog != null)
                     {
                         dataArray.Remove(existingErrorLog);
                     }
+
+                    //var existingErrorLog = dataArray.FirstOrDefault(log => log["Mesaj"] != null && log["Mesaj"].ToString() == message && log["ID"].ToString() == responseDataArray.ID && log["Number"].ToString() == responseDataArray.Number && log["Version"].ToString() == responseDataArray.Version);
+                    //if (existingErrorLog != null)
+                    //{
+                    //    dataArray.Remove(existingErrorLog);
+                    //}
 
 
                     //var existingErrorLog = dataArray.FirstOrDefault(log => log["Mesaj"] != null && log["Mesaj"].ToString() == message && log["ID"].ToString() == responseDataArray.ID && log["Number"].ToString() == responseDataArray.Number && log["Version"].ToString() == responseDataArray.Version);

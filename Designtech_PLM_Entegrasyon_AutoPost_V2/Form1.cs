@@ -231,10 +231,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                     var catalogValue = jsonObject["DatabaseSchema"].ToString();
                     // Tablo varsa kontrol et
                     var tableExists = TableExists($"[{catalogValue}].Change_Notice_LogTable", connectionString);
+                    var tableExistsEnt_EPMDocState = TableExists($"[{catalogValue}].Ent_EPMDocState", connectionString);
+                    var tableExistsEnt_EPMDocStateCancelled = TableExists($"[{catalogValue}].Ent_EPMDocState_CANCELLED", connectionString);
                     //var tableExistsLOG = TableExists($"[{catalogValue}].WTPartAlternateLink_LOG", connectionString);
                     //var tableExistsControlLog = TableExists($"[{catalogValue}].WTPartAlternateLink_ControlLog", connectionString);
 
-                    if (!tableExists)
+                    if (!tableExists || !tableExistsEnt_EPMDocState || !tableExistsEnt_EPMDocStateCancelled)
                     {
                         // Tablo yoksa oluþtur
                         CreateTable(connectionString);
@@ -366,6 +368,89 @@ TransferID varchar(MAX),
   UpdateStampA2 datetime
 )
 ";
+
+
+
+  string createTableSql4 = @"
+    CREATE TABLE " + scheman + @".[Ent_EPMDocState](
+	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EPMDocID] [bigint] NULL,
+	[StateDegeri] [nvarchar](200) NULL,
+ CONSTRAINT [PK_Ent_EPMDocState] PRIMARY KEY CLUSTERED 
+(
+	[Ent_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY];
+";
+
+
+            string createTableTrigger4 = @"
+CREATE TRIGGER " + scheman + @".[EPMDokumanState]
+ON " + scheman + @".[EPMDocument] 
+AFTER UPDATE
+AS 
+BEGIN
+
+    DECLARE @EPMDocumentID BIGINT,
+		    @StateDegeri NVARCHAR(200);
+
+    SELECT @EPMDocumentID = idA2A2, @StateDegeri = statestate FROM inserted;
+
+    IF @StateDegeri = 'RELEASED'
+    BEGIN
+  
+        IF EXISTS (SELECT 1 FROM " + scheman + @".EPMReferenceLink WHERE idA3A5 = @EPMDocumentID AND referenceType = 'DRAWING')
+        BEGIN
+            INSERT INTO " + scheman + @".Ent_EPMDocState (EPMDocID, StateDegeri) VALUES (@EPMDocumentID, @StateDegeri);
+        END
+    END
+
+END;
+
+ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState];
+";
+
+
+            string createTableSql5 = @"
+    CREATE TABLE " + scheman + @".[Ent_EPMDocState_CANCELLED](
+	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EPMDocID] [bigint] NULL,
+	[StateDegeri] [nvarchar](200) NULL,
+ CONSTRAINT [PK_Ent_EPMDocState_CANCELLED] PRIMARY KEY CLUSTERED 
+(
+	[Ent_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY];
+";
+
+
+            string createTableTrigger5 = @"
+CREATE TRIGGER " + scheman + @".[EPMDokumanState_CANCELLED]
+ON " + scheman + @".[EPMDocument] 
+AFTER UPDATE
+AS 
+BEGIN
+
+    DECLARE @EPMDocumentID BIGINT,
+		    @StateDegeri NVARCHAR(200);
+
+    SELECT @EPMDocumentID = idA2A2, @StateDegeri = statestate FROM inserted;
+
+    IF @StateDegeri = 'CANCELLED'
+    BEGIN
+  
+        IF EXISTS (SELECT 1 FROM " + scheman + @".EPMReferenceLink WHERE idA3A5 = @EPMDocumentID AND referenceType = 'DRAWING')
+        BEGIN
+            INSERT INTO " + scheman + @".Ent_EPMDocState_CANCELLED (EPMDocID, StateDegeri) VALUES (@EPMDocumentID, @StateDegeri);
+        END
+    END
+
+END;
+
+ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCELLED];
+";
+
+
             #endregion
 
 
@@ -376,18 +461,75 @@ TransferID varchar(MAX),
                 connection.Open();
                 using (var command1 = new SqlCommand(createTableSql, connection))
                 {
+                    try
+                    {
                     command1.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
 
-                // Create the second table
                 using (var command2 = new SqlCommand(createTableSql2, connection))
                 {
+                    try
+                    {
                     command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
-                // Create the third table
                 using (var command2 = new SqlCommand(createTableSql3, connection))
                 {
-                    command2.ExecuteNonQuery();
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                using (var command2 = new SqlCommand(createTableSql4, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                } 
+                using (var command2 = new SqlCommand(createTableTrigger4, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                using (var command2 = new SqlCommand(createTableSql5, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                using (var command2 = new SqlCommand(createTableTrigger5, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }
@@ -1044,7 +1186,7 @@ TransferID varchar(MAX),
 
                             else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
                             {
-                                if (state == "RELEASED" || state == "INWORK" || state == "CANCELLED" || state == "ALTERNATE_RELEASED" || state == "REMOVED_PART" || state == "SEND_FILE" || state == "CADSTOK")
+                                if (state == "CANCELLED" || state == "SEND_FILE" )
                                 {
                                     apiAdres = item["api_adres"].ToString();
                                     anaKaynak = item["ana_kaynak"].ToString();
@@ -1134,7 +1276,15 @@ TransferID varchar(MAX),
 
                 formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
                 formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                if(state == "SEND_FILE")
+                {
                 sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
+                }
+                if(state == "CANCELLED")
+                {
+                sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState_CANCELLED WHERE [StateDegeri] = 'CANCELLED'";
+
+                }
 
 
             }
@@ -1276,19 +1426,19 @@ TransferID varchar(MAX),
                                 new { idA3masterReference });
 
                             var alternateStateControl3 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
-                                @"SELECT * 
-      FROM [PLM1].[PLM1].[WTPart] 
+                                $@"SELECT * 
+      FROM [{catalogValue}].[WTPart] 
       WHERE idA3masterReference = @idA3masterReference
         AND statecheckoutInfo = 'c/i' 
         AND latestiterationInfo = 1 
         AND versionIdA2versionInfo = (
             SELECT MAX(versionIdA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
             WHERE idA3masterReference = @idA3masterReference
         )
         AND versionLevelA2versionInfo = (
             SELECT MAX(versionLevelA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
             WHERE idA3masterReference = @idA3masterReference
         )",
                                 new { idA3masterReference });
@@ -1403,19 +1553,19 @@ TransferID varchar(MAX),
                                         new { idA3masterReference2 });
 
                                     var alternateStateControl6 = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
-                                        @"SELECT * 
-      FROM [PLM1].[PLM1].[WTPart] 
+                                        $@"SELECT * 
+      FROM [{catalogValue}].[WTPart] 
       WHERE idA3masterReference = @idA3masterReference2
         AND statecheckoutInfo = 'c/i' 
         AND latestiterationInfo = 1 
         AND versionIdA2versionInfo = (
             SELECT MAX(versionIdA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
             WHERE idA3masterReference = @idA3masterReference2
         )
         AND versionLevelA2versionInfo = (
             SELECT MAX(versionLevelA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
             WHERE idA3masterReference = @idA3masterReference2
         )",
                                         new { idA3masterReference2 });
@@ -1466,6 +1616,7 @@ TransferID varchar(MAX),
                         }
                         if (sourceApi.Contains("CADDocumentMgmt"))
                         {
+                            if(partItem.StateDegeri == "RELEASED") { 
                             var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
                             string partCode = "";
                             if (cadAssociationsJSON != null)
@@ -1510,14 +1661,16 @@ TransferID varchar(MAX),
                                         if (representation.AdditionalFiles != null && representation.AdditionalFiles.Count > 0)
                                         {
 
-                                            foreach (var item in representation.AdditionalFiles)
+                                            foreach (var item in representation.AdditionalFiles.Where(x => x.FileName.Contains(".pdf") || x.FileName.Contains(".PDF") || x.Format == "PDF"))
                                         {
 
                                         if (item != null)
                                         {
 
-                                            //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
-                                            if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF") || item.Format == "PDF")
+                                                       
+
+                                                        //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
+                                                        if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF") || item.Format == "PDF")
                                             {
                                                 var pdfUrl = item.URL;
                                                 //var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
@@ -1538,8 +1691,52 @@ TransferID varchar(MAX),
                             {
 
                             }
-                            // If LastUpdateTimestamp has not changed, do nothing
-                        }
+
+
+                            }
+
+                            if (partItem.StateDegeri == "CANCELLED")
+                            {
+                                try
+                                {
+
+                              
+                                var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
+
+
+                                var CADViewResponse = new TeknikResimCancel
+                                {
+                                    Number = CADResponse.Number,
+                                    Revizyon = CADResponse.Revision,
+                               
+                                };
+
+
+                                ApiService _apiService = new ApiService();
+
+
+
+                                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                                var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+                                await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+
+                                    LogService logService = new LogService(_configuration);
+
+                                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi.");
+
+                                    await conn.ExecuteAsync($@"
+        DELETE FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED]
+        WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogService logService = new LogService(_configuration);
+
+                                    logService.CreateJsonFileLog(ex.Message, "HATA");
+                                }
+                            }
+                                // If LastUpdateTimestamp has not changed, do nothing
+                            }
 
                         //if (sourceApi.Contains("CADDocumentMgmt"))
                         //{
@@ -1657,19 +1854,19 @@ TransferID varchar(MAX),
                             //       new { idA3MasterReference = item.IdA3B5 });
 
                             var wtpartAlternatePart = await conn.QuerySingleAsync<AlternateStateConntrolClass>(
-                                     @"SELECT * 
-      FROM [PLM1].[PLM1].[WTPart] 
+                                     $@"SELECT TOP 1* 
+      FROM [{catalogValue}].[WTPart] 
      WHERE [idA3MasterReference] = @idA3MasterReference
         AND statecheckoutInfo = 'c/i' 
         AND latestiterationInfo = 1 
         AND versionIdA2versionInfo = (
             SELECT MAX(versionIdA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
            WHERE [idA3MasterReference] = @idA3MasterReference
         )
         AND versionLevelA2versionInfo = (
             SELECT MAX(versionLevelA2versionInfo) 
-            FROM [PLM1].[PLM1].[WTPart]
+            FROM [{catalogValue}].[WTPart]
             WHERE [idA3MasterReference] = @idA3MasterReference
         )",
                                     new { idA3MasterReference = item.IdA3B5 });
@@ -3387,7 +3584,7 @@ TransferID varchar(MAX),
                     var partName = "";
                     var partNumber = "";
 
-                    if (partCode != null || partCode != "")
+                    if (!string.IsNullOrEmpty(partCode))
                     {
 
                     var SQL_WTPart = $"SELECT [idA3masterReference] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
@@ -3414,7 +3611,7 @@ TransferID varchar(MAX),
                     //    partNumber = "Number deðeri bulunamadý";
                     //}
 
-                    var CADViewResponseContentInfo = new TeknikResimViewModel
+                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
                     {
                         Number = CADResponse.Number,
                         Revizyon = CADResponse.Revision,
@@ -3423,22 +3620,19 @@ TransferID varchar(MAX),
                         ModifiedOn = CADResponse.LastModified,
                         AuthorizationDate = "",
                         ModifiedBy = CADResponse.ModifiedBy,
-                        State = CADResponse.State,
-                        cADContent = new CADContent
+                        state = 50,
+                        name = pdfFileName,
+                        content = await DownloadPdfAsync(pdfUrl),
+                        projectCode = "",
+                        relatedParts = new RelatedParts
                         {
-                            //FileData = await DownloadPdfAsync(pdfUrl),
-                            FileData = await DownloadPdfAsync(pdfUrl),
-                            Name = pdfFileName
-                        },
-                        dAD_WTPART_Iliþki = new CAD_WTPART_Iliþki
-                        {
-
                             RelatedPartName = partName,
-                            RelatedPartNumber = partNumber
+                            RelatedPartNumber = partNumber,
+                            isUpdateAndDelete = true,
                         }
+                     
 
                     };
-                    CADViewResponseContentInfo.State.Value = "50";
 
                     // PDF dosyasýný indir
                     //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
@@ -3475,9 +3669,9 @@ TransferID varchar(MAX),
                 }
                 catch (Exception ex)
                 {
-                    // Hata mesajýný veya hata günlüðünü kaydedin
-                    //Console.WriteLine($"Hata: {ex.Message}");
-                    var CADViewResponseContentInfo = new TeknikResimViewModel
+                    //Hata mesajýný veya hata günlüðünü kaydedin
+                    Console.WriteLine($"Hata: {ex.Message}");
+                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
                     {
                         Number = CADResponse.Number,
                         Revizyon = CADResponse.Revision,
@@ -3486,19 +3680,21 @@ TransferID varchar(MAX),
                         ModifiedOn = CADResponse.LastModified,
                         AuthorizationDate = "",
                         ModifiedBy = CADResponse.ModifiedBy,
-                        State = CADResponse.State,
-                        cADContent = new CADContent
-                        {
-                            FileData = await DownloadPdfAsync(pdfUrl),
-                            Name = pdfFileName
-                        }
+                        state = 50,
+                        name = pdfFileName,
+                        content = await DownloadPdfAsync(pdfUrl),
+                        projectCode = "",
+                        
+                        
+                       
 
                     };
-                    CADViewResponseContentInfo.State.Value = "50";
                     var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
                     LogService logService = new LogService(_configuration);
 
                     logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+
+                    MessageBox.Show(ex.Message);
                 }
                 finally
                 {
@@ -3508,8 +3704,11 @@ TransferID varchar(MAX),
 
                 //MessageBox.Show($"PDF dosyasý ({pdfFileName}) gönderildi.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                LogService logService = new LogService(_configuration);
+
+                logService.CreateJsonFileLog(ex.Message, "HATA");
                 //MessageBox.Show($"Hata: {ex.Message}");
             }
         }
