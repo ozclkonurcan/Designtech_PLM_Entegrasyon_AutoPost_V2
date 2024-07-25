@@ -8,16 +8,25 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
 {
 	public class TeknikResim
 	{
-		public string? Description { get; set; }
-		public string? ModifiedBy { get; set; }
-		public string? Name { get; set; }
-		public string? Number { get; set; }
-		public string? Revision { get; set; }
-		public string? ObjectType { get; set; }
-		public string? Version { get; set; }
-		public DateTime? LastModified { get; set; }
-		public State? State { get; set; }
-		public List<Attachment>? Attachments { get; set; }
+        public string OdataContext { get; set; }
+        public string OdataType { get; set; }
+        public DateTime CreatedOn { get; set; }
+        public string ID { get; set; }
+        public DateTime LastModified { get; set; }
+        public string FileName { get; set; }
+        public string ModifiedBy { get; set; }
+
+        public string Name { get; set; }
+        public string Number { get; set; }
+        public string Description { get; set; }
+
+        public string Revision { get; set; }
+
+        public State State { get; set; }
+
+        public string Version { get; set; }
+        public string VersionID { get; set; }
+        public List<Attachment> Attachments { get; set; }
 	}
 
 

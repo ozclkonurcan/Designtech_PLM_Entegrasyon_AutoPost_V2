@@ -76,12 +76,16 @@
             contextMenuStrip1 = new ContextMenuStrip(components);
             kapatToolStripMenuItem = new ToolStripMenuItem();
             notifyIcon1 = new NotifyIcon(components);
+            rdbAttachment = new RadioButton();
+            groupBox6 = new GroupBox();
+            rdbRepresentation = new RadioButton();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
             groupBox4.SuspendLayout();
             groupBox5.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
+            groupBox6.SuspendLayout();
             SuspendLayout();
             // 
             // btnStartAutoPost
@@ -389,7 +393,7 @@
             groupBox3.Controls.Add(btnApiEkle);
             groupBox3.Location = new Point(12, 210);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(610, 101);
+            groupBox3.Size = new Size(401, 101);
             groupBox3.TabIndex = 3;
             groupBox3.TabStop = false;
             groupBox3.Text = "Windchill bağlantı ayarı";
@@ -401,32 +405,32 @@
             txtWindchillApi.Location = new Point(11, 26);
             txtWindchillApi.Name = "txtWindchillApi";
             txtWindchillApi.PlaceholderText = "Windchill Server Name";
-            txtWindchillApi.Size = new Size(192, 27);
+            txtWindchillApi.Size = new Size(378, 27);
             txtWindchillApi.TabIndex = 7;
             txtWindchillApi.TextChanged += txtWindchillApi_TextChanged;
             // 
             // txtBasicPassword
             // 
             txtBasicPassword.Cursor = Cursors.IBeam;
-            txtBasicPassword.Location = new Point(407, 26);
+            txtBasicPassword.Location = new Point(153, 59);
             txtBasicPassword.Name = "txtBasicPassword";
             txtBasicPassword.PasswordChar = '*';
             txtBasicPassword.PlaceholderText = "Password";
-            txtBasicPassword.Size = new Size(192, 27);
+            txtBasicPassword.Size = new Size(136, 27);
             txtBasicPassword.TabIndex = 11;
             // 
             // txtBasicUsername
             // 
             txtBasicUsername.Cursor = Cursors.IBeam;
-            txtBasicUsername.Location = new Point(209, 26);
+            txtBasicUsername.Location = new Point(11, 61);
             txtBasicUsername.Name = "txtBasicUsername";
             txtBasicUsername.PlaceholderText = "Username";
-            txtBasicUsername.Size = new Size(192, 27);
+            txtBasicUsername.Size = new Size(136, 27);
             txtBasicUsername.TabIndex = 7;
             // 
             // btnApiEkle
             // 
-            btnApiEkle.Location = new Point(505, 59);
+            btnApiEkle.Location = new Point(295, 58);
             btnApiEkle.Name = "btnApiEkle";
             btnApiEkle.Size = new Size(94, 29);
             btnApiEkle.TabIndex = 9;
@@ -553,12 +557,47 @@
             notifyIcon1.DoubleClick += NotifyIcon_DoubleClick;
             notifyIcon1.MouseDoubleClick += notifyIcon1_MouseDoubleClick;
             // 
+            // rdbAttachment
+            // 
+            rdbAttachment.AutoSize = true;
+            rdbAttachment.Checked = true;
+            rdbAttachment.Location = new Point(6, 33);
+            rdbAttachment.Name = "rdbAttachment";
+            rdbAttachment.Size = new Size(107, 24);
+            rdbAttachment.TabIndex = 12;
+            rdbAttachment.TabStop = true;
+            rdbAttachment.Text = "Attachment";
+            rdbAttachment.UseVisualStyleBackColor = true;
+            rdbAttachment.CheckedChanged += rdbAttachment_CheckedChanged;
+            // 
+            // groupBox6
+            // 
+            groupBox6.Controls.Add(rdbRepresentation);
+            groupBox6.Controls.Add(rdbAttachment);
+            groupBox6.Location = new Point(419, 218);
+            groupBox6.Name = "groupBox6";
+            groupBox6.Size = new Size(203, 93);
+            groupBox6.TabIndex = 10;
+            groupBox6.TabStop = false;
+            groupBox6.Text = "PDF Ayarları";
+            // 
+            // rdbRepresentation
+            // 
+            rdbRepresentation.AutoSize = true;
+            rdbRepresentation.Location = new Point(6, 63);
+            rdbRepresentation.Name = "rdbRepresentation";
+            rdbRepresentation.Size = new Size(130, 24);
+            rdbRepresentation.TabIndex = 13;
+            rdbRepresentation.Text = "Representation";
+            rdbRepresentation.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
             ClientSize = new Size(1210, 644);
+            Controls.Add(groupBox6);
             Controls.Add(groupBox5);
             Controls.Add(groupBox4);
             Controls.Add(button1btnStopAutoPost);
@@ -585,6 +624,8 @@
             groupBox4.PerformLayout();
             groupBox5.ResumeLayout(false);
             contextMenuStrip1.ResumeLayout(false);
+            groupBox6.ResumeLayout(false);
+            groupBox6.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -636,5 +677,8 @@
 		private Label label8;
 		private Label label7;
 		private Label label12;
-	}
+        private RadioButton rdbAttachment;
+        private GroupBox groupBox6;
+        private RadioButton rdbRepresentation;
+    }
 }

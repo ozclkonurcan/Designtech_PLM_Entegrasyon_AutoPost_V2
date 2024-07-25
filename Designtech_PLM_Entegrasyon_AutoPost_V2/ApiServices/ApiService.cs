@@ -22,6 +22,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
         public static List<string> JsonVeriListesi { get; set; } = new List<string>();
     }
 
+    public class HataliResponse
+    {
+        public static List<string> JsonVeriListesi { get; set; } = new List<string>();
+    }
+
     public class ApiErrorResponse
     {
         public bool success { get; set; }
@@ -71,7 +76,6 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                         {
                             // Başarısız durum işleme alınacak
                             errorContent =$"API başarısız yanıt: {apiResponse.message}";
-
                             throw new HttpRequestException($"API başarısız yanıt: {apiResponse.message}");
                         }
                     }

@@ -53,13 +53,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
         public string? DocumentType { get; set; }
         public string? Description { get; set; }
         public DateTime? ModifiedOn { get; set; }
-        public string? AuthorizationDate { get; set; }
+        public DateTime? AuthorizationDate { get; set; }
         public string? ModifiedBy { get; set; }
         public int state { get; set; } = 0;
         public string name { get; set; }
-        public byte[]? content { get; set; }
+        public string? content { get; set; }
         public string projectCode { get; set; }
-        public RelatedParts relatedParts { get; set; }
+        public List<RelatedParts> relatedParts { get; set; }
     }
 
 

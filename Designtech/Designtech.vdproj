@@ -39,25 +39,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_288A1EE0A4754520A6629F7ABD3CFB20"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_4B1524D0907B445E9C75D5158D46E11B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5033D8929A6F4B25B596AC801E3A4D6F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_68A068C86CF84D44AF5945EBA3C6F3DD"
+        "MsmKey" = "8:_5BF4F9CD0811421084573037BD815DE5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -81,13 +69,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_8527EEE7564644E29051D1C921D16E11"
+        "MsmKey" = "8:_85B939F8729E45FFB8E7FF0F6B06FC8A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_85B939F8729E45FFB8E7FF0F6B06FC8A"
+        "MsmKey" = "8:_AEBDB2DA78ED40AA99BE24C067B872A8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -99,7 +87,19 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_BD5B324D158F43A492EC577362D0A185"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_C6C278EF30C14CDFABDFA868FF743161"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CBB2F37FE5F44C608E4E088D348A3FCA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -266,50 +266,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_288A1EE0A4754520A6629F7ABD3CFB20"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5BF4F9CD0811421084573037BD815DE5"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\SSS\\Configuration\\appsettings.json"
+            "SourcePath" = "8:C:\\Designtech\\Configuration\\appsettings.json"
             "TargetName" = "8:appsettings.json"
-            "Tag" = "8:"
-            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5033D8929A6F4B25B596AC801E3A4D6F"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\SSS\\Configuration\\EmailController.json"
-            "TargetName" = "8:EmailController.json"
-            "Tag" = "8:"
-            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_68A068C86CF84D44AF5945EBA3C6F3DD"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\SSS\\Configuration\\scanpdf-425313-50117e72a809.json"
-            "TargetName" = "8:scanpdf-425313-50117e72a809.json"
             "Tag" = "8:"
             "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
             "Condition" = "8:"
@@ -386,12 +346,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_8527EEE7564644E29051D1C921D16E11"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_85B939F8729E45FFB8E7FF0F6B06FC8A"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\SSS\\Configuration\\ApiSendDataSettings.json"
-            "TargetName" = "8:ApiSendDataSettings.json"
+            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\contentLogo.ico"
+            "TargetName" = "8:contentLogo.ico"
             "Tag" = "8:"
-            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
+            "Folder" = "8:_92DDC59D76444C5EA2D96A599D12304E"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -406,12 +366,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_85B939F8729E45FFB8E7FF0F6B06FC8A"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AEBDB2DA78ED40AA99BE24C067B872A8"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\..\\OneDrive\\Masaüstü\\contentLogo.ico"
-            "TargetName" = "8:contentLogo.ico"
+            "SourcePath" = "8:C:\\Designtech\\Configuration\\scanpdf-425313-50117e72a809.json"
+            "TargetName" = "8:scanpdf-425313-50117e72a809.json"
             "Tag" = "8:"
-            "Folder" = "8:_92DDC59D76444C5EA2D96A599D12304E"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -446,12 +406,52 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BD5B324D158F43A492EC577362D0A185"
+            {
+            "SourcePath" = "8:C:\\Designtech\\Configuration\\EmailController.json"
+            "TargetName" = "8:EmailController.json"
+            "Tag" = "8:"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C6C278EF30C14CDFABDFA868FF743161"
             {
             "SourcePath" = "8:..\\Designtech_PLM_Entegrasyon_AutoPost_V2\\bin\\Debug\\net8.0-windows\\tessdata\\eng.tesseract_cube.nn"
             "TargetName" = "8:eng.tesseract_cube.nn"
             "Tag" = "8:"
             "Folder" = "8:_93562B7395D640DF9AED4DDD12024A54"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CBB2F37FE5F44C608E4E088D348A3FCA"
+            {
+            "SourcePath" = "8:C:\\Designtech\\Configuration\\ApiSendDataSettings.json"
+            "TargetName" = "8:ApiSendDataSettings.json"
+            "Tag" = "8:"
+            "Folder" = "8:_3F19ACDA7B1A4D589B0798083F7C31C8"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -598,7 +598,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Designtech"
         "ProductCode" = "8:{F1E69BBE-821D-4606-88A9-FD4CB4D7E6EA}"
-        "PackageCode" = "8:{A540910F-ACCA-4091-AF0D-3A305CA535AD}"
+        "PackageCode" = "8:{623B81B5-7302-421D-B268-9D3BECC77362}"
         "UpgradeCode" = "8:{96F1B4BB-B66F-4A2B-80D6-F04A058480BF}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

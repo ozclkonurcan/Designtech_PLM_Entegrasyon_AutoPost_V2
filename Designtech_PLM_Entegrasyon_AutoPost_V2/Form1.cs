@@ -60,6 +60,9 @@ using IronPdf.Pages;
 using PdfSharp.Drawing;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Vision.V1;
+using FluentFTP;
+using System.Net.Mail;
+using Renci.SshNet;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -230,13 +233,21 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                     // Yeni veriyi JSON nesnesine ekle veya güncelle
                     var catalogValue = jsonObject["DatabaseSchema"].ToString();
                     // Tablo varsa kontrol et
+
                     var tableExists = TableExists($"[{catalogValue}].Change_Notice_LogTable", connectionString);
                     var tableExistsEnt_EPMDocState = TableExists($"[{catalogValue}].Ent_EPMDocState", connectionString);
                     var tableExistsEnt_EPMDocStateCancelled = TableExists($"[{catalogValue}].Ent_EPMDocState_CANCELLED", connectionString);
+                    var Des_PartDocumentBagla = TableExists($"[{catalogValue}].Des_PartDocumentBagla", connectionString);
+                    var Des_PartDocumentBaglaLog = TableExists($"[{catalogValue}].Des_PartDokumanBaglaLog", connectionString);
+
+                    var EPMDokumanStateTrigger = TriggerExists($"[{catalogValue}].EPMDokumanState", connectionString);
+                    var EPMDokumanState_CANCELLEDTrigger = TriggerExists($"[{catalogValue}].EPMDokumanState_CANCELLED", connectionString);
+                    var Part_DocumentTrigger = TriggerExists($"[{catalogValue}].Part_Document", connectionString);
+
                     //var tableExistsLOG = TableExists($"[{catalogValue}].WTPartAlternateLink_LOG", connectionString);
                     //var tableExistsControlLog = TableExists($"[{catalogValue}].WTPartAlternateLink_ControlLog", connectionString);
 
-                    if (!tableExists || !tableExistsEnt_EPMDocState || !tableExistsEnt_EPMDocStateCancelled)
+                    if (!tableExists || !tableExistsEnt_EPMDocState || !tableExistsEnt_EPMDocStateCancelled || !Des_PartDocumentBagla || !Des_PartDocumentBaglaLog || !EPMDokumanStateTrigger || !EPMDokumanState_CANCELLEDTrigger || !Part_DocumentTrigger)
                     {
                         // Tablo yoksa oluþtur
                         CreateTable(connectionString);
@@ -273,6 +284,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = $"IF OBJECT_ID('{tableName}', 'U') IS NULL SELECT 0 ELSE SELECT 1";
+                connection.Open();
+                return (int)command.ExecuteScalar() == 1;
+            }
+        }
+
+        private bool TriggerExists(string triggerName, string connectionString)
+        {
+            using (var connection = new SqlConnection(connectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = $"IF OBJECT_ID('{triggerName}', 'TR') IS NULL SELECT 0 ELSE SELECT 1";
                 connection.Open();
                 return (int)command.ExecuteScalar() == 1;
             }
@@ -371,16 +393,13 @@ TransferID varchar(MAX),
 
 
 
-  string createTableSql4 = @"
-    CREATE TABLE " + scheman + @".[Ent_EPMDocState](
+            string createTableSql4 = @"
+    CREATE TABLE " + scheman + @".Ent_EPMDocState (
 	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[EPMDocID] [bigint] NULL,
 	[StateDegeri] [nvarchar](200) NULL,
- CONSTRAINT [PK_Ent_EPMDocState] PRIMARY KEY CLUSTERED 
-(
-	[Ent_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY];
+	CONSTRAINT [PK_Ent_EPMDocState] PRIMARY KEY CLUSTERED ([Ent_ID] ASC)
+);
 ";
 
 
@@ -412,17 +431,13 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState];
 
 
             string createTableSql5 = @"
-    CREATE TABLE " + scheman + @".[Ent_EPMDocState_CANCELLED](
+    CREATE TABLE " + scheman + @".Ent_EPMDocState_CANCELLED (
 	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[EPMDocID] [bigint] NULL,
 	[StateDegeri] [nvarchar](200) NULL,
- CONSTRAINT [PK_Ent_EPMDocState_CANCELLED] PRIMARY KEY CLUSTERED 
-(
-	[Ent_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY];
+	CONSTRAINT [PK_Ent_EPMDocState_CANCELLED] PRIMARY KEY CLUSTERED ([Ent_ID] ASC)
+);
 ";
-
 
             string createTableTrigger5 = @"
 CREATE TRIGGER " + scheman + @".[EPMDokumanState_CANCELLED]
@@ -451,6 +466,127 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 ";
 
 
+
+
+            string Des_PartDocumentBagla = @$"
+   CREATE TABLE {scheman}.Des_PartDocumentBagla (
+	[PartDocID] [int] IDENTITY(1,1) NOT NULL,
+	[WTDocumentTypeID] [int] NULL,
+	[WTDocumentTypeName] [nvarchar](MAX) NULL,
+	[Mesaj] [nvarchar](150) NULL,
+	[EklemeDurumu] [tinyint] NULL,
+	CONSTRAINT [PK_Des_PartDocumentBagla_1] PRIMARY KEY CLUSTERED ([PartDocID] ASC)
+);
+";
+
+            string Des_PartDocumentBaglalOG = @$"
+   CREATE TABLE {scheman}.Des_PartDokumanBaglaLog (
+	[S_ID] [int] IDENTITY(1,1) NOT NULL,
+	[Tarih] [datetime] NULL,
+	[Part_ID] [bigint] NULL,
+	[Part_Number] [nvarchar](50) NULL,
+	[PartMasterID] [bigint] NULL,
+	[DocType_ID] [bigint] NULL,
+	[DocMaster_ID] [bigint] NULL,
+	[DocNumber] [nvarchar](50) NULL,
+	[Eklenti] [nvarchar](50) NULL,
+	[GuncelDeger] [nvarchar](50) NULL,
+	[EklemeDurumu] [tinyint] NULL,
+	[Kontrol] [tinyint] NULL,
+	[Kullanim] [tinyint] NULL,
+	CONSTRAINT [PK_Des_PartDokumanBaglaLog] PRIMARY KEY CLUSTERED ([S_ID] ASC)
+);
+";
+
+
+            string Part_DocumentTrigger = @$"
+CREATE TRIGGER [{scheman}].[Part_Document]
+ON [{scheman}].[WTPartReferenceLink]
+AFTER INSERT
+AS
+BEGIN
+	DECLARE @Part_ID BIGINT,
+			@PartMasterID BIGINT,
+			@Part_Number NVARCHAR(40),
+			@DocType_ID BIGINT,
+			@DocMaster_ID BIGINT,
+			@DocID BIGINT,
+			@DocNumber NVARCHAR(32),
+			@Eklenti NVARCHAR(50),
+			@EklemeDurumu TINYINT,
+			@Kontrol INT,
+			@KontrolArka INT,
+			@KontrolOn TINYINT,
+			@TekrarOn NVARCHAR(50),
+			@TekrarArka NVARCHAR(50)
+
+	SELECT @Part_ID=idA3A5, @DocMaster_ID = idA3B5	FROM inserted
+
+	SELECT @PartMasterID = idA3masterReference FROM {scheman}.WTPart WHERE idA2A2 = @Part_ID
+
+	SELECT @Part_Number= WTPartNumber FROM {scheman}.WTPartMaster WHERE idA2A2=@PartMasterID
+	
+	SELECT @DocNumber = WTDocumentNumber FROM {scheman}.WTDocumentMaster	WHERE idA2A2 = @DocMaster_ID
+	
+	SELECT @DocType_ID=idA2typeDefinitionReference, @DocID=idA2A2 FROM {scheman}.WTDocument WHERE idA3masterReference = @DocMaster_ID
+		   	 
+	SELECT @Eklenti = WTDocumentTypeName, @EklemeDurumu = EklemeDurumu FROM {scheman}.Des_PartDocumentBagla WHERE WTDocumentTypeID = @DocType_ID
+
+	SELECT @Kontrol =  COUNT(*) FROM {scheman}.Des_PartDocumentBagla WHERE WTDocumentTypeID = @DocType_ID
+	
+	IF @Kontrol=1
+		BEGIN
+	
+		IF @EklemeDurumu = 0
+			BEGIN
+				SET @TekrarArka = @Part_Number + '_' + @Eklenti
+				SELECT @KontrolArka = COUNT(*) FROM {scheman}.Des_PartDokumanBaglaLog WHERE GuncelDeger = @TekrarArka
+
+						 
+						IF @KontrolArka <= 0
+							BEGIN
+								UPDATE {scheman}.WTDocumentMaster
+								SET WTDocumentNumber = @Part_Number + '_' + @Eklenti 
+								WHERE idA2A2 = @DocMaster_ID
+							END
+							ELSE
+							BEGIN
+								UPDATE {scheman}.WTDocumentMaster
+								SET WTDocumentNumber = @Part_Number + '_' + @Eklenti + '_' + CONVERT(nvarchar, @KontrolArka)
+								WHERE idA2A2 = @DocMaster_ID
+							END
+
+						INSERT INTO {scheman}.Des_PartDokumanBaglaLog (Part_ID,Part_Number,PartMasterID,DocType_ID,DocMaster_ID,DocNumber,Eklenti,EklemeDurumu,Kontrol,Kullanim,GuncelDeger) 
+						VALUES (@Part_ID,@Part_Number,@PartMasterID,@DocType_ID,@DocMaster_ID,@DocNumber,@Eklenti,@EklemeDurumu,@Kontrol,1,@TekrarArka)
+
+				
+			END
+			ELSE IF @EklemeDurumu = 1
+			BEGIN
+				SET @TekrarOn = @Eklenti + @Part_Number
+				SELECT @KontrolOn = COUNT(*) FROM {scheman}.Des_PartDokumanBaglaLog WHERE GuncelDeger = @TekrarOn
+
+				IF @KontrolOn <= 0
+							BEGIN
+								UPDATE {scheman}.WTDocumentMaster
+								SET WTDocumentNumber = @Part_Number + '_' + @Eklenti 
+								WHERE idA2A2 = @DocMaster_ID
+							END
+							ELSE
+							BEGIN
+								UPDATE {scheman}.WTDocumentMaster
+								SET WTDocumentNumber = @Part_Number + '_' + @Eklenti + '_' + CONVERT(nvarchar, @KontrolOn)
+								WHERE idA2A2 = @DocMaster_ID
+							END
+
+						INSERT INTO {scheman}.Des_PartDokumanBaglaLog (Part_ID,Part_Number,PartMasterID,DocType_ID,DocMaster_ID,DocNumber,Eklenti,EklemeDurumu,Kontrol,Kullanim,GuncelDeger) 
+						VALUES (@Part_ID,@Part_Number,@PartMasterID,@DocType_ID,@DocMaster_ID,@DocNumber,@Eklenti,@EklemeDurumu,@Kontrol,1,@Eklenti + @Part_Number)
+					END				
+			END
+		END
+";
+
+
             #endregion
 
 
@@ -463,7 +599,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 {
                     try
                     {
-                    command1.ExecuteNonQuery();
+                        command1.ExecuteNonQuery();
                     }
                     catch (Exception)
                     {
@@ -474,7 +610,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 {
                     try
                     {
-                    command2.ExecuteNonQuery();
+                        command2.ExecuteNonQuery();
                     }
                     catch (Exception)
                     {
@@ -499,7 +635,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                     catch (Exception)
                     {
                     }
-                } 
+                }
                 using (var command2 = new SqlCommand(createTableTrigger4, connection))
                 {
                     try
@@ -522,6 +658,37 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                     }
                 }
                 using (var command2 = new SqlCommand(createTableTrigger5, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
+                using (var command2 = new SqlCommand(Des_PartDocumentBagla, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                using (var command2 = new SqlCommand(Des_PartDocumentBaglalOG, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+                using (var command2 = new SqlCommand(Part_DocumentTrigger, connection))
                 {
                     try
                     {
@@ -953,7 +1120,8 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
             }
             catch (Exception ex)
             {
-                MessageBox.Show("HATA !", ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                MessageBox.Show("HATA " + ex.Message, "HATA ! ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1186,7 +1354,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
                             else if (sourceApi.Contains("CADDocumentMgmt") && sablonDataDurumu == "true")
                             {
-                                if (state == "CANCELLED" || state == "SEND_FILE" )
+                                if (state == "CANCELLED" || state == "SEND_FILE")
                                 {
                                     apiAdres = item["api_adres"].ToString();
                                     anaKaynak = item["ana_kaynak"].ToString();
@@ -1244,7 +1412,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
                     //formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-                    formattedTarih2 = DateTime.Today.AddDays(-3).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    formattedTarih2 = DateTime.Today.AddDays(-1).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if (state == "ALTERNATE_RELEASED")
                     {
                         sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and [idA3view] = {resolvedViewKod.idA2A2} and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
@@ -1276,13 +1444,13 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
                 formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
                 formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-                if(state == "SEND_FILE")
+                if (state == "SEND_FILE")
                 {
-                sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
+                    sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
                 }
-                if(state == "CANCELLED")
+                if (state == "CANCELLED")
                 {
-                sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState_CANCELLED WHERE [StateDegeri] = 'CANCELLED'";
+                    sql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState_CANCELLED WHERE [StateDegeri] = 'CANCELLED'";
 
                 }
 
@@ -1316,13 +1484,13 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                     if (sourceApi.Contains("ProdMgmt"))
                     {
                         json = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.idA2A2}')?$expand=Alternates($expand=AlternatePart)", BasicUsername, BasicPassword, CSRF_NONCE);
-                        jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName,$"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
+                        jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName, $"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
                     if (sourceApi.Contains("CADDocumentMgmt"))
                     {
                         cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
                         cadAssociationsJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
-                     cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+                        cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
 
 
@@ -1344,7 +1512,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                             globalUserEmail = responseCreator;
                             var turkishDateFormat2 = response.LastModified.ToString();
                             var iso8601Date2 = ConvertToIso8601Format(turkishDateFormat2);
-                         
+
                             response.LastModified = Convert.ToDateTime(iso8601Date2);
 
                             var existingLog = await conn.QueryFirstOrDefaultAsync<WTChangeOrder2MasterViewModel>(
@@ -1616,83 +1784,171 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                         }
                         if (sourceApi.Contains("CADDocumentMgmt"))
                         {
-                            if(partItem.StateDegeri == "RELEASED") { 
-                            var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
-                            string partCode = "";
-                            if (cadAssociationsJSON != null)
+
+
+
+                            if (partItem.StateDegeri == "RELEASED" && rdbRepresentation.Checked == true)
                             {
-                                var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
-                                if (CADAssociationsResponse != null && CADAssociationsResponse.Value != null && CADAssociationsResponse.Value.Count > 0)
+                                var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
+                                string partCode = "";
+                                if (cadAssociationsJSON != null)
                                 {
-                                    var firstAssociation = CADAssociationsResponse.Value.SingleOrDefault();
-                                    if (firstAssociation != null && firstAssociation.ID != null)
+                                    var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                                    if (CADAssociationsResponse != null && CADAssociationsResponse.Value != null && CADAssociationsResponse.Value.Count > 0)
                                     {
+                                        var firstAssociation = CADAssociationsResponse.Value.SingleOrDefault();
+                                        if (firstAssociation != null && firstAssociation.ID != null)
+                                        {
 
-                                        var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
-                                    string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
-                                    Regex regex = new Regex(pattern);
-                                    Match match = regex.Match(CADAssociations);
+                                            var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                                            string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                                            Regex regex = new Regex(pattern);
+                                            Match match = regex.Match(CADAssociations);
 
-                                    if (match.Success)
-                                    {
-                                        partCode = match.Groups[1].Value;
+                                            if (match.Success)
+                                            {
+                                                partCode = match.Groups[1].Value;
 
-                                    }
+                                            }
+                                        }
+
                                     }
 
                                 }
 
-                            }
-
-                            try
-                            {
-
-                                if (cadJSON2 != null || cadJSON2 != "")
+                                try
                                 {
 
-                                    //var representation = CADResponse.Representations;
-
-                                    foreach (var representation in CADResponse.Representations)
+                                    if (cadJSON2 != null || cadJSON2 != "")
                                     {
 
+                                        //var representation = CADResponse.Representations;
 
-                                    if (representation != null)
-                                    {
-                                        if (representation.AdditionalFiles != null && representation.AdditionalFiles.Count > 0)
+                                        if(CADResponse.Representations != null) { 
+
+                                        foreach (var representation in CADResponse.Representations)
                                         {
 
-                                            foreach (var item in representation.AdditionalFiles.Where(x => x.FileName.Contains(".pdf") || x.FileName.Contains(".PDF") || x.Format == "PDF"))
-                                        {
 
-                                        if (item != null)
-                                        {
-
-                                                       
-
-                                                        //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
-                                                        if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF") || item.Format == "PDF")
+                                            if (representation != null)
                                             {
-                                                var pdfUrl = item.URL;
-                                                //var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
-                                                var pdfFileName = item.Label;
-                                                await SendPdfToCustomerFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
+                                                if (representation.AdditionalFiles != null && representation.AdditionalFiles.Count > 0)
+                                                {
+
+                                                    foreach (var item in representation.AdditionalFiles.Where(x => x.FileName.Contains(".pdf") || x.FileName.Contains(".PDF") || x.Format == "PDF"))
+                                                    {
+
+                                                        if (item != null)
+                                                        {
+
+
+
+                                                            //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
+                                                            if (item.FileName.Contains(".pdf") || item.FileName.Contains(".PDF") || item.Format == "PDF")
+                                                            {
+                                                                var pdfUrl = item.URL;
+                                                                //var pdfFileName = item.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase).ToString();
+                                                                var pdfFileName = item.Label;
+                                                                await SendPdfToCustomerFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                         }
-                                    }
-                                    }
-                                    }
+                                        else
+                                        {
+                                            LogService logService = new LogService(_configuration);
 
+                                            logService.CreateJsonFileLog(CADResponse.Number + CADResponse.FileName + "Representation da Veri bulunamadý." );
+                                        }
+
+                                    }
 
                                 }
+                                catch (Exception ex)
+                                {
+                                    LogService logService = new LogService(_configuration);
+
+                                    logService.CreateJsonFileLog(ex.Message, "HATA");
+                                }
+
 
                             }
-                            catch (Exception)
+
+                            if(partItem.StateDegeri == "RELEASED" && rdbAttachment.Checked == true)
                             {
+                               
+                                    var CADResponse = JsonConvert.DeserializeObject<TeknikResim>(cadJSON);
+                                    string partCode = "";
+                                    if (cadAssociationsJSON != null)
+                                    {
+                                        var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                                        if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
+                                        {
+                                            var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                                            string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                                            Regex regex = new Regex(pattern);
+                                            Match match = regex.Match(CADAssociations);
 
-                            }
+                                            if (match.Success)
+                                            {
+                                                partCode = match.Groups[1].Value;
+
+                                            }
+
+                                        }
+
+                                    }
+
+                                    try
+                                    {
+
+                                        if (cadJSON != null || cadJSON != "")
+                                        {
+
+                                            if (CADResponse.Attachments != null && CADResponse.Attachments.Count > 0)
+                                            {
+
+                                                //var selectedAttachment = CADResponse.Attachments.FirstOrDefault(a => a.Content != null && a.Content.Label != null && a.Content.Label.Contains(CADResponse.Number));
+                                                var selectedAttachment = CADResponse.Attachments.FirstOrDefault(a =>
+                                                a.Content != null &&
+                                                a.Content.Label != null &&
+                                                a.Content.Label.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+                                            );
+
+                                                if (selectedAttachment != null)
+                                                {
+
+                                                    //var pdfSettings = CADResponse.Attachments.FirstOrDefault().Content;
+                                                    if (selectedAttachment is not null)
+                                                    {
+                                                        var pdfUrl = selectedAttachment.Content.URL;
+                                                        var pdfFileName = selectedAttachment.Content.Label;
+                                                        await SendPdfToCustomerAttachmentFunctionAsync(pdfUrl, pdfFileName, apiFullUrl, apiURL, endPoint, partItem.EPMDocID, catalogValue, conn, CADResponse, state, partCode);
+                                                    }
+                                                }
+                                        }
+                                        else
+                                        {
+                                            LogService logService = new LogService(_configuration);
+
+                                            logService.CreateJsonFileLog(CADResponse.Number + CADResponse.FileName + "Attachment da Veri bulunamadý.");
+                                        }
 
 
+                                        }
+
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                    LogService logService = new LogService(_configuration);
+
+                                    logService.CreateJsonFileLog(ex.Message, "HATA");
+                                }
+                                    // If LastUpdateTimestamp has not changed, do nothing
+                                
                             }
 
                             if (partItem.StateDegeri == "CANCELLED")
@@ -1700,25 +1956,25 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                                 try
                                 {
 
-                              
-                                var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
+
+                                    var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
 
 
-                                var CADViewResponse = new TeknikResimCancel
-                                {
-                                    Number = CADResponse.Number,
-                                    Revizyon = CADResponse.Revision,
-                               
-                                };
+                                    var CADViewResponse = new TeknikResimCancel
+                                    {
+                                        Number = CADResponse.Number,
+                                        Revizyon = CADResponse.Revision,
+
+                                    };
 
 
-                                ApiService _apiService = new ApiService();
+                                    ApiService _apiService = new ApiService();
 
 
 
-                                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-                                var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
-                                await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+                                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
 
                                     LogService logService = new LogService(_configuration);
 
@@ -1735,8 +1991,8 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                                     logService.CreateJsonFileLog(ex.Message, "HATA");
                                 }
                             }
-                                // If LastUpdateTimestamp has not changed, do nothing
-                            }
+                            // If LastUpdateTimestamp has not changed, do nothing
+                        }
 
                         //if (sourceApi.Contains("CADDocumentMgmt"))
                         //{
@@ -1881,7 +2137,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
                             // Parçanýn RELEASED durumda olup olmadýðýný kontrol edin
                             //if (wtpartAlternatePart != null && wtpartAlternatePart.statestate == "RELEASED" )
-                            if (wtpartStateControl != null  && wtpartStateControl.Any(x => x.statestate == "RELEASED") && wtpartAlternatePart.statestate != "CANCELLED")
+                            if (wtpartStateControl != null && wtpartStateControl.Any(x => x.statestate == "RELEASED") && wtpartAlternatePart.statestate != "CANCELLED")
                             {
                                 // Yeni eklenen verileri WTPartAlternateLink_ControlLog tablosuna ekleyin
                                 await conn.ExecuteAsync($@"
@@ -1969,9 +2225,9 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
             $"SELECT * FROM [{catalogValue}].[WTPart] WHERE [idA3MasterReference] = @idA3MasterReference and latestiterationInfo = '1'",
             new { idA3MasterReference = item.IdA3B5 }));
 
-                                           var wtparControlLog = (await conn.QueryFirstOrDefaultAsync<dynamic>(
-            $"SELECT * FROM [{catalogValue}].[WTPartAlternateLink_ControlLog] WHERE [IdA3A5] = @IdA3A5 and [IdA3B5] = @IdA3B5",
-            new { IdA3A5 = item.IdA3A5, IdA3B5 = item.IdA3B5 }));
+                            var wtparControlLog = (await conn.QueryFirstOrDefaultAsync<dynamic>(
+$"SELECT * FROM [{catalogValue}].[WTPartAlternateLink_ControlLog] WHERE [IdA3A5] = @IdA3A5 and [IdA3B5] = @IdA3B5",
+new { IdA3A5 = item.IdA3A5, IdA3B5 = item.IdA3B5 }));
 
 
                             if (wtparControlLog != null)
@@ -1981,65 +2237,65 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                             new { idA2A2 = item.IdA3B5 }));
 
 
-                            var removedJson = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + wtpart.idA2A2}')?$expand=Alternates($expand=AlternatePart;$filter=startswith(AlternatePart/ID,'OR:wt.part.WTPart:{wtpartAlternatePart.idA2A2}'))", BasicUsername, BasicPassword, CSRF_NONCE);
-                            var removedResponse = JsonConvert.DeserializeObject<Part>(removedJson);
+                                var removedJson = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + wtpart.idA2A2}')?$expand=Alternates($expand=AlternatePart;$filter=startswith(AlternatePart/ID,'OR:wt.part.WTPart:{wtpartAlternatePart.idA2A2}'))", BasicUsername, BasicPassword, CSRF_NONCE);
+                                var removedResponse = JsonConvert.DeserializeObject<Part>(removedJson);
 
 
 
-                            removedResponse.Alternates = new List<Alternates>();
-                        
+                                removedResponse.Alternates = new List<Alternates>();
+
                                 // Check if wtpartMasterAlternatePart is not null
                                 if (wtpartMasterAlternatePart != null)
-                            {
-                                // Create a single Alternates object with necessary data
-                                // (Include all required fields)
-                                var alternates = new Alternates
                                 {
-                                    ID = "wt.part.WTPartAlternateLink:" + wtpartAlternatePart.idA2A2,
-                                    AlternatePart = new AlternatePart
+                                    // Create a single Alternates object with necessary data
+                                    // (Include all required fields)
+                                    var alternates = new Alternates
                                     {
-                                        ID = "OR:wt.part.WTPart:" + wtpartMasterAlternatePart.idA2A2,
-                                        Name = wtpartMasterAlternatePart.name,
-                                        Number = wtpartMasterAlternatePart.WTPartNumber,
-                                        State = new Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel.State
+                                        ID = "wt.part.WTPartAlternateLink:" + wtpartAlternatePart.idA2A2,
+                                        AlternatePart = new AlternatePart
                                         {
-                                            // State sýnýfýna ait diðer alanlarý doldurun
-                                            Value = wtpartAlternatePart.statestate,
+                                            ID = "OR:wt.part.WTPart:" + wtpartMasterAlternatePart.idA2A2,
+                                            Name = wtpartMasterAlternatePart.name,
+                                            Number = wtpartMasterAlternatePart.WTPartNumber,
+                                            State = new Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel.State
+                                            {
+                                                // State sýnýfýna ait diðer alanlarý doldurun
+                                                Value = wtpartAlternatePart.statestate,
+                                            }
+                                            // Add other required fields (State, MuhasebeKodu, MuhasebeAdi, etc.)
                                         }
-                                        // Add other required fields (State, MuhasebeKodu, MuhasebeAdi, etc.)
-                                    }
-                                };
+                                    };
 
-                                // Add the complete alternates object to the list
-                                removedResponse.Alternates.Add(alternates);
-                            }
+                                    // Add the complete alternates object to the list
+                                    removedResponse.Alternates.Add(alternates);
+                                }
 
 
 
 
-                            // Silinen verileri WTPartAlternateLink_ControlLog tablosundan sil
-                            await RemovedLogAndPostDataAsync(removedResponse, catalogValue, conn, apiFullUrl, apiURL, endPoint);
+                                // Silinen verileri WTPartAlternateLink_ControlLog tablosundan sil
+                                await RemovedLogAndPostDataAsync(removedResponse, catalogValue, conn, apiFullUrl, apiURL, endPoint);
 
-                            await conn.ExecuteAsync($@"
+                                await conn.ExecuteAsync($@"
 				DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
 				 WHERE [IdA3A5] = @IdA3A5 and [IdA3B5] = @IdA3B5", new { IdA3A5 = item.IdA3A5, IdA3B5 = item.IdA3B5 });
 
-                            //                        await conn.ExecuteAsync($@"
-                            //DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
-                            //WHERE IdA2A2 IN @Ids", new { Ids = deletedData.Select(d => d.IdA2A2).ToArray() });
+                                //                        await conn.ExecuteAsync($@"
+                                //DELETE FROM [{catalogValue}].[WTPartAlternateLink_ControlLog]
+                                //WHERE IdA2A2 IN @Ids", new { Ids = deletedData.Select(d => d.IdA2A2).ToArray() });
 
-                            //                        await conn.ExecuteAsync($@"
-                            //DELETE FROM [{catalogValue}].[WTPartAlternateLink_LOG]
-                            //WHERE Number IN @Ids", new { Ids = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray() });
+                                //                        await conn.ExecuteAsync($@"
+                                //DELETE FROM [{catalogValue}].[WTPartAlternateLink_LOG]
+                                //WHERE Number IN @Ids", new { Ids = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray() });
 
-                            await conn.ExecuteAsync($@"
+                                await conn.ExecuteAsync($@"
     DELETE FROM [{catalogValue}].[WTPartAlternateLink_LOG]
     WHERE AnaParcaNumber = @AnaParcaNumber AND Number IN @Numbers",
-                     new
-                     {
-                         AnaParcaNumber = removedResponse.Number,
-                         Numbers = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray()
-                     });
+                         new
+                         {
+                             AnaParcaNumber = removedResponse.Number,
+                             Numbers = removedResponse.Alternates.Select(d => d.AlternatePart.Number).ToArray()
+                         });
 
                             }
 
@@ -3015,10 +3271,10 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 var existingRecordTimestampDefinitionSeq = $"SELECT * FROM [{catalogValue}].[TimestampDefinition] WHERE [displayName] = 'Entegrasyon Tarihi'";
                 var existingRecordTimestampDefinition = await conn.QueryFirstOrDefaultAsync<dynamic>(existingRecordTimestampDefinitionSeq);
 
-             
-                   
-                    var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
-                    var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre edilemedi\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
+
+
+                var currentDate = DateTime.Now.ToString("yyyy-MM-dd");
+                var content = $"{{\r\n  \"EntegrasyonDurumu\": \"Parça entegre edilemedi\",\r\n  \"EntegrasyonTarihi\": \"{currentDate}\"\r\n}}";
 
 
 
@@ -3027,190 +3283,190 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
 
 
-                    // Öncelikle, mevcut kaydý kontrol edin
-                    var existingRecord = await conn.QueryFirstOrDefaultAsync(
-                 $"SELECT * FROM [{catalogValue}].[StringValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
-                 new { KodidA2A2 });
-                    var existingRecordTimeStamp = await conn.QueryFirstOrDefaultAsync(
-                   $"SELECT * FROM [{catalogValue}].[TimestampValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
-                   new { KodidA2A2 });
+                // Öncelikle, mevcut kaydý kontrol edin
+                var existingRecord = await conn.QueryFirstOrDefaultAsync(
+             $"SELECT * FROM [{catalogValue}].[StringValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
+             new { KodidA2A2 });
+                var existingRecordTimeStamp = await conn.QueryFirstOrDefaultAsync(
+               $"SELECT * FROM [{catalogValue}].[TimestampValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
+               new { KodidA2A2 });
 
 
 
 
-                    if (existingRecord != null)
-                    {
-                        // Mevcut bir kayýt varsa, güncelleme iþlemi yapýn
-                        int result = await conn.ExecuteAsync(
-                            $"UPDATE [{catalogValue}].[StringValue] " +
-                            "SET " +
-                            "[hierarchyIDA6] = @hierarchyIDA6, " +
-                            "[idA2A2] = @idA2A2, " +
-                            "[classnameA2A2] = @classnameA2A2, " +
-                            "[idA3A5] = @idA3A5, " +
-                            "[idA3A6] = @idA3A6, " +
-                            "[markForDeleteA2] = @markForDeleteA2, " +
-                            "[modifyStampA2] = @modifyStampA2, " +
-                            "[updateCountA2] = @updateCountA2, " +
-                            "[updateStampA2] = @updateStampA2, " +
-                            "[createStampA2] = @createStampA2, " +
-                            "[classnamekeyA4] = @classnamekeyA4, " +
-                            "[classnamekeyA6] = @classnamekeyA6, " +
-                            "[value] = @value, " +
-                            "[value2] = @value2 " +
-                            $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
-                            new
-                            {
-                                hierarchyIDA6 = "7058085483721066086",
-                                idA2A2 = respIdSeq,
-                                classnameA2A2 = "wt.iba.value.StringValue",
-                                idA3A5 = 0,
-                                idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
-                                markForDeleteA2 = 0,
-                                modifyStampA2 = DateTime.Now.Date,
-                                updateCountA2 = 1,
-                                updateStampA2 = DateTime.Now.Date,
-                                createStampA2 = DateTime.Now.Date,
-                                classnamekeyA4 = "wt.part.WTPart",
-                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA ENTEGRE EDÝLEMEDÝ",
-                                value2 = "Parça entegre edilemedi",
-                                KodidA2A2
-                            });
-
-
-
-
-                        if (result == 1)
+                if (existingRecord != null)
+                {
+                    // Mevcut bir kayýt varsa, güncelleme iþlemi yapýn
+                    int result = await conn.ExecuteAsync(
+                        $"UPDATE [{catalogValue}].[StringValue] " +
+                        "SET " +
+                        "[hierarchyIDA6] = @hierarchyIDA6, " +
+                        "[idA2A2] = @idA2A2, " +
+                        "[classnameA2A2] = @classnameA2A2, " +
+                        "[idA3A5] = @idA3A5, " +
+                        "[idA3A6] = @idA3A6, " +
+                        "[markForDeleteA2] = @markForDeleteA2, " +
+                        "[modifyStampA2] = @modifyStampA2, " +
+                        "[updateCountA2] = @updateCountA2, " +
+                        "[updateStampA2] = @updateStampA2, " +
+                        "[createStampA2] = @createStampA2, " +
+                        "[classnamekeyA4] = @classnamekeyA4, " +
+                        "[classnamekeyA6] = @classnamekeyA6, " +
+                        "[value] = @value, " +
+                        "[value2] = @value2 " +
+                        $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordStringDefinition.idA2A2}",
+                        new
                         {
-                            await conn.ExecuteAsync(
-                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
-                        }
-                    }
-                    else
+                            hierarchyIDA6 = "7058085483721066086",
+                            idA2A2 = respIdSeq,
+                            classnameA2A2 = "wt.iba.value.StringValue",
+                            idA3A5 = 0,
+                            idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
+                            markForDeleteA2 = 0,
+                            modifyStampA2 = DateTime.Now.Date,
+                            updateCountA2 = 1,
+                            updateStampA2 = DateTime.Now.Date,
+                            createStampA2 = DateTime.Now.Date,
+                            classnamekeyA4 = "wt.part.WTPart",
+                            classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                            value = "PARÇA ENTEGRE EDÝLEMEDÝ",
+                            value2 = "Parça entegre edilemedi",
+                            KodidA2A2
+                        });
+
+
+
+
+                    if (result == 1)
                     {
-                        // Mevcut bir kayýt yoksa, yeni bir kayýt ekleyin
-                        int result = await conn.ExecuteAsync(
-                            $"INSERT INTO [{catalogValue}].[StringValue] " +
-                            "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) " +
-                            "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value, @value2)",
-                            new
-                            {
-                                hierarchyIDA6 = "7058085483721066086",
-                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
-                                idA3A4 = Convert.ToInt64(KodidA2A2),
-                                classnameA2A2 = "wt.iba.value.StringValue",
-                                idA3A5 = 0,
-                                idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
-                                markForDeleteA2 = 0,
-                                modifyStampA2 = DateTime.Now.Date,
-                                updateCountA2 = 1,
-                                updateStampA2 = DateTime.Now.Date,
-                                createStampA2 = DateTime.Now.Date,
-                                classnamekeyA4 = "wt.part.WTPart",
-                                classnamekeyA6 = "wt.iba.definition.StringDefinition",
-                                value = "PARÇA ENTEGRE EDÝLEMEDÝ",
-                                value2 = "Parça entegre edilemedi"
-                            });
-
-
-
-
-
-                        if (result == 1)
-                        {
-                            await conn.ExecuteAsync(
-                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
-                        }
+                        await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
                     }
+                }
+                else
+                {
+                    // Mevcut bir kayýt yoksa, yeni bir kayýt ekleyin
+                    int result = await conn.ExecuteAsync(
+                        $"INSERT INTO [{catalogValue}].[StringValue] " +
+                        "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) " +
+                        "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value, @value2)",
+                        new
+                        {
+                            hierarchyIDA6 = "7058085483721066086",
+                            idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                            idA3A4 = Convert.ToInt64(KodidA2A2),
+                            classnameA2A2 = "wt.iba.value.StringValue",
+                            idA3A5 = 0,
+                            idA3A6 = Convert.ToInt64(existingRecordStringDefinition.idA2A2),
+                            markForDeleteA2 = 0,
+                            modifyStampA2 = DateTime.Now.Date,
+                            updateCountA2 = 1,
+                            updateStampA2 = DateTime.Now.Date,
+                            createStampA2 = DateTime.Now.Date,
+                            classnamekeyA4 = "wt.part.WTPart",
+                            classnamekeyA6 = "wt.iba.definition.StringDefinition",
+                            value = "PARÇA ENTEGRE EDÝLEMEDÝ",
+                            value2 = "Parça entegre edilemedi"
+                        });
 
-                    var controlDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    DateTime controlDate2 = Convert.ToDateTime(controlDate);
-                    if (existingRecordTimeStamp != null)
+
+
+
+
+                    if (result == 1)
                     {
-
-
-                        // TimestampValue tablosunu güncelleyin
-                        int result = await conn.ExecuteAsync(
-                            $"UPDATE [{catalogValue}].[TimestampValue] " +
-                            "SET " +
-                            "[hierarchyIDA6] = @hierarchyIDA6, " +
-                            "[idA2A2] = @idA2A2, " +
-                            "[classnameA2A2] = @classnameA2A2, " +
-                            "[idA3A5] = @idA3A5, " +
-                            "[idA3A6] = @idA3A6, " +
-                            "[markForDeleteA2] = @markForDeleteA2, " +
-                            "[modifyStampA2] = @modifyStampA2, " +
-                            "[updateCountA2] = @updateCountA2, " +
-                            "[updateStampA2] = @updateStampA2, " +
-                            "[createStampA2] = @createStampA2, " +
-                            "[classnamekeyA4] = @classnamekeyA4, " +
-                            "[classnamekeyA6] = @classnamekeyA6, " +
-                            "[value] = @value " +
-                            $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
-                            new
-                            {
-                                hierarchyIDA6 = "-148878178526147486",
-                                idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
-                                classnameA2A2 = "wt.iba.value.TimestampValue",
-                                idA3A5 = 0,
-                                idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
-                                markForDeleteA2 = 0,
-                                modifyStampA2 = DateTime.Now.Date,
-                                updateCountA2 = 1,
-                                updateStampA2 = DateTime.Now.Date,
-                                createStampA2 = DateTime.Now.Date,
-                                classnamekeyA4 = "wt.part.WTPart",
-                                classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
-                                value = controlDate2,
-                                KodidA2A2
-                            });
-
-                        // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1)
-                        {
-                            await conn.ExecuteAsync(
-                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
-                        }
+                        await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
                     }
-                    else
+                }
+
+                var controlDate = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                DateTime controlDate2 = Convert.ToDateTime(controlDate);
+                if (existingRecordTimeStamp != null)
+                {
+
+
+                    // TimestampValue tablosunu güncelleyin
+                    int result = await conn.ExecuteAsync(
+                        $"UPDATE [{catalogValue}].[TimestampValue] " +
+                        "SET " +
+                        "[hierarchyIDA6] = @hierarchyIDA6, " +
+                        "[idA2A2] = @idA2A2, " +
+                        "[classnameA2A2] = @classnameA2A2, " +
+                        "[idA3A5] = @idA3A5, " +
+                        "[idA3A6] = @idA3A6, " +
+                        "[markForDeleteA2] = @markForDeleteA2, " +
+                        "[modifyStampA2] = @modifyStampA2, " +
+                        "[updateCountA2] = @updateCountA2, " +
+                        "[updateStampA2] = @updateStampA2, " +
+                        "[createStampA2] = @createStampA2, " +
+                        "[classnamekeyA4] = @classnamekeyA4, " +
+                        "[classnamekeyA6] = @classnamekeyA6, " +
+                        "[value] = @value " +
+                        $"WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = {existingRecordTimestampDefinition.idA2A2}",
+                        new
+                        {
+                            hierarchyIDA6 = "-148878178526147486",
+                            idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+                            classnameA2A2 = "wt.iba.value.TimestampValue",
+                            idA3A5 = 0,
+                            idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
+                            markForDeleteA2 = 0,
+                            modifyStampA2 = DateTime.Now.Date,
+                            updateCountA2 = 1,
+                            updateStampA2 = DateTime.Now.Date,
+                            createStampA2 = DateTime.Now.Date,
+                            classnamekeyA4 = "wt.part.WTPart",
+                            classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+                            value = controlDate2,
+                            KodidA2A2
+                        });
+
+                    // Güncelleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                    if (result == 1)
                     {
-
-
-                        int result = await conn.ExecuteAsync(
-    $"INSERT INTO [{catalogValue}].[TimestampValue] " +
-    "([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) " +
-    "VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value)",
-    new
-    {
-        hierarchyIDA6 = "-148878178526147486",
-        idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
-        idA3A4 = Convert.ToInt64(KodidA2A2),
-        classnameA2A2 = "wt.iba.value.TimestampValue",
-        idA3A5 = 0,
-        idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
-        markForDeleteA2 = 0,
-        modifyStampA2 = DateTime.Now.Date,
-        updateCountA2 = 1,
-        updateStampA2 = DateTime.Now.Date,
-        createStampA2 = DateTime.Now.Date,
-        classnamekeyA4 = "wt.part.WTPart",
-        classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
-        value = controlDate2,
-
-    });
-
-
-                        // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
-                        if (result == 1)
-                        {
-                            await conn.ExecuteAsync(
-                                $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
-                        }
+                        await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
                     }
+                }
+                else
+                {
 
 
-             
+                    int result = await conn.ExecuteAsync(
+$"INSERT INTO [{catalogValue}].[TimestampValue] " +
+"([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) " +
+"VALUES (@hierarchyIDA6, @idA2A2, @idA3A4, @classnameA2A2, @idA3A5, @idA3A6, @markForDeleteA2, @modifyStampA2, @updateCountA2, @updateStampA2, @createStampA2, @classnamekeyA4, @classnamekeyA6, @value)",
+new
+{
+    hierarchyIDA6 = "-148878178526147486",
+    idA2A2 = Convert.ToInt64(resolvedIdSeq.value) + 100,
+    idA3A4 = Convert.ToInt64(KodidA2A2),
+    classnameA2A2 = "wt.iba.value.TimestampValue",
+    idA3A5 = 0,
+    idA3A6 = Convert.ToInt64(existingRecordTimestampDefinition.idA2A2),
+    markForDeleteA2 = 0,
+    modifyStampA2 = DateTime.Now.Date,
+    updateCountA2 = 1,
+    updateStampA2 = DateTime.Now.Date,
+    createStampA2 = DateTime.Now.Date,
+    classnamekeyA4 = "wt.part.WTPart",
+    classnamekeyA6 = "wt.iba.definition.TimestampDefinition",
+    value = controlDate2,
+
+});
+
+
+                    // Yeni ekleme iþlemi baþarýlýysa, id_sequence tablosuna dummy = 'x' þeklinde ekleme iþlemi gerçekleþtirin
+                    if (result == 1)
+                    {
+                        await conn.ExecuteAsync(
+                            $"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+                    }
+                }
+
+
+
 
             }
             catch (Exception)
@@ -3545,25 +3801,27 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
         #region PDF Download Settings
 
 
-        private async Task SendPdfToCustomerFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, RootObject CADResponse, string stateType,string partCode)
+        #region PDF FONKSYÝONLARI
+
+        //REP
+        private async Task SendPdfToCustomerFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, RootObject CADResponse, string stateType, string partCode)
         {
             try
             {
                 if (stateType == "CADSTOK")
                 {
-                    var CADViewResponse = new TeknikResimViewModel
+                    var CADViewResponse = new TeknikResim2ViewModel
                     {
                         Number = CADResponse.Number,
                         Revizyon = CADResponse.Revision,
                         DocumentType = "TR",
                         Description = CADResponse.Description,
                         ModifiedOn = CADResponse.LastModified,
-                        AuthorizationDate = "",
+                        AuthorizationDate = CADResponse.LastModified,
                         ModifiedBy = CADResponse.ModifiedBy,
-                        State = CADResponse.State,
+                        state = 30
                     };
 
-                    CADViewResponse.State.Value = "50";
 
                     ApiService _apiService = new ApiService();
 
@@ -3587,10 +3845,10 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                     if (!string.IsNullOrEmpty(partCode))
                     {
 
-                    var SQL_WTPart = $"SELECT [idA3masterReference] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
-                    var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
-                    var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
-                    var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+                        var SQL_WTPart = $"SELECT [idA3masterReference] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+                        var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
+                        var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+                        var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
 
 
                         partName = resolvedItems_SQL_WTPartMaster.name;
@@ -3618,19 +3876,22 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                         DocumentType = "TR",
                         Description = CADResponse.Description,
                         ModifiedOn = CADResponse.LastModified,
-                        AuthorizationDate = "",
+                        AuthorizationDate = CADResponse.LastModified,
                         ModifiedBy = CADResponse.ModifiedBy,
-                        state = 50,
+                        state = 30,
                         name = pdfFileName,
                         content = await DownloadPdfAsync(pdfUrl),
-                        projectCode = "",
-                        relatedParts = new RelatedParts
-                        {
-                            RelatedPartName = partName,
-                            RelatedPartNumber = partNumber,
-                            isUpdateAndDelete = true,
-                        }
-                     
+                        projectCode = "Proje1",
+                        relatedParts = new List<RelatedParts>
+                            {
+                                new RelatedParts
+                                {
+                                    RelatedPartName = partName,
+                                    RelatedPartNumber = partNumber,
+                                    isUpdateAndDelete = false,
+                                }
+                            }
+
 
                     };
 
@@ -3678,15 +3939,15 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                         DocumentType = "TR",
                         Description = CADResponse.Description,
                         ModifiedOn = CADResponse.LastModified,
-                        AuthorizationDate = "",
+                        AuthorizationDate = CADResponse.LastModified,
                         ModifiedBy = CADResponse.ModifiedBy,
-                        state = 50,
+                        state = 30,
                         name = pdfFileName,
                         content = await DownloadPdfAsync(pdfUrl),
-                        projectCode = "",
-                        
-                        
-                       
+                        projectCode = "Proje1",
+
+
+
 
                     };
                     var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
@@ -3709,9 +3970,194 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 LogService logService = new LogService(_configuration);
 
                 logService.CreateJsonFileLog(ex.Message, "HATA");
+
                 //MessageBox.Show($"Hata: {ex.Message}");
             }
         }
+
+
+
+
+        //ATTACHMENT
+        private async Task SendPdfToCustomerAttachmentFunctionAsync(string pdfUrl, string pdfFileName, string apiFullUrl, string apiURL, string endPoint, long EPMDocID, string catalogValue, SqlConnection conn, TeknikResim CADResponse, string stateType, string partCode)
+        {
+            try
+            {
+                if (stateType == "CADSTOK")
+                {
+                    var CADViewResponse = new TeknikResim2ViewModel
+                    {
+                        
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = CADResponse.LastModified,
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        state = 30
+                    };
+
+
+                    ApiService _apiService = new ApiService();
+
+
+
+                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+
+                }
+                if (stateType == "CAD_WTPART_ILISKI")
+                {
+
+                }
+                if (stateType == "SEND_FILE")
+                {
+
+                    var partName = "";
+                    var partNumber = "";
+
+                    if (!string.IsNullOrEmpty(partCode))
+                    {
+
+                        var SQL_WTPart = $"SELECT [idA3masterReference] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+                        var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
+                        var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+                        var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+
+
+                        partName = resolvedItems_SQL_WTPartMaster.name;
+                        partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                    }
+
+
+
+
+                    //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
+                    //{
+                    //    partName = resolvedItems_SQL_WTPartMaster.name;
+                    //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                    //}
+                    //else
+                    //{
+                    //    partName = "Name deðer bulunamadý";
+                    //    partNumber = "Number deðeri bulunamadý";
+                    //}
+
+                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                    {
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = CADResponse.LastModified,
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        state = 30,
+                        name = pdfFileName,
+                        content = await DownloadPdfAsync(pdfUrl),
+                        projectCode = "Proje1",
+                        relatedParts = new List<RelatedParts>
+                            {
+                                new RelatedParts
+                                {
+                                    RelatedPartName = partName,
+                                    RelatedPartNumber = partNumber,
+                                    isUpdateAndDelete = false,
+                                }
+                            }
+
+
+                    };
+
+                    // PDF dosyasýný indir
+                    //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
+
+                    //  Api Endpoint
+                    //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
+                    //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
+
+                    // PDF dosyasýný müþteri API'sine gönder
+
+                    ApiService _apiService = new ApiService();
+
+
+
+                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                    LogService logService = new LogService(_configuration);
+
+                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+                    //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
+                }
+
+
+
+                try
+                {
+
+
+                    await conn.ExecuteAsync($@"
+        DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
+
+                }
+                catch (Exception ex)
+                {
+                    //Hata mesajýný veya hata günlüðünü kaydedin
+                    Console.WriteLine($"Hata: {ex.Message}");
+                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                    {
+                        Number = CADResponse.Number,
+                        Revizyon = CADResponse.Revision,
+                        DocumentType = "TR",
+                        Description = CADResponse.Description,
+                        ModifiedOn = CADResponse.LastModified,
+                        AuthorizationDate = CADResponse.LastModified,
+                        ModifiedBy = CADResponse.ModifiedBy,
+                        state = 30,
+                        name = pdfFileName,
+                        content = await DownloadPdfAsync(pdfUrl),
+                        projectCode = "Proje1",
+
+
+
+
+                    };
+                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                    LogService logService = new LogService(_configuration);
+
+                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+
+                    MessageBox.Show(ex.Message);
+                }
+                finally
+                {
+                    // Baðlantýyý kapatýn
+                    conn.Close();
+                }
+
+                //MessageBox.Show($"PDF dosyasý ({pdfFileName}) gönderildi.");
+            }
+            catch (Exception ex)
+            {
+                LogService logService = new LogService(_configuration);
+
+                logService.CreateJsonFileLog(ex.Message, "HATA");
+
+                //MessageBox.Show($"Hata: {ex.Message}");
+            }
+        }
+
+
+        #endregion
+
+
+
+
+
 
         private async Task DownloadAndSavePdfAsync(string pdfUrl)
         {
@@ -3758,7 +4204,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
         }
 
 
-        private async Task<byte[]> DownloadPdfAsync(string pdfUrl)
+        private async Task<string> DownloadPdfAsync(string pdfUrl)
         {
             try
             {
@@ -3807,7 +4253,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 _httpClient1.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
                 using (var response = await _httpClient1.GetAsync(pdfUrl))
                 {
-                  
+
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -3833,9 +4279,9 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                         byte[] bytes = await response.Content.ReadAsByteArrayAsync();
                         var stream = new MemoryStream(bytes);
                         //PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
-                    
+
                         // PDF'yi yükle
-                    
+
                         using (var pdfDocument = PdfiumViewer.PdfDocument.Load(stream))
                         {
                             // Toplam sayfa sayýsýný belirle
@@ -3852,6 +4298,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
 
                                 System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(689, 550, 114, 14);
+                                //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(5592, 4792, 1312, 38); // Kale pdf ayarý
 
                                 Bitmap croppedImage = CropImage(pageImage, cropArea);
 
@@ -3869,10 +4316,10 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                                 // Sayfa bilgisini çýkar
                                 //string sheetInfo = ExtractSheetInfo(ocrResult);
 
-                             
+
                                 // Sayfa bilgisini ve resmi listeye ekle
                                 sayfaBilgileri.Add(Tuple.Create(pageIndex + 1, sheetInfo, pageImage));
-                            
+
 
                                 //// Belleði temizle
                                 croppedImage.Dispose();
@@ -3942,7 +4389,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
 
                         }
 
-
+                        string base64EncodedPdf = Convert.ToBase64String(pdfBytes);
                         var content2 = new ByteArrayContent(pdfBytes);
 
                         // Dosya adýný Content-Disposition baþlýðýna ekleyin
@@ -3950,7 +4397,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                         {
                             FileName = dosyaAdi // Orijinal dosya adýný kullanýn
                         };
-                        return pdfBytes;
+                        return base64EncodedPdf;
                     }
                     else
                     {
@@ -4204,14 +4651,14 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 Console.WriteLine("Temizlenmiþ OCR Sonucu: " + cleanedOcrResult);
 
                 // "SHEET" ile baþlayan ve "OF" veya "0F" ile biten kýsmý bul
-                string[] parts = cleanedOcrResult.Split(new string[] { "SHEET ", "SHEET", "sHEET", "1SHEET" }, StringSplitOptions.None);
+                string[] parts = cleanedOcrResult.Split(new string[] { "Sayfa", "SHEET ", "SHEET", "sHEET", "1SHEET" }, StringSplitOptions.None);
 
                 // Ýlgilendiðimiz kýsým ikinci elemandýr (SHEET'ten sonraki)
                 if (parts.Length > 1)
                 {
                     string sheetPart = parts[1].Trim();
                     // "OF" veya "0F" ile biten kýsmý ayýr
-                    string[] sheetNumbers = sheetPart.Split(new string[] { "OF", "0F", "or" }, StringSplitOptions.None);
+                    string[] sheetNumbers = sheetPart.Split(new string[] { "Toplam Sayfa", "OF", "0F", "or" }, StringSplitOptions.None);
 
                     if (sheetNumbers.Length > 1)
                     {
@@ -4376,7 +4823,7 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                     //await EntegrasyonDurumCheckOut(partItem.idA2A2, state);
                 }
 
-              
+
 
 
                 if (response.State.Value == "A")
@@ -4446,16 +4893,16 @@ ALTER TABLE " + scheman + @".[EPMDocument] ENABLE TRIGGER [EPMDokumanState_CANCE
                 var anaPartLOG = new AnaPart();
                 var anaPartCancelled = new AnaPartCancelled();
                 var jsonData3 = "";
-                 //string faiValue = string.IsNullOrEmpty(response.Fai) ? "H" : response.Fai;
+                //string faiValue = string.IsNullOrEmpty(response.Fai) ? "H" : response.Fai;
 
-                if(response.CLASSIFICATION == null)
+                if (response.CLASSIFICATION == null)
                 {
                     response.CLASSIFICATION = new CLASSIFICATION
                     {
                         ClfNodeHierarchyDisplayName = "NULL"
                     };
                 }
-              
+
 
                 if (response.State.Value == "RELEASED")
                 {
@@ -5045,7 +5492,7 @@ new
                         }
                     }).ToList()
                 };
-             
+
                 ApiService _apiService = new ApiService();
                 var jsonData3 = JsonConvert.SerializeObject(response);
                 var jsonData4 = JsonConvert.SerializeObject(removePart);
@@ -5055,7 +5502,7 @@ new
 
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLog(jsonData3, $"Ana parça: {response.Number} - Muadil parça: {removePart.Alternates.FirstOrDefault().AlternatePart.Number} muadil iliþkisi kaldýrýldý.");
-                
+
 
             }
             catch (Exception)
@@ -5511,8 +5958,8 @@ new
                             var displayStringSTATE = "";
                             if (dataObject["State"]?["Display"] != null)
                             {
-                                 displayStringSTATE = $" ({dataObject["State"]["Display"]})";
-                                if(displayStringSTATE == " (Aktif)")
+                                displayStringSTATE = $" ({dataObject["State"]["Display"]})";
+                                if (displayStringSTATE == " (Aktif)")
                                 {
                                     displayStringSTATE = " (Released)";
                                 }
@@ -5524,7 +5971,7 @@ new
                             // Format the string with selected properties
                             string displayString = $"{dataObject["Number"]} - {dataObject["Version"]} - {dataObject["Name"]}";
 
-                        
+
                             // Check if message exists
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("kaldýrýldý"))
                             {
@@ -5534,10 +5981,10 @@ new
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()) && dataObject["Mesaj"].ToString().Contains("Muadil parça"))
                             {
                                 //displayString += $" - {dataObject["Mesaj"]}";
-                                displayString = displayString.Replace(dataObject["Number"].ToString()+" - ", null);
+                                displayString = displayString.Replace(dataObject["Number"].ToString() + " - ", null);
                                 displayString = displayString.Replace(dataObject["Name"].ToString(), null);
-                                displayString = displayString.Replace(dataObject["Version"].ToString()+" - ", null);
-                              
+                                displayString = displayString.Replace(dataObject["Version"].ToString() + " - ", null);
+
                             }
                             if (dataObject.ContainsKey("Mesaj") && !string.IsNullOrEmpty(dataObject["Mesaj"].ToString()))
                             {
@@ -5630,6 +6077,20 @@ new
         private void label6_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void rdbAttachment_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+
+                txtParola.Enabled = true;
+                txtKullaniciAdi.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("HATA !", ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
