@@ -79,6 +79,9 @@
             rdbAttachment = new RadioButton();
             groupBox6 = new GroupBox();
             rdbRepresentation = new RadioButton();
+            groupBox7 = new GroupBox();
+            rdbTesseractOff = new RadioButton();
+            rdbTesseractOpen = new RadioButton();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
@@ -86,11 +89,12 @@
             groupBox5.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
             groupBox6.SuspendLayout();
+            groupBox7.SuspendLayout();
             SuspendLayout();
             // 
             // btnStartAutoPost
             // 
-            btnStartAutoPost.Location = new Point(836, 309);
+            btnStartAutoPost.Location = new Point(850, 380);
             btnStartAutoPost.Name = "btnStartAutoPost";
             btnStartAutoPost.Size = new Size(94, 29);
             btnStartAutoPost.TabIndex = 0;
@@ -280,7 +284,7 @@
             groupBox2.Controls.Add(label1);
             groupBox2.Location = new Point(630, 12);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(320, 299);
+            groupBox2.Size = new Size(320, 362);
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
             groupBox2.Text = "Bağlantı Durumu";
@@ -391,7 +395,7 @@
             groupBox3.Controls.Add(txtBasicPassword);
             groupBox3.Controls.Add(txtBasicUsername);
             groupBox3.Controls.Add(btnApiEkle);
-            groupBox3.Location = new Point(12, 210);
+            groupBox3.Location = new Point(12, 213);
             groupBox3.Name = "groupBox3";
             groupBox3.Size = new Size(401, 101);
             groupBox3.TabIndex = 3;
@@ -450,7 +454,7 @@
             // 
             // button1btnStopAutoPost
             // 
-            button1btnStopAutoPost.Location = new Point(736, 309);
+            button1btnStopAutoPost.Location = new Point(730, 380);
             button1btnStopAutoPost.Name = "button1btnStopAutoPost";
             button1btnStopAutoPost.Size = new Size(94, 29);
             button1btnStopAutoPost.TabIndex = 5;
@@ -460,7 +464,7 @@
             // 
             // btnKapat
             // 
-            btnKapat.Location = new Point(636, 309);
+            btnKapat.Location = new Point(630, 381);
             btnKapat.Name = "btnKapat";
             btnKapat.Size = new Size(94, 29);
             btnKapat.TabIndex = 6;
@@ -482,9 +486,9 @@
             groupBox4.Controls.Add(listBox1);
             groupBox4.Controls.Add(lblDataCount);
             groupBox4.Controls.Add(label5);
-            groupBox4.Location = new Point(12, 335);
+            groupBox4.Location = new Point(12, 415);
             groupBox4.Name = "groupBox4";
-            groupBox4.Size = new Size(938, 301);
+            groupBox4.Size = new Size(938, 295);
             groupBox4.TabIndex = 8;
             groupBox4.TabStop = false;
             groupBox4.Text = "PLM LOG";
@@ -495,7 +499,7 @@
             listBox1.HorizontalExtent = 3000;
             listBox1.HorizontalScrollbar = true;
             listBox1.IntegralHeight = false;
-            listBox1.Location = new Point(11, 37);
+            listBox1.Location = new Point(11, 42);
             listBox1.Name = "listBox1";
             listBox1.ScrollAlwaysVisible = true;
             listBox1.Size = new Size(921, 244);
@@ -508,7 +512,7 @@
             groupBox5.Controls.Add(listBox2);
             groupBox5.Location = new Point(956, 12);
             groupBox5.Name = "groupBox5";
-            groupBox5.Size = new Size(247, 624);
+            groupBox5.Size = new Size(247, 698);
             groupBox5.TabIndex = 9;
             groupBox5.TabStop = false;
             groupBox5.Text = "Log dosya listesi";
@@ -528,7 +532,7 @@
             listBox2.FormattingEnabled = true;
             listBox2.Location = new Point(5, 27);
             listBox2.Name = "listBox2";
-            listBox2.Size = new Size(237, 584);
+            listBox2.Size = new Size(237, 664);
             listBox2.TabIndex = 0;
             listBox2.SelectedIndexChanged += listBox2_SelectedIndexChanged;
             // 
@@ -574,9 +578,9 @@
             // 
             groupBox6.Controls.Add(rdbRepresentation);
             groupBox6.Controls.Add(rdbAttachment);
-            groupBox6.Location = new Point(419, 218);
+            groupBox6.Location = new Point(419, 213);
             groupBox6.Name = "groupBox6";
-            groupBox6.Size = new Size(203, 93);
+            groupBox6.Size = new Size(203, 101);
             groupBox6.TabIndex = 10;
             groupBox6.TabStop = false;
             groupBox6.Text = "PDF Ayarları";
@@ -591,12 +595,46 @@
             rdbRepresentation.Text = "Representation";
             rdbRepresentation.UseVisualStyleBackColor = true;
             // 
+            // groupBox7
+            // 
+            groupBox7.Controls.Add(rdbTesseractOff);
+            groupBox7.Controls.Add(rdbTesseractOpen);
+            groupBox7.Location = new Point(419, 316);
+            groupBox7.Name = "groupBox7";
+            groupBox7.Size = new Size(203, 93);
+            groupBox7.TabIndex = 14;
+            groupBox7.TabStop = false;
+            groupBox7.Text = "PDF Sheet Düzenleme";
+            // 
+            // rdbTesseractOff
+            // 
+            rdbTesseractOff.AutoSize = true;
+            rdbTesseractOff.Checked = true;
+            rdbTesseractOff.Location = new Point(6, 63);
+            rdbTesseractOff.Name = "rdbTesseractOff";
+            rdbTesseractOff.Size = new Size(72, 24);
+            rdbTesseractOff.TabIndex = 13;
+            rdbTesseractOff.TabStop = true;
+            rdbTesseractOff.Text = "Kapalı";
+            rdbTesseractOff.UseVisualStyleBackColor = true;
+            // 
+            // rdbTesseractOpen
+            // 
+            rdbTesseractOpen.AutoSize = true;
+            rdbTesseractOpen.Location = new Point(6, 33);
+            rdbTesseractOpen.Name = "rdbTesseractOpen";
+            rdbTesseractOpen.Size = new Size(58, 24);
+            rdbTesseractOpen.TabIndex = 12;
+            rdbTesseractOpen.Text = "Açık";
+            rdbTesseractOpen.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSize = true;
-            ClientSize = new Size(1210, 644);
+            ClientSize = new Size(1210, 720);
+            Controls.Add(groupBox7);
             Controls.Add(groupBox6);
             Controls.Add(groupBox5);
             Controls.Add(groupBox4);
@@ -626,6 +664,8 @@
             contextMenuStrip1.ResumeLayout(false);
             groupBox6.ResumeLayout(false);
             groupBox6.PerformLayout();
+            groupBox7.ResumeLayout(false);
+            groupBox7.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -680,5 +720,8 @@
         private RadioButton rdbAttachment;
         private GroupBox groupBox6;
         private RadioButton rdbRepresentation;
+        private GroupBox groupBox7;
+        private RadioButton rdbTesseractOff;
+        private RadioButton rdbTesseractOpen;
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
 
         public string Name { get; set; }
         public string Number { get; set; }
-        public string Description { get; set; }
+        public string Description { get; set; } = "Null";
 
         public string Revision { get; set; }
 
@@ -54,10 +55,29 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
     {
         public List<PartDocAssociation> Value { get; set; }
     }
-	
-	
 
-public class AdditionalFile
+
+    public class CADDocumentResponse2
+    {
+        [JsonProperty("@odata.context")]
+        public string ODataContext { get; set; }
+
+        [JsonProperty("value")]
+        public List<object> Value { get; set; }  // Value is an empty list, so we use object type here
+
+        [JsonProperty("@PTC.AppliedContainerContext.LocalTimeZone")]
+        public string LocalTimeZone { get; set; }
+    }
+
+
+    public class CADAssociation2
+    {
+        public string ID { get; set; }
+    }
+
+
+
+    public class AdditionalFile
     {
         public string URL { get; set; }
         public string Label { get; set; }
@@ -97,7 +117,7 @@ public class AdditionalFile
 
         public string Name { get; set; }
         public string Number { get; set; }
-        public string Description { get; set; }
+        public string Description { get; set; } = "Null";
 
         public string Revision { get; set; }
 

@@ -51,7 +51,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
         public string? Number { get; set; }
         public string? Revizyon { get; set; }
         public string? DocumentType { get; set; }
-        public string? Description { get; set; }
+        public string? Description { get; set; } = "NULL Attr";
         public DateTime? ModifiedOn { get; set; }
         public DateTime? AuthorizationDate { get; set; }
         public string? ModifiedBy { get; set; }
