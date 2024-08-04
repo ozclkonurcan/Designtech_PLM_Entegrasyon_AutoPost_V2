@@ -1454,8 +1454,8 @@ BEGIN
                 if (ilkCalistirmaProdMgmt)
                 {
                     formattedTarih = DateTime.Today.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    //formattedTarih2 = DateTime.Today.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
-                    formattedTarih2 = DateTime.Today.AddDays(-1).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    formattedTarih2 = DateTime.Now.ToString("yyyy.MM.dd HH:mm:ss.fffffff");
+                    //formattedTarih2 = DateTime.Today.AddDays(-1).ToString("yyyy.MM.dd HH:mm:ss.fffffff");
                     if (state == "ALTERNATE_RELEASED")
                     {
                         sql = $"SELECT [idA2A2], [idA3masterReference], [statestate], [updateStampA2] FROM {catalogValue}.WTPart WHERE [statestate] = 'RELEASED' and [latestiterationInfo] = 1 and [idA3view] = {resolvedViewKod.idA2A2} and (updateStampA2 >= @formattedTarih or updateStampA2 >= @formattedTarih2)";
@@ -1523,7 +1523,7 @@ BEGIN
                     var cadJSON = "";
                     var cadJSON2 = "";
                     var jsonWTUSER = "";
-                    var cadAssociationsJSON = "";
+                    var cadReferencesJSON = "";
                     if (sourceApi.Contains("ProdMgmt"))
                     {
                         json = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.idA2A2}')?$expand=Alternates($expand=AlternatePart)", BasicUsername, BasicPassword, CSRF_NONCE);
@@ -1532,7 +1532,7 @@ BEGIN
                     if (sourceApi.Contains("CADDocumentMgmt"))
                     {
                         cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
-                        cadAssociationsJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
+                        cadReferencesJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/References", BasicUsername, BasicPassword, CSRF_NONCE);
                         cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
                     }
 
@@ -1549,6 +1549,7 @@ BEGIN
                     {
                         if (sourceApi.Contains("ProdMgmt"))
                         {
+
                             var response = JsonConvert.DeserializeObject<Part>(json);
                             var responseCreator = JsonConvert.DeserializeObject<WTUsers>(jsonWTUSER);
                             EmailControlString(responseCreator);
@@ -1832,6 +1833,7 @@ BEGIN
 
                             if (partItem.StateDegeri == "RELEASED" && rdbRepresentation.Checked == true)
                             {
+                                var cadAssociationsJSON = "";
                                 var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
                                 string partCode = "";
                                 if (cadAssociationsJSON != null)
@@ -1914,7 +1916,7 @@ BEGIN
                                                             LogService logService = new LogService(_configuration);
                                                             var jsonData4 = JsonConvert.SerializeObject(CADResponse);
                                                             //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderme iþlemi gerçekleþtirilemedi.");
+                                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderilmedi.");
 
                                                             //logService.CreateJsonFileLog(cadJSON + "Attachment da Veri bulunamadý.");
                                                             continue;
@@ -1926,7 +1928,7 @@ BEGIN
                                                         LogService logService = new LogService(_configuration);
                                                         var jsonData4 = JsonConvert.SerializeObject(CADResponse);
                                                         //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                                                        logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderme iþlemi gerçekleþtirilemedi.");
+                                                        logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderilmedi");
 
                                                         //logService.CreateJsonFileLog(cadJSON + "Attachment da Veri bulunamadý.");
                                                         continue;
@@ -1939,7 +1941,7 @@ BEGIN
                                             LogService logService = new LogService(_configuration);
                                             var jsonData4 = JsonConvert.SerializeObject(CADResponse);
                                             //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderme iþlemi gerçekleþtirilemedi.");
+                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Representation da da Veri bulunamadý bu nedenle gönderilmedi");
 
                                             //logService.CreateJsonFileLog(cadJSON + "Attachment da Veri bulunamadý.");
                                             continue;
@@ -1961,41 +1963,113 @@ BEGIN
 
                             if(partItem.StateDegeri == "RELEASED" && rdbAttachment.Checked == true)
                             {
-                               
-                                    var CADResponse = JsonConvert.DeserializeObject<TeknikResim>(cadJSON);
+                                var cadAssociationsJSON = "";
+
+                                var CADResponse = JsonConvert.DeserializeObject<TeknikResim>(cadJSON);
                                     string partCode = "";
                                 if (CADResponse.Attachments != null && CADResponse.Attachments.Count > 0)
                                 {
 
-                                    try
-                                    {
-                                        if (cadAssociationsJSON != null)
+                                   
+                                        if (cadReferencesJSON != null)
                                         {
-                                            var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
-                                            if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
-                                            {
-                                                var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
-                                                string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
-                                                Regex regex = new Regex(pattern);
-                                                Match match = regex.Match(CADAssociations);
 
-                                                if (match.Success)
+
+                                            var CADReferencesResponse = JsonConvert.DeserializeObject<CADDocumentReferences>(cadReferencesJSON);
+                                            var CADReferencesResponse_ID = CADReferencesResponse.Value.Where(x => x.DepType.Display == "Drawing Reference").FirstOrDefault().ID.ToString();
+
+                                            string patternReferences = @"OR:wt\.epm\.structure\.EPMReferenceLink:(\d+)";
+                                            Regex regexReferences = new Regex(patternReferences);
+                                            Match matchReferences = regexReferences.Match(CADReferencesResponse_ID);
+
+                                            var empReferenceLinkID = "";
+                                            if (matchReferences.Success)
+                                            {
+                                                 empReferenceLinkID = matchReferences.Groups[1].Value;
+                                            }
+
+
+                                            var SQL_EPMReferenceLink = $"SELECT * FROM {catalogValue}.EPMReferenceLink WHERE [idA2A2] = '{empReferenceLinkID}'";
+                                            var resolvedItems_SQL_EPMReferenceLink = await conn.QuerySingleAsync<dynamic>(SQL_EPMReferenceLink);
+                                            var SQL_EPMDocument = $@"
+SELECT * 
+FROM [{catalogValue}].EPMDocument 
+WHERE [idA3masterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+  AND latestiterationInfo = 1
+  AND versionIdA2versionInfo = (
+      SELECT MAX(versionIdA2versionInfo)
+      FROM [{catalogValue}].EPMDocument
+      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+  )
+  AND versionLevelA2versionInfo = (
+      SELECT MAX(versionLevelA2versionInfo)
+      FROM [{catalogValue}].EPMDocument
+      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+)";
+
+                                            var resolvedItems_SQL_EPMDocument = await conn.QuerySingleAsync<dynamic>(SQL_EPMDocument);
+
+                                            var SQL_EPMDocumentMaster = $@"
+SELECT * 
+FROM [{catalogValue}].EPMDocumentMaster 
+WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
+
+                                            var resolvedItems_SQL_EPMDocumentMaster = await conn.QuerySingleAsync<dynamic>(SQL_EPMDocumentMaster);
+
+                                            if (resolvedItems_SQL_EPMDocument.statestate == "RELEASED") {
+
+
+
+
+                                                var EPMBuildRuleSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + resolvedItems_SQL_EPMDocument.idA2A2}')/PartDocAssociations", BasicUsername, BasicPassword, CSRF_NONCE);
+                                                var EPMBuildRuleSONResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(EPMBuildRuleSON);
+
+                                                var EPMBuildRuleAssociations = EPMBuildRuleSONResponse.Value.FirstOrDefault().ID;
+                                                string patternEPMBuildRule = @"OR:wt\.epm\.build\.EPMBuildRule:(\d+)";
+                                                Regex regexEPMBuildRule = new Regex(patternEPMBuildRule);
+                                                Match matchEPMBuildRule = regexEPMBuildRule.Match(EPMBuildRuleAssociations);
+                                                var EPMBuildRuleID = "";
+
+                                                if (matchEPMBuildRule.Success)
                                                 {
-                                                    partCode = match.Groups[1].Value;
+                                                    EPMBuildRuleID = matchEPMBuildRule.Groups[1].Value;
 
                                                 }
 
-                                            }
 
-                                        }
-                                    }
-                                    catch (Exception)
-                                    {
+                                                var SQL_EPMBuildRule = $"SELECT * FROM {catalogValue}.EPMBuildRule WHERE [idA2A2] = '{EPMBuildRuleID}'";
+                                                var resolvedItems_SQL_EPMBuildRule = await conn.QuerySingleAsync<dynamic>(SQL_EPMBuildRule);
 
-                                    }
+                                                var SQL_WTPart = $"SELECT * FROM {catalogValue}.WTPart WHERE [branchIditerationInfo] = '{resolvedItems_SQL_EPMBuildRule.branchIdA3B5}' and latestiterationInfo = 1";
+                                                var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 
-                                    try
-                                    {
+                                                //var SQL_WTPartMaster = $"SELECT * FROM {catalogValue}.WTPartMaster WHERE [branchIditerationInfo] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+                                                //var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+
+                                                partCode = Convert.ToString(resolvedItems_SQL_WTPart.idA2A2);
+
+
+                                                //var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                                                //if (CADAssociationsResponse != null || CADAssociationsResponse.Value.Count != 0)
+                                                //{
+                                                //    var CADAssociations = CADAssociationsResponse.Value.FirstOrDefault().ID;
+                                                //    string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                                                //    Regex regex = new Regex(pattern);
+                                                //    Match match = regex.Match(CADAssociations);
+
+                                                //    if (match.Success)
+                                                //    {
+                                                //        partCode = match.Groups[1].Value;
+
+                                                //    }
+
+                                                //}
+
+
+                                   
+                                 
+
+
 
                                         if (cadJSON != null || cadJSON != "")
                                         {
@@ -2028,31 +2102,40 @@ BEGIN
 
                                             var jsonData4 = JsonConvert.SerializeObject(CADResponse);
                                             //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Attachment da Veri bulunamadý bu nedenle gönderme iþlemi gerçekleþtirilemedi.");
+                                            logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Attachment da Veri bulunamadý bu nedenle gönderilmedi.");
                                             
                                             //logService.CreateJsonFileLog(cadJSON + "Attachment da Veri bulunamadý.");
                                             continue;
                                         }
                                         }
 
+                                            
+
+
+                                        }
+                                        else
+                                        {
+                                            LogService logService = new LogService(_configuration);
+
+                                            var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                            //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                            logService.CreateJsonFileLogError(jsonData4, $"Released iþlemi gerçekleþtirildi ama CAD Döküman Released deðil. CADName : {resolvedItems_SQL_EPMDocumentMaster.CADName} Name : {resolvedItems_SQL_EPMDocumentMaster.name} DocumentNumber : {resolvedItems_SQL_EPMDocumentMaster.documentNumber} State : {resolvedItems_SQL_EPMDocument.statestate}");
+                                        }
+
+
+
                                     }
-                                    catch (Exception ex)
-                                    {
-                                    LogService logService = new LogService(_configuration);
 
-                                    logService.CreateJsonFileLog(ex.Message, "HATA");
-                                    continue;
+                                    // If LastUpdateTimestamp has not changed, do nothing
+
                                 }
-                                // If LastUpdateTimestamp has not changed, do nothing
-
-                            }
                             else
                             {
                                 LogService logService = new LogService(_configuration);
 
                                 var jsonData4 = JsonConvert.SerializeObject(CADResponse);
                                 //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                                logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Attachment da Veri bulunamadý bu nedenle gönderme iþlemi gerçekleþtirilemedi.");
+                                logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama Attachment da Veri bulunamadý bu nedenle gönderilmedi.");
 
                                 //logService.CreateJsonFileLog(cadJSON + "Attachment da Veri bulunamadý.");
                                 continue;
@@ -2065,33 +2148,102 @@ BEGIN
                                 try
                                 {
 
-
+                                    var cadAssociationsJSON = "";
                                     var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
 
-
-                                    var CADViewResponse = new TeknikResimCancel
+                                    string partCode = "";
+                                    if (cadAssociationsJSON != null)
                                     {
-                                        Number = CADResponse.Number,
-                                        Revizyon = CADResponse.Revision,
+                                        try
+                                        {
+                                            var CADAssociationsResponse = JsonConvert.DeserializeObject<CADDocumentResponse>(cadAssociationsJSON);
+                                            if (CADAssociationsResponse != null && CADAssociationsResponse.Value != null && CADAssociationsResponse.Value.Count > 0)
+                                            {
+                                                var firstAssociation = CADAssociationsResponse.Value.SingleOrDefault();
+                                                if (firstAssociation != null && firstAssociation.ID != null)
+                                                {
 
-                                    };
+                                                    var CADAssociations = CADAssociationsResponse.Value.SingleOrDefault().ID;
+                                                    string pattern = @"OR:wt\.part\.WTPart:(\d+)_Calculated_OR:wt\.epm\.EPMDocument:";
+                                                    Regex regex = new Regex(pattern);
+                                                    Match match = regex.Match(CADAssociations);
+
+                                                    if (match.Success)
+                                                    {
+                                                        partCode = match.Groups[1].Value;
+
+                                                    }
+                                                }
+
+                                            }
+
+                                        }
+                                        catch (Exception)
+                                        {
+
+                                        }
+                                    }
+
+                                    var partName = "";
+                                    var partNumber = "";
+                                    var partState = "";
+                                    if (!string.IsNullOrEmpty(partCode))
+                                    {
+
+                                        var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+                                        var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
+                                        var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+                                        var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
 
 
-                                    ApiService _apiService = new ApiService();
+                                        partName = resolvedItems_SQL_WTPartMaster.name;
+                                        partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                                        partState = resolvedItems_SQL_WTPart.statestate;
+
+                                        if(partState == "RELEASED")
+                                        {
+
+                                            var CADViewResponse = new TeknikResimCancel
+                                            {
+                                                Number = CADResponse.Number,
+                                                Revizyon = CADResponse.Revision,
+
+                                            };
+
+
+                                            ApiService _apiService = new ApiService();
 
 
 
-                                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-                                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
-                                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                                            //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                                            var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+                                            await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
 
-                                    LogService logService = new LogService(_configuration);
+                                            LogService logService = new LogService(_configuration);
 
-                                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi.");
+                                            logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi.");
 
-                                    await conn.ExecuteAsync($@"
-        DELETE FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED]
-        WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+                                                                                await conn.ExecuteAsync($@"
+                                            DELETE FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED]
+                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+                                        }
+                                        else
+                                        {
+                                            LogService logService = new LogService(_configuration);
+                                            var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                            logService.CreateJsonFileLogError(jsonData4, $"Cancelled iþlemi gerçekleþtirildi WTPart state durumu released deðil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        LogService logService = new LogService(_configuration);
+                                        var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                        logService.CreateJsonFileLogError(jsonData4, "Cancelled iþlemi gerçekleþtirildi ama gönderilmedi. WTPart iliþkisi bulunmadý.");
+                                    }
+
+
+
                                 }
                                 catch (Exception ex)
                                 {
@@ -2101,6 +2253,7 @@ BEGIN
                                 }
                             }
                             // If LastUpdateTimestamp has not changed, do nothing
+                        
                         }
 
                         //if (sourceApi.Contains("CADDocumentMgmt"))
@@ -3951,9 +4104,11 @@ new
                     var partName = "";
                     var partNumber = "";
                     var partState = "";
-
+                    var projeCode = "";
+                    var json = "";
                     if (!string.IsNullOrEmpty(partCode))
                     {
+                  
 
                         var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
                         var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
@@ -3964,36 +4119,48 @@ new
                         partName = resolvedItems_SQL_WTPartMaster.name;
                         partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
                         partState = resolvedItems_SQL_WTPart.statestate;
+                        json = await projectCodeRootObjectInfo(partCode, CADResponse);
                     }
 
 
-
-
-                    //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
-                    //{
-                    //    partName = resolvedItems_SQL_WTPartMaster.name;
-                    //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
-                    //}
-                    //else
-                    //{
-                    //    partName = "Name deðer bulunamadý";
-                    //    partNumber = "Number deðeri bulunamadý";
-                    //}
-
-                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                    try
                     {
-                        Number = CADResponse.Number,
-                        Revizyon = CADResponse.Revision,
-                        DocumentType = "TR",
-                        Description = CADResponse.Description ?? "Null",
-                        ModifiedOn = CADResponse.LastModified,
-                        AuthorizationDate = CADResponse.LastModified,
-                        ModifiedBy = CADResponse.ModifiedBy,
-                        state = 30,
-                        name = pdfFileName,
-                        content = await DownloadPdfAsync(pdfUrl),
-                        projectCode = "Proje1",
-                        relatedParts = new List<RelatedParts>
+                        var response = JsonConvert.DeserializeObject<PartPDF>(json);
+                        if (string.IsNullOrEmpty(response.ProjeKodu.FirstOrDefault().Value))
+                        {
+                            LogService logService = new LogService(_configuration);
+                            var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                            //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                            logService.CreateJsonFileLogError(jsonData4, $"WTPart'ýn projectCode Attr. de deðer bulunmuyor");
+                        }
+                        else
+                        {
+                            //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
+                            //{
+                            //    partName = resolvedItems_SQL_WTPartMaster.name;
+                            //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                            //}
+                            //else
+                            //{
+                            //    partName = "Name deðer bulunamadý";
+                            //    partNumber = "Number deðeri bulunamadý";
+                            //}
+
+                            var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                            {
+                                Number = CADResponse.Number,
+                                Revizyon = CADResponse.Revision,
+                                DocumentType = "TR",
+                                Description = CADResponse.Description ?? "Null",
+                                ModifiedOn = CADResponse.LastModified,
+                                AuthorizationDate = CADResponse.LastModified,
+                                //ModifiedBy = CADResponse.ModifiedBy,
+                                ModifiedBy = "WindchillAD",
+                                state = 30,
+                                name = pdfFileName,
+                                content = await DownloadPdfAsync(pdfUrl),
+                                projectCode = response.ProjeKodu.FirstOrDefault().Value,
+                                relatedParts = new List<RelatedParts>
                             {
                                 new RelatedParts
                                 {
@@ -4004,98 +4171,112 @@ new
                             }
 
 
-                    };
+                            };
 
-                    // PDF dosyasýný indir
-                    //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
+                            // PDF dosyasýný indir
+                            //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
 
-                    //  Api Endpoint
-                    //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
-                    //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
+                            //  Api Endpoint
+                            //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
+                            //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
 
-                    // PDF dosyasýný müþteri API'sine gönder
+                            // PDF dosyasýný müþteri API'sine gönder
 
-                    ApiService _apiService = new ApiService();
+                            ApiService _apiService = new ApiService();
 
 
 
-                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
-                    if (!string.IsNullOrEmpty(partCode))
-                    {
-
-                    if(partState == "RELEASED")
-                    {
-
-                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
-                    LogService logService = new LogService(_configuration);
-
-                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
-                            //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
-
-                            try
+                            //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                            var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                            if (!string.IsNullOrEmpty(partCode))
                             {
 
-                                //                await conn.ExecuteAsync($@"
-                                //DELETE FROM [{catalogValue}].[Ent_EPMDocState]
-                                //WHERE EPMDocID = @Ids AND 
-                                //      (SELECT COUNT(*) FROM [{catalogValue}].[Ent_EPMDocState] WHERE EPMDocID = @Ids) >= 1",
-                                //new { Ids = EPMDocID });
+                                if (partState == "RELEASED")
+                                {
 
-                                await conn.ExecuteAsync($@"
+                                    await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                                    LogService logService = new LogService(_configuration);
+
+                                    logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+                                    //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
+
+                                    try
+                                    {
+
+                                        //                await conn.ExecuteAsync($@"
+                                        //DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                                        //WHERE EPMDocID = @Ids AND 
+                                        //      (SELECT COUNT(*) FROM [{catalogValue}].[Ent_EPMDocState] WHERE EPMDocID = @Ids) >= 1",
+                                        //new { Ids = EPMDocID });
+
+                                        await conn.ExecuteAsync($@"
                     DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                     WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 
-                            }
-                            catch (Exception ex)
-                            {
-                                //Hata mesajýný veya hata günlüðünü kaydedin
-                                Console.WriteLine($"Hata: {ex.Message}");
-                                var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        //Hata mesajýný veya hata günlüðünü kaydedin
+                                        Console.WriteLine($"Hata: {ex.Message}");
+                                        var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
+                                        {
+                                            Number = CADResponse.Number,
+                                            Revizyon = CADResponse.Revision,
+                                            DocumentType = "TR",
+                                            Description = CADResponse.Description,
+                                            ModifiedOn = CADResponse.LastModified,
+                                            AuthorizationDate = CADResponse.LastModified,
+                                            //ModifiedBy = CADResponse.ModifiedBy,
+                                            ModifiedBy = "WindchillAD",
+                                            state = 30,
+                                            name = pdfFileName,
+                                            content = await DownloadPdfAsync(pdfUrl),
+                                            projectCode = response.ProjeKodu.FirstOrDefault().Value,
+
+
+
+
+                                        };
+                                        var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+
+                                        logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+
+                                        MessageBox.Show(ex.Message);
+                                    }
+                                    finally
+                                    {
+                                        // Baðlantýyý kapatýn
+                                        conn.Close();
+                                    }
+                                }
+                                else
                                 {
-                                    Number = CADResponse.Number,
-                                    Revizyon = CADResponse.Revision,
-                                    DocumentType = "TR",
-                                    Description = CADResponse.Description,
-                                    ModifiedOn = CADResponse.LastModified,
-                                    AuthorizationDate = CADResponse.LastModified,
-                                    ModifiedBy = CADResponse.ModifiedBy,
-                                    state = 30,
-                                    name = pdfFileName,
-                                    content = await DownloadPdfAsync(pdfUrl),
-                                    projectCode = "Proje1",
-
-
-
-
-                                };
-                                var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfo);
-
-                                logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
-
-                                MessageBox.Show(ex.Message);
+                                    LogService logService = new LogService(_configuration);
+                                    var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                    //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                    logService.CreateJsonFileLogError(jsonData4, $"Released iþlemi gerçekleþtirildi WTPart state durumu released deðil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+                                }
                             }
-                            finally
+                            else
                             {
-                                // Baðlantýyý kapatýn
-                                conn.Close();
+                                LogService logService = new LogService(_configuration);
+                                var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama gönderilmedi. WTPart iliþkisi bulunmadý.");
                             }
                         }
-                        else
-                        {
-                            LogService logService = new LogService(_configuration);
-                            var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-                            //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                            logService.CreateJsonFileLogError(jsonData4, $"Released iþlemi gerçekleþtirildi WTPart state durumu released deðil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
-                        }
+
                     }
-                    else
+                    catch (Exception ex)
                     {
                         LogService logService = new LogService(_configuration);
                         var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-                        //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                        logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi WTPart a dair bir iliþki bulunamadý.");
+                        logService.CreateJsonFileLogError(jsonData4, "HATA :" + ex.Message + " JSON ÇIKTISI " + json);
                     }
+
+                
+
+                       
                 }
 
 
@@ -4153,13 +4334,14 @@ new
                 }
                 if (stateType == "SEND_FILE")
                 {
-
                     var partName = "";
                     var partNumber = "";
                     var partState = "";
-
+                    var projeCode = "";
+                    var json = "";
                     if (!string.IsNullOrEmpty(partCode))
                     {
+                        
 
                         var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
                         var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
@@ -4170,36 +4352,52 @@ new
                         partName = resolvedItems_SQL_WTPartMaster.name;
                         partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
                         partState = resolvedItems_SQL_WTPart.statestate;
+                        //projeCode = resolvedItems_SQL_WTPart.ProjeKodu;
+
+                    json = await projectCodeInfo(partCode,CADResponse); // partCode deðerini fonksiyona gönderin
                     }
 
 
-
-
-                    //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
-                    //{
-                    //    partName = resolvedItems_SQL_WTPartMaster.name;
-                    //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
-                    //}
-                    //else
-                    //{
-                    //    partName = "Name deðer bulunamadý";
-                    //    partNumber = "Number deðeri bulunamadý";
-                    //}
-
-                    var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                    if (!string.IsNullOrEmpty(json)) // json boþ deðilse iþle
                     {
-                        Number = CADResponse.Number,
-                        Revizyon = CADResponse.Revision,
-                        DocumentType = "TR",
-                        Description = CADResponse.Description ?? "Null",
-                        ModifiedOn = CADResponse.LastModified,
-                        AuthorizationDate = CADResponse.LastModified,
-                        ModifiedBy = CADResponse.ModifiedBy,
-                        state = 30,
-                        name = pdfFileName,
-                        content = await DownloadPdfAsync(pdfUrl),
-                        projectCode = "Proje1",
-                        relatedParts = new List<RelatedParts>
+                        try
+                        {
+                            var response = JsonConvert.DeserializeObject<PartPDF>(json);
+                            if (string.IsNullOrEmpty(response.ProjeKodu.FirstOrDefault().Value))
+                            {
+                                LogService logService = new LogService(_configuration);
+                                var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                logService.CreateJsonFileLogError(jsonData4, $"WTPart'ýn projectCode Attr. de deðer bulunmuyor");
+                            }
+                            else
+                            {
+                                //if (resolvedItems_SQL_EPMBuildHistory != null || resolvedItems_SQL_EPMBuildHistory != "")
+                                //{
+                                //    partName = resolvedItems_SQL_WTPartMaster.name;
+                                //    partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
+                                //}
+                                //else
+                                //{
+                                //    partName = "Name deðer bulunamadý";
+                                //    partNumber = "Number deðeri bulunamadý";
+                                //}
+
+                                var CADViewResponseContentInfo = new TeknikResim2ViewModel
+                                {
+                                    Number = CADResponse.Number,
+                                    Revizyon = CADResponse.Revision,
+                                    DocumentType = "TR",
+                                    Description = CADResponse.Description ?? "Null",
+                                    ModifiedOn = CADResponse.LastModified,
+                                    AuthorizationDate = CADResponse.LastModified,
+                                    //ModifiedBy = CADResponse.ModifiedBy,
+                                    ModifiedBy = "WindchillAD",
+                                    state = 30,
+                                    name = pdfFileName,
+                                    content = await DownloadPdfAsync(pdfUrl),
+                                    projectCode = response.ProjeKodu.FirstOrDefault().Value,
+                                    relatedParts = new List<RelatedParts>
                             {
                                 new RelatedParts
                                 {
@@ -4210,101 +4408,118 @@ new
                             }
 
 
-                    };
+                                };
 
-                    // PDF dosyasýný indir
-                    //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
+                                // PDF dosyasýný indir
+                                //byte[] pdfBytes = await DownloadPdfAsync(pdfUrl);
 
-                    //  Api Endpoint
-                    //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
-                    //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
+                                //  Api Endpoint
+                                //string customerApiEndpoint = apiFullUrl + "/" + endPoint;
+                                //string customerApiEndpoint = "http://localhost:7217/api/Designtech/SENDFILE";
 
-                    // PDF dosyasýný müþteri API'sine gönder
+                                // PDF dosyasýný müþteri API'sine gönder
 
-                    ApiService _apiService = new ApiService();
+                                ApiService _apiService = new ApiService();
 
 
 
-                    //var jsonData3 = JsonConvert.SerializeObject(anaPart);
-                    var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
-                    if (!string.IsNullOrEmpty(partCode))
-                    {
+                                //var jsonData3 = JsonConvert.SerializeObject(anaPart);
+                                var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+                                if (!string.IsNullOrEmpty(partCode))
+                                {
 
-                        if (partState == "RELEASED")
-                        {
+                                    if (partState == "RELEASED")
+                                    {
 
-                            await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
-                            LogService logService = new LogService(_configuration);
+                                        await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+                                        LogService logService = new LogService(_configuration);
 
-                            logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
-                            //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
+                                        logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+                                        //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
 
-                            try
-                            {
+                                        try
+                                        {
 
-                                //                await conn.ExecuteAsync($@"
-                                //DELETE FROM [{catalogValue}].[Ent_EPMDocState]
-                                //WHERE EPMDocID = @Ids AND 
-                                //      (SELECT COUNT(*) FROM [{catalogValue}].[Ent_EPMDocState] WHERE EPMDocID = @Ids) >= 1",
-                                //new { Ids = EPMDocID });
+                                            //                await conn.ExecuteAsync($@"
+                                            //DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                                            //WHERE EPMDocID = @Ids AND 
+                                            //      (SELECT COUNT(*) FROM [{catalogValue}].[Ent_EPMDocState] WHERE EPMDocID = @Ids) >= 1",
+                                            //new { Ids = EPMDocID });
 
-                                await conn.ExecuteAsync($@"
+                                            await conn.ExecuteAsync($@"
                     DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                     WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 
-                            }
-                            catch (Exception ex)
-                            {
-                                //Hata mesajýný veya hata günlüðünü kaydedin
-                                Console.WriteLine($"Hata: {ex.Message}");
-                                var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            //Hata mesajýný veya hata günlüðünü kaydedin
+                                            Console.WriteLine($"Hata: {ex.Message}");
+                                            var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
+                                            {
+                                                Number = CADResponse.Number,
+                                                Revizyon = CADResponse.Revision,
+                                                DocumentType = "TR",
+                                                Description = CADResponse.Description,
+                                                ModifiedOn = CADResponse.LastModified,
+                                                AuthorizationDate = CADResponse.LastModified,
+                                                //ModifiedBy = CADResponse.ModifiedBy,
+                                                ModifiedBy = "WindchillAD",
+                                                state = 30,
+                                                name = pdfFileName,
+                                                content = await DownloadPdfAsync(pdfUrl),
+                                                projectCode = response.ProjeKodu.FirstOrDefault().Value,
+
+
+
+
+                                            };
+                                            var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfo);
+
+                                            logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
+
+                                            MessageBox.Show(ex.Message);
+                                        }
+                                        finally
+                                        {
+                                            // Baðlantýyý kapatýn
+                                            conn.Close();
+                                        }
+
+                                    }
+                                    else
+                                    {
+                                        LogService logService = new LogService(_configuration);
+                                        var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                        //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                        logService.CreateJsonFileLogError(jsonData4, $"Released iþlemi gerçekleþtirildi WTPart state durumu released deðil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+                                    }
+                                }
+                                else
                                 {
-                                    Number = CADResponse.Number,
-                                    Revizyon = CADResponse.Revision,
-                                    DocumentType = "TR",
-                                    Description = CADResponse.Description,
-                                    ModifiedOn = CADResponse.LastModified,
-                                    AuthorizationDate = CADResponse.LastModified,
-                                    ModifiedBy = CADResponse.ModifiedBy,
-                                    state = 30,
-                                    name = pdfFileName,
-                                    content = await DownloadPdfAsync(pdfUrl),
-                                    projectCode = "Proje1",
+                                    LogService logService = new LogService(_configuration);
+                                    var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                                    //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
+                                    logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi ama gönderilmedi. WTPart iliþkisi bulunmadý.");
+                                }
 
-
-
-
-                                };
-                                var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfo);
-
-                                logService.CreateJsonFileLog(LogJsonData, "CAD Döküman bilgileri gönderildi.");
-
-                                MessageBox.Show(ex.Message);
-                            }
-                            finally
-                            {
-                                // Baðlantýyý kapatýn
-                                conn.Close();
+                                //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
                             }
 
                         }
-                        else
+                        catch (Exception ex)
                         {
                             LogService logService = new LogService(_configuration);
                             var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-                            //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                            logService.CreateJsonFileLogError(jsonData4, $"Released iþlemi gerçekleþtirildi WTPart state durumu released deðil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+                            logService.CreateJsonFileLogError(jsonData4, "HATA :" + ex.Message + " JSON ÇIKTISI "+json);
                         }
+                  
                     }
-                    else
-                    {
-                        LogService logService = new LogService(_configuration);
-                        var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-                        //logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadý.");
-                        logService.CreateJsonFileLogError(jsonData4, "Released iþlemi gerçekleþtirildi WTPart a dair bir iliþki bulunamadý.");
-                    }
-            
-                    //await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
+                  
+
+
+                
+
                 }
 
 
@@ -4315,13 +4530,107 @@ new
             catch (Exception ex)
             {
                 LogService logService = new LogService(_configuration);
-
-                logService.CreateJsonFileLog(ex.Message, "HATA");
+                var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                logService.CreateJsonFileLogError(jsonData4, "HATA :"+ ex.Message);
+                //logService.CreateJsonFileLog(ex.Message, "HATA");
 
                 //MessageBox.Show($"Hata: {ex.Message}");
             }
         }
 
+
+
+        private async Task<string> projectCodeInfo(string partCode, TeknikResim CADResponse)
+        {
+            try
+            {
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName2 = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+                var WindchillServerName = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
+
+                var apiData = await windchillApiService.GetApiData(WindchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{partCode}')", BasicUsername, BasicPassword, CSRF_NONCE);
+
+                // API yanýtý boþ veya geçersiz ise logla ve hata fýrlat
+                if (string.IsNullOrEmpty(apiData))
+                {
+                    var hataMesajý = "Windchill API'sinden veri alýnamadý. Yanýt boþ.";
+                    LogService logService = new LogService(_configuration);
+                    var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                    logService.CreateJsonFileLogError(jsonData4, hataMesajý);
+                    throw new Exception(hataMesajý);
+                }
+
+                return apiData; // Baþarýlý durumda API verilerini döndür
+            }
+            catch (Exception ex)
+            {
+                LogService logService = new LogService(_configuration);
+                var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                logService.CreateJsonFileLogError(jsonData4, $"projectCodeInfo fonksiyonunda hata oluþtu: {ex.Message}");
+                // Hata durumunda boþ bir string döndür veya uygun bir hata yönetimi uygulayýn
+                return string.Empty;
+            }
+        }
+
+        private async Task<string> projectCodeRootObjectInfo(string partCode, RootObject CADResponse)
+        {
+            try
+            {
+                WindchillApiService windchillApiService = new WindchillApiService();
+
+                string directoryPath = "Configuration";
+                string fileName2 = "appsettings.json";
+                string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);
+
+                if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+                {
+                    Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+                }
+
+                string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+                JObject jsonObject = JObject.Parse(jsonData);
+                var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
+                var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
+                var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
+                var WindchillServerName = jsonObject["APIConnectionINFO"]["WindchillServerName"].ToString();
+
+                var apiData = await windchillApiService.GetApiData(WindchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{partCode}')", BasicUsername, BasicPassword, CSRF_NONCE);
+
+                // API yanýtý boþ veya geçersiz ise logla ve hata fýrlat
+                if (string.IsNullOrEmpty(apiData))
+                {
+                    var hataMesajý = "Windchill API'sinden veri alýnamadý. Yanýt boþ.";
+                    LogService logService = new LogService(_configuration);
+                    var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                    logService.CreateJsonFileLogError(jsonData4, hataMesajý);
+                    throw new Exception(hataMesajý);
+                }
+
+                return apiData; // Baþarýlý durumda API verilerini döndür
+            }
+            catch (Exception ex)
+            {
+                LogService logService = new LogService(_configuration);
+                var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+                logService.CreateJsonFileLogError(jsonData4, $"projectCodeInfo fonksiyonunda hata oluþtu: {ex.Message}");
+                // Hata durumunda boþ bir string döndür veya uygun bir hata yönetimi uygulayýn
+                return string.Empty;
+            }
+        }
 
         #endregion
 
@@ -4386,6 +4695,7 @@ new
                 string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);
                 string filePathPDFScan = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName3);
                 byte[] pdfBytes;
+                byte[] pdfBytesConvertA4;
 
 
                 string jsonFilePath = filePathPDFScan;
@@ -4468,7 +4778,6 @@ new
                         }
 
 
-
                         if (rdbTesseractOpen.Checked == true)
                         {
 
@@ -4497,6 +4806,8 @@ new
 
 
                             byte[] bytes = await response.Content.ReadAsByteArrayAsync();
+                            //pdfBytesConvertA4 = await ConvertPdfToA4(bytes);
+
                             var stream = new MemoryStream(bytes);
                             //PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
 
@@ -4504,6 +4815,7 @@ new
 
                             using (var pdfDocument = PdfiumViewer.PdfDocument.Load(stream))
                             {
+                           
                                 // Toplam sayfa sayýsýný belirle
                                 int totalPages = pdfDocument.PageCount;
 
@@ -4511,38 +4823,52 @@ new
                                 List<Tuple<int, string, Bitmap>> sayfaBilgileri = new List<Tuple<int, string, Bitmap>>();
                                 for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
                                 {
-                                    // Sayfayý resim olarak dönüþtür
-                                    Bitmap pageImage = ConvertPdfPageToImage(pdfDocument, pageIndex);
+                                    using (var page = pdfDocument.Render(pageIndex, 300, 300, PdfRenderFlags.CorrectFromDpi))
+                                    {
+                                        // Sayfayý resim olarak dönüþtür
+                                        Bitmap pageImage = ConvertPdfPageToImage(pdfDocument, pageIndex);
 
 
 
 
-                                    System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(689, 550, 114, 14);
-                                    //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(5592, 4792, 1312, 38); // Kale pdf ayarý
+                                        //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(475, 810, 114, 14);
+                                        //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(1482, 1146, 180, 14); // Kale pdf ayarý
+                                        //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(2245, 1587, 1312, 38); // Kale pdf ayarý
 
-                                    Bitmap croppedImage = CropImage(pageImage, cropArea);
+                                        //Bitmap croppedImage = CropImage(pageImage, cropArea);
 
-                                    // PNG formatýna dönüþtür ve kaydet
-                                    string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"croppedImage-{pageIndex}-.png");
-                                    croppedImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+                                        // PNG formatýna dönüþtür ve kaydet
+                                        //string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"croppedImage-{pageIndex}-.png");
+                                        //croppedImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
 
-                                    // Görüntü iþleme
-                                    //Bitmap processedImage = PreprocessImage(croppedImage);
+                                        // Görüntü iþleme
+                                        //Bitmap processedImage = PreprocessImage(croppedImage);
+                                        System.Drawing.Rectangle cropRect = new System.Drawing.Rectangle(5562, 4790, 1400, 38);
+                                    Bitmap croppedBitmap = new Bitmap(cropRect.Width, cropRect.Height);
+                                    using (Graphics g = Graphics.FromImage(croppedBitmap))
+                                    {
+                                        g.DrawImage(page, new System.Drawing.Rectangle(0, 0, croppedBitmap.Width, croppedBitmap.Height),
+                                                         cropRect,
+                                                         GraphicsUnit.Pixel);
+                                    }
+                                        string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"croppedImage-{pageIndex}-.png");
+                                        croppedBitmap.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
 
-                                    //Kýrpýlmýþ bölgeyi OCR ile tarat
-                                    string ocrResult = PerformOcr(croppedImage);
+                                        //Kýrpýlmýþ bölgeyi OCR ile tarat
+                                        string ocrResult = PerformOcr(croppedBitmap);
                                     string sheetInfo = ExtractSheetInfo(ocrResult);
 
-                                    // Sayfa bilgisini çýkar
-                                    //string sheetInfo = ExtractSheetInfo(ocrResult);
+                                        // Sayfa bilgisini çýkar
+                                        //string sheetInfo = ExtractSheetInfo(ocrResult);
 
 
-                                    // Sayfa bilgisini ve resmi listeye ekle
-                                    sayfaBilgileri.Add(Tuple.Create(pageIndex + 1, sheetInfo, pageImage));
+                                        // Sayfa bilgisini ve resmi listeye ekle
+                                        sayfaBilgileri.Add(Tuple.Create(pageIndex + 1, sheetInfo, pageImage));
 
 
-                                    //// Belleði temizle
-                                    croppedImage.Dispose();
+                                        //// Belleði temizle
+                                        croppedBitmap.Dispose();
+                                    }
                                 }
 
                                 // Sayfalarý sheet numarasýna göre sýrala
@@ -4642,275 +4968,46 @@ new
             }
         }
 
-        //private async Task<string> DownloadPdfAsync(string pdfUrl)
-        //{
-        //    try
-        //    {
-        //        //pdfUrl = "http://plm-1.designtech.com/Windchill/servlet/WindchillAuthGW/com.ptc.windchill.enterprise.wvs.saveWVSObject.utils.SaveWVSObjectHelper/saveWVSObject/PDF_P-00000119327_prt.pdf?annotations=true&oid=OR%3Awt.content.ApplicationData%3A107583206&fileType=pdf&u8=1";
 
-        //        string directoryPath = "Configuration";
-        //        string fileName2 = "appsettings.json";
-        //        string fileName3 = "scanpdf-425313-50117e72a809.json";
-        //        string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName2);
-        //        string filePathPDFScan = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName3);
-        //        byte[] pdfBytes;
-
-
-        //        string jsonFilePath = filePathPDFScan;
-        //        GoogleCredential credential = GoogleCredential.FromFile(jsonFilePath);
-
-        //        // Vision API istemcisini oluþturun
-        //        var clientBuilder = new ImageAnnotatorClientBuilder
-        //        {
-        //            CredentialsPath = jsonFilePath
-        //        };
-        //        var client = clientBuilder.Build();
-        //        //string directoryPath2 = "Configuration";
-        //        //string fileName2 = "ApiSendDataSettings.json";
-
-        //        if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
-        //        {
-        //            Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
-        //        }
-
-
-
-        //        // (Önceki kodlar burada)
-        //        string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
-
-        //        JObject jsonObject = JObject.Parse(jsonData);
-
-        //        var CSRF_NONCE = jsonObject["APIConnectionINFO"]["CSRF_NONCE"].ToString();
-        //        var BasicUsername = jsonObject["APIConnectionINFO"]["Username"].ToString();
-        //        var BasicPassword = jsonObject["APIConnectionINFO"]["Password"].ToString();
-
-
-        //        var _httpClient1 = new HttpClient();
-        //        _httpClient1.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{BasicUsername}:{BasicPassword}")));
-
-        //        _httpClient1.DefaultRequestHeaders.Add("CSRF-NONCE", CSRF_NONCE);
-        //        using (var response = await _httpClient1.GetAsync(pdfUrl))
-        //        {
-
-
-        //            if (response.IsSuccessStatusCode)
-        //            {
-        //                if (rdbTesseractOff.Checked == true)
-        //                {
-
-        //                    var dosyaAdi = Path.GetFileName(new Uri(pdfUrl).LocalPath);
-
-        //                    // PDF dosyasýný belirtilen dizine kaydet
-        //                    string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
-        //                    string savePath = Path.Combine(saveDirectory, dosyaAdi);
-
-        //                    // Klasör yoksa oluþtur
-        //                    if (!Directory.Exists(saveDirectory))
-        //                    {
-        //                        Directory.CreateDirectory(saveDirectory);
-        //                    }
-
-        //                    // PDF dosyasýný kaydet
-        //                    await using (var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write))
-        //                    {
-        //                        await response.Content.CopyToAsync(fileStream);
-        //                    }
-
-
-
-
-
-        //                    byte[] bytes = await response.Content.ReadAsByteArrayAsync();
-        //                    var stream = new MemoryStream(bytes);
-
-
-        //                    string base64EncodedPdf = Convert.ToBase64String(bytes);
-        //                    var content2 = new ByteArrayContent(bytes);
-
-        //                    // Dosya adýný Content-Disposition baþlýðýna ekleyin
-        //                    content2.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-        //                    {
-        //                        FileName = dosyaAdi // Orijinal dosya adýný kullanýn
-        //                    };
-        //                    return base64EncodedPdf;
-        //                }
-
-
-
-        //                if (rdbTesseractOpen.Checked == true)
-        //                {
-
-
-
-        //                    var dosyaAdi = Path.GetFileName(new Uri(pdfUrl).LocalPath);
-
-        //                    // PDF dosyasýný belirtilen dizine kaydet
-        //                    string saveDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration", "PDF");
-        //                    string savePath = Path.Combine(saveDirectory, dosyaAdi);
-
-        //                    // Klasör yoksa oluþtur
-        //                    if (!Directory.Exists(saveDirectory))
-        //                    {
-        //                        Directory.CreateDirectory(saveDirectory);
-        //                    }
-
-        //                    // PDF dosyasýný kaydet
-        //                    await using (var fileStream = new FileStream(savePath, FileMode.Create, FileAccess.Write))
-        //                    {
-        //                        await response.Content.CopyToAsync(fileStream);
-        //                    }
-
-
-
-
-
-        //                    byte[] bytes = await response.Content.ReadAsByteArrayAsync();
-        //                    var stream = new MemoryStream(bytes);
-        //                    //PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(stream);
-
-        //                    // PDF'yi yükle
-
-        //                    using (var pdfDocument = PdfiumViewer.PdfDocument.Load(stream))
-        //                    {
-        //                        // Toplam sayfa sayýsýný belirle
-        //                        int totalPages = pdfDocument.PageCount;
-
-        //                        // Sayfalarý iþle
-        //                        List<Tuple<int, string, Bitmap>> sayfaBilgileri = new List<Tuple<int, string, Bitmap>>();
-        //                        for (int pageIndex = 0; pageIndex < totalPages; pageIndex++)
-        //                        {
-        //                            // Sayfayý resim olarak dönüþtür
-        //                            Bitmap pageImage = ConvertPdfPageToImage(pdfDocument, pageIndex);
-
-
-
-
-        //                            System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(689, 550, 114, 14);
-        //                            //System.Drawing.Rectangle cropArea = new System.Drawing.Rectangle(5592, 4792, 1312, 38); // Kale pdf ayarý
-
-        //                            Bitmap croppedImage = CropImage(pageImage, cropArea);
-
-        //                            // PNG formatýna dönüþtür ve kaydet
-        //                            string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"croppedImage-{pageIndex}-.png");
-        //                            croppedImage.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
-
-        //                            // Görüntü iþleme
-        //                            //Bitmap processedImage = PreprocessImage(croppedImage);
-
-        //                            //Kýrpýlmýþ bölgeyi OCR ile tarat
-        //                            string ocrResult = PerformOcr(croppedImage);
-        //                            string sheetInfo = ExtractSheetInfo(ocrResult);
-
-        //                            // Sayfa bilgisini çýkar
-        //                            //string sheetInfo = ExtractSheetInfo(ocrResult);
-
-
-        //                            // Sayfa bilgisini ve resmi listeye ekle
-        //                            sayfaBilgileri.Add(Tuple.Create(pageIndex + 1, sheetInfo, pageImage));
-
-
-        //                            //// Belleði temizle
-        //                            croppedImage.Dispose();
-        //                        }
-
-        //                        // Sayfalarý sheet numarasýna göre sýrala
-        //                        sayfaBilgileri.Sort((a, b) =>
-        //                        {
-        //                            // Boþ dize kontrolü ekleyerek güvenli dönüþüm yapýn
-        //                            string[] aParts = a.Item2.Split(' ');
-        //                            string[] bParts = b.Item2.Split(' ');
-
-        //                            if (aParts.Length > 0 && bParts.Length > 0)
-        //                            {
-        //                                if (int.TryParse(aParts[0], out int aNumber) && int.TryParse(bParts[0], out int bNumber))
-        //                                {
-        //                                    return aNumber - bNumber;
-        //                                }
-        //                            }
-
-        //                            // Varsayýlan olarak sýralamada deðiþiklik yapmayýn
-        //                            return 0;
-        //                        });
-
-        //                        //// Sayfalarý sheet numarasýna göre sýrala
-        //                        //sayfaBilgileri.Sort((a, b) => int.Parse(a.Item2.Split(' ')[0]) - int.Parse(b.Item2.Split(' ')[0]));
-
-
-        //                        // Yeni PDF oluþtur
-        //                        using (PdfSharp.Pdf.PdfDocument newPdfDocument = new PdfSharp.Pdf.PdfDocument())
-        //                        {
-        //                            foreach (var sayfaBilgisi in sayfaBilgileri)
-        //                            {
-        //                                Bitmap pageImage = sayfaBilgisi.Item3;
-        //                                PdfSharp.Pdf.PdfPage pdfPage = newPdfDocument.AddPage();
-        //                                pdfPage.Width = XUnit.FromPoint(pageImage.Width);
-        //                                pdfPage.Height = XUnit.FromPoint(pageImage.Height);
-
-        //                                using (XGraphics gfx = XGraphics.FromPdfPage(pdfPage))
-        //                                {
-        //                                    using (MemoryStream ms = new MemoryStream())
-        //                                    {
-        //                                        pageImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-        //                                        XImage xImage = XImage.FromStream(ms);
-        //                                        //gfx.DrawImage(xImage, 0, 0);
-
-        //                                        // Görüntüyü tam sayfa boyutuna sýðdýrmak için `DrawImage` kullanýn
-        //                                        gfx.DrawImage(xImage, 0, 0, pdfPage.Width, pdfPage.Height);
-        //                                    }
-        //                                }
-
-        //                                // Belleði temizle
-        //                                pageImage.Dispose();
-        //                            }
-
-        //                            // Yeni PDF'yi kaydet
-        //                            using (MemoryStream ms = new MemoryStream())
-        //                            {
-        //                                newPdfDocument.Save(ms, false);
-        //                                pdfBytes = ms.ToArray();
-
-        //                                // pdfBytes adlý byte dizisini API'ye gönderin
-        //                            }
-        //                            //newPdfDocument.Save(outputPdfPath);
-        //                            Console.WriteLine("PDF baþarýyla sýralandý ve kaydedildi.");
-        //                        }
-
-        //                    }
-
-        //                    string base64EncodedPdf = Convert.ToBase64String(pdfBytes);
-        //                    var content2 = new ByteArrayContent(pdfBytes);
-
-        //                    // Dosya adýný Content-Disposition baþlýðýna ekleyin
-        //                    content2.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-        //                    {
-        //                        FileName = dosyaAdi // Orijinal dosya adýný kullanýn
-        //                    };
-        //                    return base64EncodedPdf;
-
-
-
-
-        //                }
-
-        //                // Eðer hiç bir radio button seçilmediyse
-        //                return string.Empty; // veya istenen bir hata mesajý
-
-        //            }
-        //            else
-        //            {
-        //                // Hata durumunu ele al
-        //                throw new Exception($"PDF indirme baþarýsýz. StatusCode: {response.StatusCode}");
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Hata durumunu ele al 
-        //        throw new Exception($"PDF indirme hatasý: {ex.Message}");
-        //    }
-        //}
-
-
+        private async Task<byte[]> ConvertPdfToA4(byte[] pdfBytes)
+        {
+            using (var inputMs = new MemoryStream(pdfBytes))
+            using (var pdfDocument = PdfiumViewer.PdfDocument.Load(inputMs))
+            using (PdfSharp.Pdf.PdfDocument newPdfDocument = new PdfSharp.Pdf.PdfDocument())
+            {
+                // Her sayfayý A4 boyutunda yeni PdfDocument'e ekle
+                for (int pageIndex = 0; pageIndex < pdfDocument.PageCount; pageIndex++)
+                {
+                    // Sayfayý resim olarak al
+                    Bitmap pageImage = ConvertPdfPageToImage(pdfDocument, pageIndex);
+
+                    // Yeni bir sayfa oluþtur ve boyutu A4 olarak ayarla
+                    PdfSharp.Pdf.PdfPage newPage = newPdfDocument.AddPage();
+                    newPage.Size = PdfSharp.PageSize.A4;
+
+                    // Resmi yeni sayfaya ekle
+                    using (XGraphics gfx = XGraphics.FromPdfPage(newPage))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            pageImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            XImage xImage = XImage.FromStream(ms);
+                            gfx.DrawImage(xImage, 0, 0, newPage.Width, newPage.Height);
+                        }
+                    }
+                }
+
+                // Yeni PDF'i belleðe kaydet
+                using (MemoryStream outputMs = new MemoryStream())
+                {
+                    newPdfDocument.Save(outputMs, false);
+                    return outputMs.ToArray();
+                }
+            }
+        }
+
+
+    
 
 
         #region PDF SIRALI YAPMA AYARLARI VS.
@@ -4926,7 +5023,8 @@ new
         }
         public static Bitmap ConvertPdfPageToImage(PdfiumViewer.PdfDocument pdfDocument, int pageIndex)
         {
-            using (var page = pdfDocument.Render(pageIndex, 600, 600, true))
+            int dpi = 900;
+            using (var page = pdfDocument.Render(pageIndex, dpi, dpi, true))
             {
                 return new Bitmap(page);
             }
@@ -4949,6 +5047,8 @@ new
         // Görüntü ön iþleme: Gri tonlama, binaryzasyon, kontrast artýrma
         private static Bitmap PreprocessImage(Bitmap image)
         {
+
+
             // Gri tonlamaya çevirme
             Bitmap grayImage = new Bitmap(image.Width, image.Height);
             using (Graphics g = Graphics.FromImage(grayImage))
@@ -5097,7 +5197,7 @@ new
             string resultText = string.Empty;
 
             // Görüntüyü ölçeklendir
-            Bitmap resizedImage = ResizeImage(image, image.Width * 10, image.Height * 10); // 10 kat büyütme
+            Bitmap resizedImage = ResizeImage(image, image.Width * 5, image.Height * 5); // 1 kat büyütme
 
             // Görüntü ön iþleme adýmý
             Bitmap preprocessedImage = PreprocessImage(resizedImage);
@@ -5107,7 +5207,7 @@ new
             {
                 // Tesseract'ý sadece sayýlarý tanýyacak þekilde ayarla
                 //engine.SetVariable("tessedit_char_whitelist", "0123456789");
-
+                engine.SetVariable("tessedit_pageseg_mode", "6");
                 using (var img = BitmapToPixConverter(preprocessedImage))
                 {
                     using (var page = engine.Process(img))
@@ -5148,14 +5248,14 @@ new
                 Console.WriteLine("Temizlenmiþ OCR Sonucu: " + cleanedOcrResult);
 
                 // "SHEET" ile baþlayan ve "OF" veya "0F" ile biten kýsmý bul
-                string[] parts = cleanedOcrResult.Split(new string[] { "Sayfa", "SHEET ", "SHEET", "sHEET", "1SHEET" }, StringSplitOptions.None);
+                string[] parts = cleanedOcrResult.Split(new string[] { "I Sayfa I", "Sayfa", "SHEET ", "SHEET", "sHEET", "1SHEET" }, StringSplitOptions.None);
 
                 // Ýlgilendiðimiz kýsým ikinci elemandýr (SHEET'ten sonraki)
                 if (parts.Length > 1)
                 {
                     string sheetPart = parts[1].Trim();
                     // "OF" veya "0F" ile biten kýsmý ayýr
-                    string[] sheetNumbers = sheetPart.Split(new string[] { "Toplam Sayfa", "OF", "0F", "or" }, StringSplitOptions.None);
+                    string[] sheetNumbers = sheetPart.Split(new string[] { "IToplam","I Toplam", "I Toplam Sayfa", "Toplam","Toplam Sayfa", "OF", "0F", "or" }, StringSplitOptions.None);
 
                     if (sheetNumbers.Length > 1)
                     {

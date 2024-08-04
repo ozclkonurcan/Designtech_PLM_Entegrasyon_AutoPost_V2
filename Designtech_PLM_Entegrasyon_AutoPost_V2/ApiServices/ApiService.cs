@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -43,7 +44,20 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
             return JsonConvert.DeserializeObject<ApiErrorResponse>(content); // Json.NET kullanılıyor.
         }
 
+
         private readonly IConfiguration _configuration;
+
+        private readonly ConcurrentQueue<ApiIstekBilgisi> _hataKuyrugu = new ConcurrentQueue<ApiIstekBilgisi>();
+        private readonly System.Threading.Timer _timer;
+
+        //public ApiService(IConfiguration configuration)
+        //{
+        //    _configuration = configuration;
+
+        //    // Her saat başı çalışacak zamanlayıcıyı başlat
+        //    _timer = new System.Threading.Timer(KuyruguIsle, null, TimeSpan.Zero, TimeSpan.FromHours(1));
+        //}
+
         public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent,string LogJsonContent)
         {
                 var errorContent = "";
@@ -81,6 +95,16 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                     }
                     else
                     {
+                        // Hata durumunda veriyi kuyruğa ekle
+                        var istekBilgisi = new ApiIstekBilgisi
+                        {
+                            ApiFullUrl = apiFullUrl,
+                            ApiURL = apiURL,
+                            Endpoint = endpoint,
+                            JsonContent = jsonContent,
+                            LogJsonContent = LogJsonContent
+                        };
+                        _hataKuyrugu.Enqueue(istekBilgisi);
                         // Günlük için yanıt içeriğini kaydet
                         errorContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Hata Yanıt İçeriği: {errorContent}");
@@ -92,6 +116,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
             {
+                var istekBilgisi = new ApiIstekBilgisi
+                {
+                    ApiFullUrl = apiFullUrl,
+                    ApiURL = apiURL,
+                    Endpoint = endpoint,
+                    JsonContent = jsonContent,
+                    LogJsonContent = LogJsonContent
+                };
+                _hataKuyrugu.Enqueue(istekBilgisi);
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLogError(LogJsonContent, ex.Message.ToString() + "Parça gönderilmedi - (API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!)" + apiFullUrl+"/"+endpoint);
 				//MessageBox.Show($"API istek sınıfı, beklenen formatla uyuşmuyor. Lütfen kontrol edin!", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -99,6 +132,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
             }
             catch (Exception ex)
             {
+                var istekBilgisi = new ApiIstekBilgisi
+                {
+                    ApiFullUrl = apiFullUrl,
+                    ApiURL = apiURL,
+                    Endpoint = endpoint,
+                    JsonContent = jsonContent,
+                    LogJsonContent = LogJsonContent
+                };
+                _hataKuyrugu.Enqueue(istekBilgisi);
                 var message = ex is ArgumentException ? ex.Message :" Hata mesajı : "+ ex.Message;
                 LogService logService = new LogService(_configuration);
                 logService.CreateJsonFileLogError(LogJsonContent, "Parça gönderilmedi  - UYGULAMA HATASI - ('"+ message +"') - API HATASI ('"+ errorContent + "') - " + apiFullUrl +"/"+ endpoint);
@@ -107,7 +149,40 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 				throw;
             }
         }
-         
+        private async void KuyruguIsle(object state)
+        {
+            while (_hataKuyrugu.TryDequeue(out var istekVerisi))
+            {
+                if (istekVerisi is ApiIstekBilgisi istekBilgisi)
+                {
+                    try
+                {
+                    // jsonData'yı ayrıştır ve gerekli bilgileri al
+                    //var dataObject = JsonConvert.DeserializeObject<dynamic>(jsonData);
+                    //string apiFullUrl = dataObject.ApiFullUrl; // Örneğin, jsonData'dan apiFullUrl'yi al
+                    //string endpoint = dataObject.Endpoint;     // Örneğin, jsonData'dan endpoint'i al
+
+                        // API'ye tekrar gönder
+                        var response = await PostDataAsync(
+                          istekBilgisi.ApiFullUrl,
+                          istekBilgisi.ApiURL,
+                          istekBilgisi.Endpoint,
+                          istekBilgisi.JsonContent,
+                          istekBilgisi.LogJsonContent
+                      );
+
+                        // Başarılı ise bir işlem yapmayın (kuyruktan zaten çıkarıldı)
+                    }
+                catch (Exception)
+                {
+                    // Hata durumunda jsonData'yı tekrar kuyruğa ekleyin
+                    _hataKuyrugu.Enqueue(istekVerisi);
+
+                    // Hata kaydı oluşturabilir veya başka bir işlem yapabilirsiniz
+                }
+                }
+            }
+        }
         //İnternet bağlantısnın kontrolünü yapıyoruz burada.
         bool IsConnectedToInternet()
         {
@@ -151,5 +226,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 
 
 
+    }
+    public class ApiIstekBilgisi
+    {
+        public string ApiFullUrl { get; set; }
+        public string ApiURL { get; set; }
+        public string Endpoint { get; set; }
+        public string JsonContent { get; set; }
+        public string LogJsonContent { get; set; }
     }
 }

@@ -46,6 +46,21 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? VersionID { get; set; }
 	}
 
+    public class PartPDF : BaseEntity
+    {
+
+        [Key]
+        public string? ID { get; set; }
+        public string? Number { get; set; }
+        public string? Name { get; set; }
+        public List<ProjeKodu>? ProjeKodu { get; set; }
+    
+    }
+
+    public class ProjeKodu {
+        public string? Value { get; set; }
+        public string? Display { get; set; }
+    }
     public class Creator
     {
         [Key]

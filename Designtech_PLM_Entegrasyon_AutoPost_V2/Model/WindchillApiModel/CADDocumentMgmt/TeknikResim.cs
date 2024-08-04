@@ -128,7 +128,57 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
         public List<Representation> Representations { get; set; }
     }
 
-  
 
+
+
+    public class CADDocumentReferences
+    {
+        public string OdataContext { get; set; }
+        public List<Reference> Value { get; set; }
+        public string AppliedContainerContextLocalTimeZone { get; set; }
+    }
+
+    public class Reference
+    {
+        public DateTime CreatedOn { get; set; }
+        public string ID { get; set; }
+        public DateTime LastModified { get; set; }
+        public DepType DepType { get; set; }
+        public List<object> ECADHookEnabled { get; set; }
+        public List<object> MergeContent { get; set; }
+        public List<object> MergeRefDes { get; set; }
+        public string ObjectType { get; set; }
+        public List<object> PartNumberRule { get; set; }
+        public ReferenceInfo ReferenceInfo { get; set; }
+        public bool Required { get; set; }
+        public List<object> RetrieveVariants { get; set; }
+        public List<object> ReviewUndefined { get; set; }
+    }
+
+    public class DepType
+    {
+        public int Value { get; set; }
+        public string Display { get; set; }
+    }
+
+    public class ReferenceInfo
+    {
+        public string FileName { get; set; }
+        public Category Category { get; set; }
+        public object SubCategory { get; set; }
+        public AuthoringApplication AuthoringApplication { get; set; }
+    }
+
+    public class Category
+    {
+        public string Value { get; set; }
+        public string Display { get; set; }
+    }
+
+    public class AuthoringApplication
+    {
+        public string Value { get; set; }
+        public string Display { get; set; }
+    }
 
 }
