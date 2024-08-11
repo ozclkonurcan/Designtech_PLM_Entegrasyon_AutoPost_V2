@@ -34,4 +34,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ViewModel
         public DateTime updateStampA2 { get; set; }
         public DateTime ReviseDate { get; set; }
     }
+
+
+
 }

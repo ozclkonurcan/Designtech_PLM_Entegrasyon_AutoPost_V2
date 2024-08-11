@@ -194,6 +194,86 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
         }
 
 
+
+        public void CreateJsonEnt_EPMDocState_ERROR(dynamic dataModel, string message = null)
+        {
+            try
+            {
+                // Log dosyasının adını ve yolunu oluştur
+                currentMonthFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Configuration\\logs", "PDFErrorLog");
+                string dateFormatted = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+                string islemTarihi = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
+                logFileName = Path.Combine(currentMonthFolder, dateFormatted + ".json");
+                DataModel responseDataArray = JsonConvert.DeserializeObject<DataModel>(dataModel);
+
+                JArray dataArray;
+                if (File.Exists(logFileName))
+                {
+                    string jsonData = File.ReadAllText(logFileName);
+                    dataArray = JArray.Parse(jsonData); // JArray'e dönüştür
+
+                }
+                else
+                {
+                    dataArray = new JArray();
+                }
+
+                // Yeni veriyi oluştur
+                JObject jsonDataObject = JObject.Parse(dataModel);
+
+                // Mesaj girildiyse ekle
+                if (!string.IsNullOrEmpty(message))
+                {
+                    jsonDataObject.Add("Mesaj", message);
+                }
+
+                jsonDataObject.Add("islemTarihi", islemTarihi);
+
+                // Hata mesajı varsa ve daha önce eklenmişse eski logu bul ve kaldır
+                if (!string.IsNullOrEmpty(message))
+                {
+
+                    var existingErrorLog = dataArray
+    .FirstOrDefault(log => (log["Mesaj"]?.ToString() ?? "") == (message ?? "") &&
+                           (log["ID"]?.ToString() ?? "") == (responseDataArray?.ID ?? "") &&
+                           (log["Number"]?.ToString() ?? "") == (responseDataArray?.Number ?? "") &&
+                           (log["Version"]?.ToString() ?? "") == (responseDataArray?.Version ?? ""));
+
+                    if (existingErrorLog != null)
+                    {
+                        dataArray.Remove(existingErrorLog);
+                    }
+
+                    //var existingErrorLog = dataArray.FirstOrDefault(log => log["Mesaj"] != null && log["Mesaj"].ToString() == message && log["ID"].ToString() == responseDataArray.ID && log["Number"].ToString() == responseDataArray.Number && log["Version"].ToString() == responseDataArray.Version);
+                    //if (existingErrorLog != null)
+                    //{
+                    //    dataArray.Remove(existingErrorLog);
+                    //}
+
+
+                    //var existingErrorLog = dataArray.FirstOrDefault(log => log["Mesaj"] != null && log["Mesaj"].ToString() == message && log["ID"].ToString() == responseDataArray.ID && log["Number"].ToString() == responseDataArray.Number && log["Version"].ToString() == responseDataArray.Version);
+                    //if (existingErrorLog != null)
+                    //{
+                    //    dataArray.Remove(existingErrorLog);
+                    //}
+                }
+
+                // Diziye ekle
+                dataArray.Add(jsonDataObject);
+
+                // JSON dosyasına yaz
+                File.WriteAllText(logFileName, JsonConvert.SerializeObject(dataArray, Formatting.Indented));
+                HataBildirimiGonder(dataModel, message);
+
+            }
+            catch (Exception ex)
+            {
+                // Hata durumunda log oluşturma işlemi
+                Log.Error("Log oluşturulurken hata oluştu: " + ex.Message);
+            }
+        }
+
+
         //MaillService
 
         public class DataModel
@@ -277,15 +357,27 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                     var mailMessage = new MailMessage
                     {
                         From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
-                        Subject = $"Hata Bildirimi - {dataModel.Number} {dataModel.Version}",
+                        Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"}",
                         Body = $@"
                         <h2>Hata Bildirimi</h2>
-                        <p><strong>Parça Numarası:</strong> {dataModel.Number}</p>
-                        <p><strong>ID:</strong> {dataModel.ID.Split(':')[2]}</p>
-                        <p><strong>Versiyon:</strong> {dataModel.Version}</p>
-                        <p><strong>Mesaj:</strong> {message}</p>",
+                        <p><strong>Parça Numarası:</strong> {dataModel.Number ?? "NULL"}</p>
+                        <p><strong>Mesaj:</strong> {message ?? "NULL"}</p>",
                         IsBodyHtml = true,
                     };
+
+                    //var mailMessage = new MailMessage
+                    //{
+                    //    From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
+                    //    Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"} {dataModel.Version ?? "NULL"}",
+                    //    Body = $@"
+                    //    <h2>Hata Bildirimi</h2>
+                    //    <p><strong>Parça Numarası:</strong> {dataModel.Number ?? "NULL"}</p>
+                    //    <p><strong>ID:</strong> {dataModel.ID.Split(':')[2] ?? "NULL"}</p>
+                    //    <p><strong>Versiyon:</strong> {dataModel.Version ?? "NULL"}</p>
+                    //    <p><strong>Mesaj:</strong> {message ?? "NULL"}</p>",
+                    //    IsBodyHtml = true,
+                    //};
+
 
                     foreach (var item in emailList)
                     {

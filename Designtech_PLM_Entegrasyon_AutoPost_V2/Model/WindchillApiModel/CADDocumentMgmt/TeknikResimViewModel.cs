@@ -23,7 +23,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
 
 	public class State
 	{
-        public string Value { get; set; } = "50";
+        public string Value { get; set; } = "30";
 		public string? Display { get; set; }
 
 	}
@@ -55,11 +55,21 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocu
         public DateTime? ModifiedOn { get; set; }
         public DateTime? AuthorizationDate { get; set; }
         public string? ModifiedBy { get; set; }
-        public int state { get; set; } = 0;
+        public int state { get; set; } = 30;
         public string name { get; set; }
         public string? content { get; set; }
         public string projectCode { get; set; }
         public List<RelatedParts> relatedParts { get; set; }
+    }
+        public class Ent_EPMDocStateModel
+    {
+        public long Ent_ID { get; set; }
+        public long EPMDocID { get; set; }
+        public string? StateDegeri { get; set; }
+        public string? idA3masterReference { get; set; }
+        public string? CadName { get; set; }
+        public string? name { get; set; }
+        public string? docNumber { get; set; }
     }
 
 
