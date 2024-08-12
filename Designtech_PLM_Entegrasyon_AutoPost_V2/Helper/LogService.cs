@@ -354,29 +354,41 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                         EnableSsl = true,
                     };
 
-                    var mailMessage = new MailMessage
+					var mailMessage = new MailMessage();
+
+
+					if (!string.IsNullOrEmpty(dataModel.ID.Split(':')[2]) && !string.IsNullOrEmpty(dataModel.Version))
                     {
-                        From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
-                        Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"}",
-                        Body = $@"
+						 mailMessage = new MailMessage
+						{
+							From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
+							Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"} {dataModel.Version ?? "NULL"}",
+							Body = $@"
+					    <h2>Hata Bildirimi</h2>
+					    <p><strong>Parça Numarası:</strong> {dataModel.Number ?? "NULL"}</p>
+					    <p><strong>ID:</strong> {dataModel.ID.Split(':')[2] ?? "NULL"}</p>
+					    <p><strong>Versiyon:</strong> {dataModel.Version ?? "NULL"}</p>
+					    <p><strong>Mesaj:</strong> {message ?? "NULL"}</p>",
+							IsBodyHtml = true,
+						};
+					}
+                    else
+                    {
+						mailMessage = new MailMessage
+						{
+							From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
+							Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"}",
+							Body = $@"
                         <h2>Hata Bildirimi</h2>
                         <p><strong>Parça Numarası:</strong> {dataModel.Number ?? "NULL"}</p>
                         <p><strong>Mesaj:</strong> {message ?? "NULL"}</p>",
-                        IsBodyHtml = true,
-                    };
+							IsBodyHtml = true,
+						};
 
-                    //var mailMessage = new MailMessage
-                    //{
-                    //    From = new MailAddress(jsonObjectFile["FromEmail"].ToString()),
-                    //    Subject = $"Hata Bildirimi - {dataModel.Number ?? "NULL"} {dataModel.Version ?? "NULL"}",
-                    //    Body = $@"
-                    //    <h2>Hata Bildirimi</h2>
-                    //    <p><strong>Parça Numarası:</strong> {dataModel.Number ?? "NULL"}</p>
-                    //    <p><strong>ID:</strong> {dataModel.ID.Split(':')[2] ?? "NULL"}</p>
-                    //    <p><strong>Versiyon:</strong> {dataModel.Version ?? "NULL"}</p>
-                    //    <p><strong>Mesaj:</strong> {message ?? "NULL"}</p>",
-                    //    IsBodyHtml = true,
-                    //};
+					}
+
+
+                    
 
 
                     foreach (var item in emailList)

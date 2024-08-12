@@ -238,9 +238,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
                     var tableExists = TableExists($"[{catalogValue}].Change_Notice_LogTable", connectionString);
                     var tableExistsEnt_EPMDocState = TableExists($"[{catalogValue}].Ent_EPMDocState", connectionString);
+                    var tableExistsEnt_EPMDocState_ERROR = TableExists($"[{catalogValue}].Ent_EPMDocState_ERROR", connectionString);
                     var tableExistsEnt_EPMDocStateCancelled = TableExists($"[{catalogValue}].Ent_EPMDocState_CANCELLED", connectionString);
+                    var tableExistsEnt_EPMDocStateCancelled_ERROR = TableExists($"[{catalogValue}].Ent_EPMDocState_CANCELLED_ERROR", connectionString);
                     var Des_PartDocumentBagla = TableExists($"[{catalogValue}].Des_PartDocumentBagla", connectionString);
                     var Des_PartDocumentBaglaLog = TableExists($"[{catalogValue}].Des_PartDokumanBaglaLog", connectionString);
+
+                    //KullanýcýAyarTable
+                    var Des_Kullanici = TableExists($"[{catalogValue}].Des_Kullanici", connectionString);
+                    var Des_KulYetki = TableExists($"[{catalogValue}].Des_KulYetki", connectionString);
+
+
 
                     var EPMDokumanStateTrigger = TriggerExists($"[{catalogValue}].EPMDokumanState", connectionString);
                     var EPMDokumanState_CANCELLEDTrigger = TriggerExists($"[{catalogValue}].EPMDokumanState_CANCELLED", connectionString);
@@ -249,7 +257,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
                     //var tableExistsLOG = TableExists($"[{catalogValue}].WTPartAlternateLink_LOG", connectionString);
                     //var tableExistsControlLog = TableExists($"[{catalogValue}].WTPartAlternateLink_ControlLog", connectionString);
 
-                    if (!tableExists || !tableExistsEnt_EPMDocState || !tableExistsEnt_EPMDocStateCancelled || !Des_PartDocumentBagla || !Des_PartDocumentBaglaLog || !EPMDokumanStateTrigger || !EPMDokumanState_CANCELLEDTrigger || !Part_DocumentTrigger)
+                    if (!tableExists || !tableExistsEnt_EPMDocState || !tableExistsEnt_EPMDocStateCancelled || !tableExistsEnt_EPMDocState_ERROR || !tableExistsEnt_EPMDocStateCancelled_ERROR || !Des_PartDocumentBagla || !Des_PartDocumentBaglaLog || !EPMDokumanStateTrigger || !EPMDokumanState_CANCELLEDTrigger || !Part_DocumentTrigger || !Des_Kullanici || !Des_KulYetki)
                     {
                         // Tablo yoksa oluþtur
                         CreateTable(connectionString);
@@ -408,8 +416,21 @@ TransferID varchar(MAX),
 );
 ";
 
+			string Ent_EPMDocState_ERROR = @"
+    CREATE TABLE " + scheman + @".Ent_EPMDocState_ERROR (
+	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EPMDocID] [bigint] NULL,
+	[StateDegeri] [nvarchar](200) NULL,
+	[idA3masterReference] [bigint] NULL,
+	[CadName] [nvarchar](200) NULL,
+	[name] [nvarchar](200) NULL,
+	[docNumber] [nvarchar](200) NULL,
+	CONSTRAINT [PK_Ent_EPMDocState_ERROR] PRIMARY KEY CLUSTERED ([Ent_ID] ASC)
+);
+";
 
-            string createTableTrigger4 = @$"
+
+			string createTableTrigger4 = @$"
 CREATE TRIGGER {scheman}.[EPMDokumanState]
 ON {scheman}.[EPMDocument] 
 AFTER UPDATE
@@ -466,7 +487,21 @@ END
 );
 ";
 
-            string createTableTrigger5 = @$"
+			string Ent_EPMDocState_CANCELLED_ERROR = @"
+    CREATE TABLE " + scheman + @".Ent_EPMDocState_CANCELLED_ERROR (
+	[Ent_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EPMDocID] [bigint] NULL,
+	[StateDegeri] [nvarchar](200) NULL,
+	[idA3masterReference] [bigint] NULL,
+	[CadName] [nvarchar](200) NULL,
+	[name] [nvarchar](200) NULL,
+	[docNumber] [nvarchar](200) NULL,
+	CONSTRAINT [PK_Ent_EPMDocState_CANCELLED_ERROR] PRIMARY KEY CLUSTERED ([Ent_ID] ASC)
+);
+";
+
+
+			string createTableTrigger5 = @$"
 CREATE TRIGGER {scheman}.[EPMDokumanState_CANCELLED]
 ON {scheman}.[EPMDocument] 
 AFTER UPDATE
@@ -657,11 +692,57 @@ END;
 ";
 
 
-            #endregion
+
+			//KULLANICI AYARLARI
+
+			string Des_Kullanici = @$"
+   CREATE TABLE {scheman}.Des_Kullanici (
+	[kullaniciID] [int] IDENTITY(1,1) NOT NULL,
+	[kullanici] [nvarchar](50) NULL,
+	[sifre] [nvarchar](max) NULL,
+	[admin] [tinyint] NULL,
+	[superAdmin] [tinyint] NULL,
+    CONSTRAINT [PK_Des_Kullanici] PRIMARY KEY CLUSTERED ([kullaniciID] ASC)
+);
+";
+
+			string Des_KulYetki = @$"
+   CREATE TABLE {scheman}.Des_KulYetki (
+    [yetkiID] [int] IDENTITY(1,1) NOT NULL,
+    [kullaniciID] [int] NULL,
+    [m1] [tinyint] NULL,
+    [m2] [tinyint] NULL,
+    [m3] [tinyint] NULL,
+    [m4] [tinyint] NULL,
+    [m5] [tinyint] NULL,
+    [m6] [tinyint] NULL,
+    [m7] [tinyint] NULL,
+    [m8] [tinyint] NULL,
+    [m9] [tinyint] NULL,
+    [m10] [tinyint] NULL,
+    [m11] [tinyint] NULL,
+    [m12] [tinyint] NULL,
+    [m13] [tinyint] NULL,
+    CONSTRAINT [PK_Des_KulYetki] PRIMARY KEY CLUSTERED ([yetkiID] ASC)
+);
+
+-- Süper Admin kullanýcýsýný ekle 
+INSERT INTO {scheman}.Des_Kullanici (kullanici, sifre, admin, superAdmin)
+VALUES ('desSuperAdmin', 'AQAAAAIAAYagAAAAEAsIwLrCwmnHFq0fs4+7elwHSWLwOp373WDRrn++RDUUdYCHQ9iXuF7bM5uaAs6Vig==', 1, 1);
+
+-- Süper Admin'in ID'sini al
+DECLARE @superAdminID INT = (SELECT kullaniciID FROM {scheman}.Des_Kullanici WHERE kullanici = 'desSuperAdmin');
+
+-- Süper Admin'e yetkileri atama
+INSERT INTO {scheman}.Des_KulYetki (kullaniciID, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13)
+VALUES (@superAdminID, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+";
+			//Þifre Des.23!Tech => AQAAAAIAAYagAAAAEAsIwLrCwmnHFq0fs4+7elwHSWLwOp373WDRrn++RDUUdYCHQ9iXuF7bM5uaAs6Vig==
+			#endregion
 
 
 
-            using (var connection = new SqlConnection(connectionString))
+			using (var connection = new SqlConnection(connectionString))
             {
 
                 connection.Open();
@@ -767,9 +848,54 @@ END;
                     catch (Exception)
                     {
                     }
+                }      
+                using (var command2 = new SqlCommand(Ent_EPMDocState_ERROR, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }  
+                using (var command2 = new SqlCommand(Ent_EPMDocState_CANCELLED_ERROR, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
-            }
-        }
+                #region Kullanýcý Ayarlarý
+
+                using (var command2 = new SqlCommand(Des_Kullanici, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }   
+                using (var command2 = new SqlCommand(Des_KulYetki, connection))
+                {
+                    try
+                    {
+                        command2.ExecuteNonQuery();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+				#endregion
+
+
+			}
+		}
 
 
 
@@ -1519,9 +1645,8 @@ END;
                 if (state == "SEND_FILE")
                 {
                     // Saat kontrolü
-                     if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                      if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                     {
-                        // Saat 17:00 ile 23:59 arasý
                         var errorSql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState_ERROR WHERE [StateDegeri] = 'RELEASED'";
 
                         var errorRecords = await conn.QueryAsync<Ent_EPMDocStateModel>(errorSql);
@@ -1546,7 +1671,7 @@ END;
                 }
                 if (state == "CANCELLED")
                 {
-                     if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                      if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                     {
                         // Saat 17:00 ile 23:59 arasý
                         var errorSql = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri] FROM {catalogValue}.Ent_EPMDocState_CANCELLED_ERROR WHERE [StateDegeri] = 'CANCELLED'";
@@ -2502,7 +2627,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
                                                         var now = DateTime.Now;
-                                                         if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                                          if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                                         {
                                                             logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "CAD Döküman iptal edildi.");
                                                             await conn.ExecuteAsync($@"
@@ -2527,7 +2652,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
                                                             LogService logService = new LogService(_configuration);
                                                             logService.CreateJsonFileLog(LogJsonDataCatch, "HATA ! " + ex.Message);
                                                             var now = DateTime.Now;
-                                                             if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                                              if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                                             {
                                                                 logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonDataCatch, "ERROR PARTS ! " + ex.Message);
                                                                 await conn.ExecuteAsync($@"
@@ -4558,7 +4683,7 @@ new
                     DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                     WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
                                         var now = DateTime.Now;
-                                         if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                          if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                         {
 
                                             logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "CAD Döküman bilgileri gönderildi.");
@@ -4595,7 +4720,7 @@ new
                                         logService.CreateJsonFileLog(LogJsonData, "HATA ! " + ex.Message);
 
                                         var now = DateTime.Now;
-                                         if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                          if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                         {
                                             logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "ERROR PARTS ! " + ex.Message);
 
@@ -4880,7 +5005,7 @@ new
                                         DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                                         WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
                                             var now = DateTime.Now;
-                                             if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                              if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                             {
                                                 logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "CAD Döküman bilgileri gönderildi.");
                                                 await conn.ExecuteAsync($@"
@@ -4917,7 +5042,7 @@ new
                                             LogService logService = new LogService(_configuration);
                                             logService.CreateJsonFileLog(LogJsonData, "HATA ! "+ex.Message);
                                             var now = DateTime.Now;
-                                             if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
+                                              if (now.Hour >= 17 && now.Hour < 23 && now.Minute <= 59)
                                             {
                                                 logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "ERROR PARTS ! " + ex.Message);
                                                 await conn.ExecuteAsync($@"
