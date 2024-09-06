@@ -542,6 +542,17 @@
                             "Property" = "8:_D147CC772E174C4CA1FEAC07B7C84E35"
                                 "Folders"
                                 {
+                                    "{9EF0B969-E518-4E46-987F-47570745A589}:_30B20D0B21D945DEA2AEA76CF5FE6FD0"
+                                    {
+                                    "Name" = "8:PDFErrorLog"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "Property" = "8:_9AB2B28B00B948B2A92AC3021B5EC3F1"
+                                        "Folders"
+                                        {
+                                        }
+                                    }
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_DE0A2E3E50004018A107BB27CB32EBAC"
                                     {
                                     "Name" = "8:TakvimFile"

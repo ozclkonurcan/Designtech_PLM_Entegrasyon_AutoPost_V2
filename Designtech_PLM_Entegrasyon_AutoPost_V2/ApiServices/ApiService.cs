@@ -58,7 +58,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
         //    _timer = new System.Threading.Timer(KuyruguIsle, null, TimeSpan.Zero, TimeSpan.FromHours(1));
         //}
 
-        public async Task<string> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent,string LogJsonContent)
+        public async Task<ApiErrorResponse> PostDataAsync(string apiFullUrl, string apiURL, string endpoint,string jsonContent,string LogJsonContent)
         {
                 var errorContent = "";
             try
@@ -83,7 +83,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
                         if (apiResponse.success == true)
                         {
                             VeriDepo.JsonVeriListesi.Add("");
-                            return await response.Content.ReadAsStringAsync();
+
+                            //LogService logService = new LogService(_configuration);
+                            //logService.CreateJsonFileLog(jsonContent, "CAD Döküman bilgileri gönderildi."+ apiResponse.message);
+
+                            return apiResponse;
 
                         }
                         else
