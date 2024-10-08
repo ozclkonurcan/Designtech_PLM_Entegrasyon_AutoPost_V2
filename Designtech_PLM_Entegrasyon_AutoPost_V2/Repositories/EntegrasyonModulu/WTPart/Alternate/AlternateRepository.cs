@@ -1,0 +1,180 @@
+﻿using Dapper;
+using Designtech_PLM_Entegrasyon_AutoPost.ApiServices;
+using Designtech_PLM_Entegrasyon_AutoPost.Helper;
+using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.Alternate;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.Entity;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.Equivalence;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.WTPart.Alternate
+{
+	public class AlternateRepository : IAlternateService
+	{
+		public async Task getAlternateData(IConfiguration _configuration, IDbConnection conn, string catalogValue, string apiFullUrl, string apiURL, string sourceApi, string endPoint)
+		{
+			try
+			{
+
+
+				var SQL_Alternate = $"SELECT * FROM {catalogValue}.Des_AlternateLink_LogTable WHERE [EntegrasyonDurum] = 1";
+
+				var responseData = await conn.QueryAsync<dynamic>(SQL_Alternate);
+
+				var dataList = responseData.ToList();
+
+
+	
+				
+
+
+				if (responseData != null)
+				{
+					foreach (var item in dataList)
+					{
+
+						var SQL_WTPart = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE [ParcaPartID] = {item.AnaParcaPartID} OR [ParcaPartID] = {item.MuadilParcaPartID}";
+						var responseDataWTPart = await conn.QueryAsync<dynamic>(SQL_WTPart);
+						if (responseDataWTPart.Count() == 0) 
+						{
+							var muadilPart = new MuadilPart
+						{
+							Number = item.AnaParcaNumber,
+							Alternates = new List<Alternates2>
+			{
+				new Alternates2
+				{
+					AlternatePart = new AlternatePart2
+					{
+						Number = item.MuadilParcaNumber,
+						isCancel = false
+					}
+				}
+			}
+						};
+
+						var jsonData2 = JsonConvert.SerializeObject(muadilPart);
+						ApiService _apiService = new ApiService();
+
+						var dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
+						LogService logService = new LogService(_configuration);
+						logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.AnaParcaNumber} - Muadil parça: {item.MuadilParcaNumber} ile ilişkilendirildi. " + dataResponse.message);
+
+						var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLink_LogTable WHERE LogID = @LogID";
+						await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID }); // await eklendi
+					}
+					}
+				}
+				else
+				{
+					// Handle the case where no data was found (responseData is null)
+					// You can throw an exception or handle this according to your business logic
+					throw new Exception("No data found for the specified query.");
+				}
+
+
+			}
+			catch (Exception ex)
+			{
+
+				throw new Exception(ex.Message);
+			}
+
+		}
+
+		public async Task getRemovedAlternateData(IConfiguration _configuration, IDbConnection conn, string catalogValue, string apiFullUrl, string apiURL, string sourceApi, string endPoint)
+		{
+			try
+			{
+
+
+				var SQL_Alternate = $"SELECT * FROM {catalogValue}.Des_AlternateLinkRemoved_LogTable";
+
+				var responseData = await conn.QueryAsync<dynamic>(SQL_Alternate);
+
+				var dataList = responseData.ToList();
+
+
+
+
+
+
+				if (responseData != null)
+				{
+					foreach (var item in dataList)
+					{
+
+					
+							var muadilPart = new MuadilPart
+							{
+								Number = item.AnaParcaNumber,
+								Alternates = new List<Alternates2>
+			{
+				new Alternates2
+				{
+					AlternatePart = new AlternatePart2
+					{
+						Number = item.MuadilParcaNumber,
+						isCancel = false
+					}
+				}
+			}
+							};
+
+							var jsonData2 = JsonConvert.SerializeObject(muadilPart);
+							ApiService _apiService = new ApiService();
+
+							var dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
+							LogService logService = new LogService(_configuration);
+							logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.AnaParcaNumber} - Muadil parça: {item.MuadilParcaNumber} muadil ilişkisi kaldırıldı." + dataResponse.message);
+
+							var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLinkRemoved_LogTable WHERE LogID = @LogID";
+							await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID }); // await eklendi
+						
+					}
+				}
+				else
+				{
+					// Handle the case where no data was found (responseData is null)
+					// You can throw an exception or handle this according to your business logic
+					throw new Exception("No data found for the specified query.");
+				}
+
+
+			}
+			catch (Exception ex)
+			{
+
+				throw new Exception(ex.Message);
+			}
+
+		}
+	}
+
+
+	public class MuadilPart : BaseEntity
+	{
+		public string Number { get; set; }
+		public List<Alternates2> Alternates { get; set; }
+	}
+	public class Alternates2
+	{
+		public AlternatePart2 AlternatePart { get; set; }
+	}
+	public class AlternatePart2 : BaseEntity
+	{
+		[Key]
+		public string? Number { get; set; }
+		public bool isCancel { get; set; }
+	}
+}
+
+

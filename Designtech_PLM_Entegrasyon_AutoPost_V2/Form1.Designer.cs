@@ -1,24 +1,24 @@
 ﻿namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
-    partial class Form1
-    {
-        /// <summary>
-        ///  Required designer variable.
-        /// </summary>
-        private System.ComponentModel.IContainer components = null;
+	partial class Form1
+	{
+		/// <summary>
+		///  Required designer variable.
+		/// </summary>
+		private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        ///  Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+		/// <summary>
+		///  Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && (components != null))
+			{
+				components.Dispose();
+			}
+			base.Dispose(disposing);
+		}
 
 		#region Windows Form Designer generated code
 
@@ -48,6 +48,8 @@
 			txtDatabaseAdi = new TextBox();
 			txtServerName = new TextBox();
 			groupBox2 = new GroupBox();
+			txtDesWTCode = new TextBox();
+			label13 = new Label();
 			label6 = new Label();
 			txtShowSqlSchemaName = new TextBox();
 			label4 = new Label();
@@ -83,8 +85,11 @@
 			rdbTesseractOff = new RadioButton();
 			rdbTesseractOpen = new RadioButton();
 			groupBox8 = new GroupBox();
-			txtDesVeriTasima = new TextBox();
 			btnDesVeriTasima = new Button();
+			txtDesVeriTasima = new TextBox();
+			rdbEntegrasyonKapali = new RadioButton();
+			rdbEntegrasyonAcik = new RadioButton();
+			groupBox9 = new GroupBox();
 			groupBox1.SuspendLayout();
 			groupBox2.SuspendLayout();
 			groupBox3.SuspendLayout();
@@ -94,11 +99,12 @@
 			groupBox6.SuspendLayout();
 			groupBox7.SuspendLayout();
 			groupBox8.SuspendLayout();
+			groupBox9.SuspendLayout();
 			SuspendLayout();
 			// 
 			// btnStartAutoPost
 			// 
-			btnStartAutoPost.Location = new Point(850, 380);
+			btnStartAutoPost.Location = new Point(830, 478);
 			btnStartAutoPost.Name = "btnStartAutoPost";
 			btnStartAutoPost.Size = new Size(94, 29);
 			btnStartAutoPost.TabIndex = 0;
@@ -275,6 +281,8 @@
 			// 
 			// groupBox2
 			// 
+			groupBox2.Controls.Add(txtDesWTCode);
+			groupBox2.Controls.Add(label13);
 			groupBox2.Controls.Add(label6);
 			groupBox2.Controls.Add(txtShowSqlSchemaName);
 			groupBox2.Controls.Add(label4);
@@ -288,10 +296,28 @@
 			groupBox2.Controls.Add(label1);
 			groupBox2.Location = new Point(630, 12);
 			groupBox2.Name = "groupBox2";
-			groupBox2.Size = new Size(320, 362);
+			groupBox2.Size = new Size(320, 336);
 			groupBox2.TabIndex = 2;
 			groupBox2.TabStop = false;
 			groupBox2.Text = "Bağlantı Durumu";
+			// 
+			// txtDesWTCode
+			// 
+			txtDesWTCode.BorderStyle = BorderStyle.None;
+			txtDesWTCode.Enabled = false;
+			txtDesWTCode.Location = new Point(11, 308);
+			txtDesWTCode.Name = "txtDesWTCode";
+			txtDesWTCode.Size = new Size(189, 20);
+			txtDesWTCode.TabIndex = 14;
+			// 
+			// label13
+			// 
+			label13.AutoSize = true;
+			label13.Location = new Point(6, 282);
+			label13.Name = "label13";
+			label13.Size = new Size(81, 20);
+			label13.TabIndex = 13;
+			label13.Text = "DES-CODE";
 			// 
 			// label6
 			// 
@@ -458,7 +484,7 @@
 			// 
 			// button1btnStopAutoPost
 			// 
-			button1btnStopAutoPost.Location = new Point(730, 380);
+			button1btnStopAutoPost.Location = new Point(730, 478);
 			button1btnStopAutoPost.Name = "button1btnStopAutoPost";
 			button1btnStopAutoPost.Size = new Size(94, 29);
 			button1btnStopAutoPost.TabIndex = 5;
@@ -468,7 +494,7 @@
 			// 
 			// btnKapat
 			// 
-			btnKapat.Location = new Point(630, 381);
+			btnKapat.Location = new Point(630, 478);
 			btnKapat.Name = "btnKapat";
 			btnKapat.Size = new Size(94, 29);
 			btnKapat.TabIndex = 6;
@@ -490,7 +516,7 @@
 			groupBox4.Controls.Add(listBox1);
 			groupBox4.Controls.Add(lblDataCount);
 			groupBox4.Controls.Add(label5);
-			groupBox4.Location = new Point(12, 415);
+			groupBox4.Location = new Point(12, 513);
 			groupBox4.Name = "groupBox4";
 			groupBox4.Size = new Size(938, 295);
 			groupBox4.TabIndex = 8;
@@ -516,7 +542,7 @@
 			groupBox5.Controls.Add(listBox2);
 			groupBox5.Location = new Point(956, 12);
 			groupBox5.Name = "groupBox5";
-			groupBox5.Size = new Size(247, 698);
+			groupBox5.Size = new Size(247, 796);
 			groupBox5.TabIndex = 9;
 			groupBox5.TabStop = false;
 			groupBox5.Text = "Log dosya listesi";
@@ -536,7 +562,7 @@
 			listBox2.FormattingEnabled = true;
 			listBox2.Location = new Point(5, 27);
 			listBox2.Name = "listBox2";
-			listBox2.Size = new Size(237, 664);
+			listBox2.Size = new Size(237, 744);
 			listBox2.TabIndex = 0;
 			listBox2.SelectedIndexChanged += listBox2_SelectedIndexChanged;
 			// 
@@ -643,15 +669,6 @@
 			groupBox8.TabStop = false;
 			groupBox8.Text = "Geçici Veri Taşıma Dokümanı";
 			// 
-			// txtDesVeriTasima
-			// 
-			txtDesVeriTasima.Cursor = Cursors.IBeam;
-			txtDesVeriTasima.Location = new Point(11, 28);
-			txtDesVeriTasima.Name = "txtDesVeriTasima";
-			txtDesVeriTasima.PlaceholderText = "Veri Taşıma Döküman Adı";
-			txtDesVeriTasima.Size = new Size(378, 27);
-			txtDesVeriTasima.TabIndex = 17;
-			// 
 			// btnDesVeriTasima
 			// 
 			btnDesVeriTasima.Location = new Point(295, 57);
@@ -662,12 +679,56 @@
 			btnDesVeriTasima.UseVisualStyleBackColor = true;
 			btnDesVeriTasima.Click += btnDesVeriTasima_Click;
 			// 
+			// txtDesVeriTasima
+			// 
+			txtDesVeriTasima.Cursor = Cursors.IBeam;
+			txtDesVeriTasima.Location = new Point(11, 28);
+			txtDesVeriTasima.Name = "txtDesVeriTasima";
+			txtDesVeriTasima.PlaceholderText = "Veri Taşıma Döküman Adı";
+			txtDesVeriTasima.Size = new Size(378, 27);
+			txtDesVeriTasima.TabIndex = 17;
+			// 
+			// rdbEntegrasyonKapali
+			// 
+			rdbEntegrasyonKapali.AutoSize = true;
+			rdbEntegrasyonKapali.Checked = true;
+			rdbEntegrasyonKapali.Location = new Point(95, 29);
+			rdbEntegrasyonKapali.Name = "rdbEntegrasyonKapali";
+			rdbEntegrasyonKapali.Size = new Size(72, 24);
+			rdbEntegrasyonKapali.TabIndex = 17;
+			rdbEntegrasyonKapali.TabStop = true;
+			rdbEntegrasyonKapali.Text = "Kapalı";
+			rdbEntegrasyonKapali.UseVisualStyleBackColor = true;
+			// 
+			// rdbEntegrasyonAcik
+			// 
+			rdbEntegrasyonAcik.AutoSize = true;
+			rdbEntegrasyonAcik.Location = new Point(14, 29);
+			rdbEntegrasyonAcik.Name = "rdbEntegrasyonAcik";
+			rdbEntegrasyonAcik.Size = new Size(58, 24);
+			rdbEntegrasyonAcik.TabIndex = 18;
+			rdbEntegrasyonAcik.TabStop = true;
+			rdbEntegrasyonAcik.Text = "Açık";
+			rdbEntegrasyonAcik.UseVisualStyleBackColor = true;
+			// 
+			// groupBox9
+			// 
+			groupBox9.Controls.Add(rdbEntegrasyonAcik);
+			groupBox9.Controls.Add(rdbEntegrasyonKapali);
+			groupBox9.Location = new Point(630, 354);
+			groupBox9.Name = "groupBox9";
+			groupBox9.Size = new Size(314, 64);
+			groupBox9.TabIndex = 19;
+			groupBox9.TabStop = false;
+			groupBox9.Text = "Entegrasyon Durumu";
+			// 
 			// Form1
 			// 
 			AutoScaleDimensions = new SizeF(8F, 20F);
 			AutoScaleMode = AutoScaleMode.Font;
 			AutoSize = true;
-			ClientSize = new Size(1210, 720);
+			ClientSize = new Size(1210, 833);
+			Controls.Add(groupBox9);
 			Controls.Add(groupBox8);
 			Controls.Add(groupBox7);
 			Controls.Add(groupBox6);
@@ -703,65 +764,72 @@
 			groupBox7.PerformLayout();
 			groupBox8.ResumeLayout(false);
 			groupBox8.PerformLayout();
+			groupBox9.ResumeLayout(false);
+			groupBox9.PerformLayout();
 			ResumeLayout(false);
 		}
 
 		#endregion
 
 		private Button btnStartAutoPost;
-        private GroupBox groupBox1;
-        private RadioButton rbServerChoose;
-        private TextBox txtParola;
-        private TextBox txtKullaniciAdi;
-        private TextBox txtDatabaseAdi;
-        private TextBox txtServerName;
-        private GroupBox groupBox2;
-        private Button btnConnectionReflesh;
-        private Label label2;
-        private Label label1;
-        private RadioButton rbLocalChoose;
-        private Button btnBaglantiKur;
-        private GroupBox groupBox3;
-        private Button btnApiEkle;
-        private Label label5;
-        private Button button1btnStopAutoPost;
-        private Button btnKapat;
-        private Label lblDataCount;
-        private GroupBox groupBox4;
-        private ListBox listBox1;
-        private GroupBox groupBox5;
-        private ListBox listBox2;
-        private TextBox txtShowCatalog;
-        private TextBox txtShowServerName;
-        private ContextMenuStrip contextMenuStrip1;
-        private ToolStripMenuItem kapatToolStripMenuItem;
-        private NotifyIcon notifyIcon1;
+		private GroupBox groupBox1;
+		private RadioButton rbServerChoose;
+		private TextBox txtParola;
+		private TextBox txtKullaniciAdi;
+		private TextBox txtDatabaseAdi;
+		private TextBox txtServerName;
+		private GroupBox groupBox2;
+		private Button btnConnectionReflesh;
+		private Label label2;
+		private Label label1;
+		private RadioButton rbLocalChoose;
+		private Button btnBaglantiKur;
+		private GroupBox groupBox3;
+		private Button btnApiEkle;
+		private Label label5;
+		private Button button1btnStopAutoPost;
+		private Button btnKapat;
+		private Label lblDataCount;
+		private GroupBox groupBox4;
+		private ListBox listBox1;
+		private GroupBox groupBox5;
+		private ListBox listBox2;
+		private TextBox txtShowCatalog;
+		private TextBox txtShowServerName;
+		private ContextMenuStrip contextMenuStrip1;
+		private ToolStripMenuItem kapatToolStripMenuItem;
+		private NotifyIcon notifyIcon1;
 		private TextBox txtBasicPassword;
 		private TextBox txtBasicUsername;
-        private Button btnListbox2Reflesh;
-        private TextBox txtWindchillApi;
-        private TextBox txtShowWindchillUserName;
-        private TextBox txtShowWindchillServerName;
-        private Label label4;
-        private Label label3;
-        private TextBox txtSqlServerPortNumber;
-        private TextBox txtShowSqlSchemaName;
-        private Label label6;
-        private TextBox txtSqlSchemaName;
+		private Button btnListbox2Reflesh;
+		private TextBox txtWindchillApi;
+		private TextBox txtShowWindchillUserName;
+		private TextBox txtShowWindchillServerName;
+		private Label label4;
+		private Label label3;
+		private TextBox txtSqlServerPortNumber;
+		private TextBox txtShowSqlSchemaName;
+		private Label label6;
+		private TextBox txtSqlSchemaName;
 		private Label label11;
 		private Label label10;
 		private Label label9;
 		private Label label8;
 		private Label label7;
 		private Label label12;
-        private RadioButton rdbAttachment;
-        private GroupBox groupBox6;
-        private RadioButton rdbRepresentation;
-        private GroupBox groupBox7;
-        private RadioButton rdbTesseractOff;
-        private RadioButton rdbTesseractOpen;
+		private RadioButton rdbAttachment;
+		private GroupBox groupBox6;
+		private RadioButton rdbRepresentation;
+		private GroupBox groupBox7;
+		private RadioButton rdbTesseractOff;
+		private RadioButton rdbTesseractOpen;
 		private GroupBox groupBox8;
 		private Button btnDesVeriTasima;
 		private TextBox txtDesVeriTasima;
+		private TextBox txtDesWTCode;
+		private Label label13;
+		private RadioButton rdbEntegrasyonKapali;
+		private RadioButton rdbEntegrasyonAcik;
+		private GroupBox groupBox9;
 	}
 }

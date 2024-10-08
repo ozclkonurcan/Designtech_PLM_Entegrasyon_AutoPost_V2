@@ -26,11 +26,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? Name { get; set; }
 		public string? Description { get; set; }
 		public State? State { get; set; }
-		public string? MuhasebeKodu { get; set; } = "0000000";
-		public string? MuhasebeAdi { get; set; }
-		public string? BirimAdi { get; set; }
+		//public string? MuhasebeKodu { get; set; } = "0000000";
+		public ProjeAdi? ProjeAdi { get; set; }
+		public string? ProjeKodu { get; set; }
+		public MuhasebeAdi? MuhasebeAdi { get; set; }
+		public string? MuhasebeKodu { get; set; }
+		public BirimAdi? BirimAdi { get; set; }
 		public string? BirimKodu { get; set; }
 
+		public PlanlamaTipiAdi? PlanlamaTipiAdi { get; set; }
 		public string? PlanlamaTipiKodu { get; set; } = "P";
         public string? Fai { get; set; }
 		public string? PLM { get; set; } = "E";
@@ -53,15 +57,37 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string? ID { get; set; }
         public string? Number { get; set; }
         public string? Name { get; set; }
-        public List<ProjeKodu>? ProjeKodu { get; set; }
+        public string? ProjeKodu { get; set; }
+        public ProjeAdi? ProjeAdi { get; set; }
     
     }
 
-    public class ProjeKodu {
+    public class ProjeAdi
+	{
         public string? Value { get; set; }
         public string? Display { get; set; }
     }
-    public class Creator
+
+
+    public class MuhasebeAdi
+    {
+        public string? Value { get; set; }
+
+
+        public string? Display { get; set; }
+
+	}
+	public class BirimAdi
+	{
+		public string? Value { get; set; }
+		public string? Display { get; set; }
+	}
+	public class PlanlamaTipiAdi
+	{
+		public string? Value { get; set; }
+		public string? Display { get; set; }
+	}
+	public class Creator
     {
         [Key]
         public string? ID { get; set; }
@@ -101,8 +127,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
         public string? Name { get; set; }
         public string? Description { get; set; }
         public State? State { get; set; }
+		//public string? MuhasebeKodu { get; set; } = "0000000";
         public string? MuhasebeKodu { get; set; } = "0000000";
-        public string? BirimKodu { get; set; }
+		public string? BirimKodu { get; set; }
 
         public string? PlanlamaTipiKodu { get; set; } = "P";
         public string? Fai { get; set; } = "H";
@@ -211,13 +238,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 		public string? Version { get; set; }
 		public State? State { get; set; }
 
-		public string? MuhasebeAdi { get; set; }
-		public string? MuhasebeKodu { get; set; } = "0000000";
-		public string? BirimAdi { get; set; }
+		public MuhasebeAdi? MuhasebeAdi { get; set; }
+		public string? MuhasebeKodu { get; set; }
+		public BirimAdi? BirimAdi { get; set; }
 		public string? BirimKodu { get; set; }
-        public DateTime? LastModified { get; set; }
-        public string? PlanlamaTipiKodu { get; set; } = "P";
-        public string? Fai { get; set; }
+		public DateTime? LastModified { get; set; }
+		public PlanlamaTipiAdi? PlanlamaTipiAdi { get; set; }
+		public string? PlanlamaTipiKodu { get; set; } = "P";
+		public string? Fai { get; set; }
         public string? PLM { get; set; } = "E";
         public CLASSIFICATION? CLASSIFICATION { get; set; }
 
@@ -230,10 +258,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel
 
 
 
+	//Yedek ALternates
 
-    //Yedek ALternates
-
-    public class Alternates2
+	public class Alternates2
     {
         [Key]
         public AlternatePart2? AlternatePart { get; set; }

@@ -419,6 +419,43 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 		}
 
 
+
+
+
+
+		public async Task<string> WTDoc_Delete(string baseUrl, string endpoint, string username, string password, string CSRF_NONCE)
+		{
+
+
+			try
+			{
+				using (var client = new HttpClient())
+				{
+					var request = new HttpRequestMessage(HttpMethod.Delete, $"http://{baseUrl}/Windchill/servlet/odata/{endpoint}");
+
+
+					request.Headers.Add("CSRF_NONCE", CSRF_NONCE);
+					string authHeader = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+					request.Headers.Add("Authorization", $"Basic {authHeader}");
+
+					var content = new StringContent("\n\n\n\n", null, "application/json");
+					request.Content = content;
+
+
+					var response = await client.SendAsync(request);
+					response.EnsureSuccessStatusCode();
+					return await response.Content.ReadAsStringAsync();
+				}
+			}
+			catch (Exception ex)
+			{
+				// Diğer hatalar
+				return ex.Message;
+			}
+
+		}
+
+
 		#endregion
 
 
