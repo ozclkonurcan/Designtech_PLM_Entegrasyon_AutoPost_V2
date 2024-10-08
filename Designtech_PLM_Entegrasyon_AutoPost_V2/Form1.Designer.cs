@@ -78,12 +78,6 @@
 			contextMenuStrip1 = new ContextMenuStrip(components);
 			kapatToolStripMenuItem = new ToolStripMenuItem();
 			notifyIcon1 = new NotifyIcon(components);
-			rdbAttachment = new RadioButton();
-			groupBox6 = new GroupBox();
-			rdbRepresentation = new RadioButton();
-			groupBox7 = new GroupBox();
-			rdbTesseractOff = new RadioButton();
-			rdbTesseractOpen = new RadioButton();
 			groupBox8 = new GroupBox();
 			btnDesVeriTasima = new Button();
 			txtDesVeriTasima = new TextBox();
@@ -96,17 +90,15 @@
 			groupBox4.SuspendLayout();
 			groupBox5.SuspendLayout();
 			contextMenuStrip1.SuspendLayout();
-			groupBox6.SuspendLayout();
-			groupBox7.SuspendLayout();
 			groupBox8.SuspendLayout();
 			groupBox9.SuspendLayout();
 			SuspendLayout();
 			// 
 			// btnStartAutoPost
 			// 
-			btnStartAutoPost.Location = new Point(830, 478);
+			btnStartAutoPost.Location = new Point(825, 420);
 			btnStartAutoPost.Name = "btnStartAutoPost";
-			btnStartAutoPost.Size = new Size(94, 29);
+			btnStartAutoPost.Size = new Size(119, 29);
 			btnStartAutoPost.TabIndex = 0;
 			btnStartAutoPost.Text = "Başlat";
 			btnStartAutoPost.UseVisualStyleBackColor = true;
@@ -427,7 +419,7 @@
 			groupBox3.Controls.Add(btnApiEkle);
 			groupBox3.Location = new Point(12, 213);
 			groupBox3.Name = "groupBox3";
-			groupBox3.Size = new Size(401, 101);
+			groupBox3.Size = new Size(610, 101);
 			groupBox3.TabIndex = 3;
 			groupBox3.TabStop = false;
 			groupBox3.Text = "Windchill bağlantı ayarı";
@@ -439,7 +431,7 @@
 			txtWindchillApi.Location = new Point(11, 26);
 			txtWindchillApi.Name = "txtWindchillApi";
 			txtWindchillApi.PlaceholderText = "Windchill Server Name";
-			txtWindchillApi.Size = new Size(378, 27);
+			txtWindchillApi.Size = new Size(588, 27);
 			txtWindchillApi.TabIndex = 7;
 			txtWindchillApi.TextChanged += txtWindchillApi_TextChanged;
 			// 
@@ -464,7 +456,7 @@
 			// 
 			// btnApiEkle
 			// 
-			btnApiEkle.Location = new Point(295, 58);
+			btnApiEkle.Location = new Point(500, 59);
 			btnApiEkle.Name = "btnApiEkle";
 			btnApiEkle.Size = new Size(94, 29);
 			btnApiEkle.TabIndex = 9;
@@ -484,7 +476,7 @@
 			// 
 			// button1btnStopAutoPost
 			// 
-			button1btnStopAutoPost.Location = new Point(730, 478);
+			button1btnStopAutoPost.Location = new Point(725, 420);
 			button1btnStopAutoPost.Name = "button1btnStopAutoPost";
 			button1btnStopAutoPost.Size = new Size(94, 29);
 			button1btnStopAutoPost.TabIndex = 5;
@@ -494,7 +486,7 @@
 			// 
 			// btnKapat
 			// 
-			btnKapat.Location = new Point(630, 478);
+			btnKapat.Location = new Point(630, 420);
 			btnKapat.Name = "btnKapat";
 			btnKapat.Size = new Size(94, 29);
 			btnKapat.TabIndex = 6;
@@ -516,9 +508,9 @@
 			groupBox4.Controls.Add(listBox1);
 			groupBox4.Controls.Add(lblDataCount);
 			groupBox4.Controls.Add(label5);
-			groupBox4.Location = new Point(12, 513);
+			groupBox4.Location = new Point(12, 455);
 			groupBox4.Name = "groupBox4";
-			groupBox4.Size = new Size(938, 295);
+			groupBox4.Size = new Size(938, 353);
 			groupBox4.TabIndex = 8;
 			groupBox4.TabStop = false;
 			groupBox4.Text = "PLM LOG";
@@ -532,7 +524,7 @@
 			listBox1.Location = new Point(11, 42);
 			listBox1.Name = "listBox1";
 			listBox1.ScrollAlwaysVisible = true;
-			listBox1.Size = new Size(921, 244);
+			listBox1.Size = new Size(921, 305);
 			listBox1.TabIndex = 0;
 			listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged;
 			// 
@@ -591,87 +583,20 @@
 			notifyIcon1.DoubleClick += NotifyIcon_DoubleClick;
 			notifyIcon1.MouseDoubleClick += notifyIcon1_MouseDoubleClick;
 			// 
-			// rdbAttachment
-			// 
-			rdbAttachment.AutoSize = true;
-			rdbAttachment.Checked = true;
-			rdbAttachment.Location = new Point(6, 33);
-			rdbAttachment.Name = "rdbAttachment";
-			rdbAttachment.Size = new Size(107, 24);
-			rdbAttachment.TabIndex = 12;
-			rdbAttachment.TabStop = true;
-			rdbAttachment.Text = "Attachment";
-			rdbAttachment.UseVisualStyleBackColor = true;
-			rdbAttachment.CheckedChanged += rdbAttachment_CheckedChanged;
-			// 
-			// groupBox6
-			// 
-			groupBox6.Controls.Add(rdbRepresentation);
-			groupBox6.Controls.Add(rdbAttachment);
-			groupBox6.Location = new Point(419, 213);
-			groupBox6.Name = "groupBox6";
-			groupBox6.Size = new Size(203, 101);
-			groupBox6.TabIndex = 10;
-			groupBox6.TabStop = false;
-			groupBox6.Text = "PDF Ayarları";
-			// 
-			// rdbRepresentation
-			// 
-			rdbRepresentation.AutoSize = true;
-			rdbRepresentation.Location = new Point(6, 63);
-			rdbRepresentation.Name = "rdbRepresentation";
-			rdbRepresentation.Size = new Size(130, 24);
-			rdbRepresentation.TabIndex = 13;
-			rdbRepresentation.Text = "Representation";
-			rdbRepresentation.UseVisualStyleBackColor = true;
-			// 
-			// groupBox7
-			// 
-			groupBox7.Controls.Add(rdbTesseractOff);
-			groupBox7.Controls.Add(rdbTesseractOpen);
-			groupBox7.Location = new Point(419, 316);
-			groupBox7.Name = "groupBox7";
-			groupBox7.Size = new Size(203, 93);
-			groupBox7.TabIndex = 14;
-			groupBox7.TabStop = false;
-			groupBox7.Text = "PDF Sheet Düzenleme";
-			// 
-			// rdbTesseractOff
-			// 
-			rdbTesseractOff.AutoSize = true;
-			rdbTesseractOff.Checked = true;
-			rdbTesseractOff.Location = new Point(6, 63);
-			rdbTesseractOff.Name = "rdbTesseractOff";
-			rdbTesseractOff.Size = new Size(72, 24);
-			rdbTesseractOff.TabIndex = 13;
-			rdbTesseractOff.TabStop = true;
-			rdbTesseractOff.Text = "Kapalı";
-			rdbTesseractOff.UseVisualStyleBackColor = true;
-			// 
-			// rdbTesseractOpen
-			// 
-			rdbTesseractOpen.AutoSize = true;
-			rdbTesseractOpen.Location = new Point(6, 33);
-			rdbTesseractOpen.Name = "rdbTesseractOpen";
-			rdbTesseractOpen.Size = new Size(58, 24);
-			rdbTesseractOpen.TabIndex = 12;
-			rdbTesseractOpen.Text = "Açık";
-			rdbTesseractOpen.UseVisualStyleBackColor = true;
-			// 
 			// groupBox8
 			// 
 			groupBox8.Controls.Add(btnDesVeriTasima);
 			groupBox8.Controls.Add(txtDesVeriTasima);
 			groupBox8.Location = new Point(12, 320);
 			groupBox8.Name = "groupBox8";
-			groupBox8.Size = new Size(401, 94);
+			groupBox8.Size = new Size(610, 94);
 			groupBox8.TabIndex = 16;
 			groupBox8.TabStop = false;
 			groupBox8.Text = "Geçici Veri Taşıma Dokümanı";
 			// 
 			// btnDesVeriTasima
 			// 
-			btnDesVeriTasima.Location = new Point(295, 57);
+			btnDesVeriTasima.Location = new Point(500, 58);
 			btnDesVeriTasima.Name = "btnDesVeriTasima";
 			btnDesVeriTasima.Size = new Size(94, 29);
 			btnDesVeriTasima.TabIndex = 18;
@@ -682,10 +607,10 @@
 			// txtDesVeriTasima
 			// 
 			txtDesVeriTasima.Cursor = Cursors.IBeam;
-			txtDesVeriTasima.Location = new Point(11, 28);
+			txtDesVeriTasima.Location = new Point(11, 26);
 			txtDesVeriTasima.Name = "txtDesVeriTasima";
 			txtDesVeriTasima.PlaceholderText = "Veri Taşıma Döküman Adı";
-			txtDesVeriTasima.Size = new Size(378, 27);
+			txtDesVeriTasima.Size = new Size(583, 27);
 			txtDesVeriTasima.TabIndex = 17;
 			// 
 			// rdbEntegrasyonKapali
@@ -715,12 +640,13 @@
 			// 
 			groupBox9.Controls.Add(rdbEntegrasyonAcik);
 			groupBox9.Controls.Add(rdbEntegrasyonKapali);
-			groupBox9.Location = new Point(630, 354);
+			groupBox9.Location = new Point(630, 350);
 			groupBox9.Name = "groupBox9";
-			groupBox9.Size = new Size(314, 64);
+			groupBox9.Size = new Size(320, 64);
 			groupBox9.TabIndex = 19;
 			groupBox9.TabStop = false;
 			groupBox9.Text = "Entegrasyon Durumu";
+			groupBox9.Enter += groupBox9_Enter;
 			// 
 			// Form1
 			// 
@@ -730,8 +656,6 @@
 			ClientSize = new Size(1210, 833);
 			Controls.Add(groupBox9);
 			Controls.Add(groupBox8);
-			Controls.Add(groupBox7);
-			Controls.Add(groupBox6);
 			Controls.Add(groupBox5);
 			Controls.Add(groupBox4);
 			Controls.Add(button1btnStopAutoPost);
@@ -743,7 +667,7 @@
 			Icon = (Icon)resources.GetObject("$this.Icon");
 			Name = "Form1";
 			StartPosition = FormStartPosition.CenterScreen;
-			Text = "Designtech PLM Entegrasyon v1.8.3";
+			Text = "Designtech PLM Entegrasyon v1.9.0";
 			FormClosing += Form1_FormClosing_1;
 			FormClosed += Form1_FormClosed;
 			Load += Form1_Load;
@@ -758,10 +682,6 @@
 			groupBox4.PerformLayout();
 			groupBox5.ResumeLayout(false);
 			contextMenuStrip1.ResumeLayout(false);
-			groupBox6.ResumeLayout(false);
-			groupBox6.PerformLayout();
-			groupBox7.ResumeLayout(false);
-			groupBox7.PerformLayout();
 			groupBox8.ResumeLayout(false);
 			groupBox8.PerformLayout();
 			groupBox9.ResumeLayout(false);
@@ -817,12 +737,6 @@
 		private Label label8;
 		private Label label7;
 		private Label label12;
-		private RadioButton rdbAttachment;
-		private GroupBox groupBox6;
-		private RadioButton rdbRepresentation;
-		private GroupBox groupBox7;
-		private RadioButton rdbTesseractOff;
-		private RadioButton rdbTesseractOpen;
 		private GroupBox groupBox8;
 		private Button btnDesVeriTasima;
 		private TextBox txtDesVeriTasima;

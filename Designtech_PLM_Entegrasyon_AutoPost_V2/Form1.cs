@@ -78,6 +78,10 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.Revise
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.EPMDocument.Attachment;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EmailSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.SqlSettigns;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.State;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.Alternate;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.Equivalence;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.EPMDocument.Attachment;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -99,6 +103,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		private readonly IEmailService _emailService;
 		private readonly IClosedEnterationAttachmentsSerivce _closedEnterationAttachmentsSerivce;
 		private readonly ISqlTriggerAndTableManagerService _sqlTriggerAndTableManagerService;
+		//Error
+		private readonly IErrorStateService _errorStateService;
+		private readonly IErrorAlternateService _errorAlternateService;
+		private readonly IErrorEquivalenceService _errorEquivalenceService;
+		private readonly IErrorAttachmentsService _errorAttachmentsService;
+		private readonly IErrorClosedEnterationAttachmentsSerivce _errorClosedEnterationAttachmentsSerivce;
+		//Error
+
+
+
+
 
 
 
@@ -111,7 +126,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 		}
 
-		public Form1(IEquivalenceService equivalenceService, IAlternateService alternateService, IStateService stateService, IWTPartReviseService partReviseService, IAttachmentsService attachmentsService, IEmailService emailService, ISqlTriggerAndTableManagerService sqlTriggerAndTableManagerService, IClosedEnterationAttachmentsSerivce closedEnterationAttachmentsSerivce)
+		public Form1(IEquivalenceService equivalenceService, IAlternateService alternateService, IStateService stateService, IWTPartReviseService partReviseService, IAttachmentsService attachmentsService, IEmailService emailService, ISqlTriggerAndTableManagerService sqlTriggerAndTableManagerService, IClosedEnterationAttachmentsSerivce closedEnterationAttachmentsSerivce, IErrorStateService errorStateService, IErrorAlternateService errorAlternateService, IErrorEquivalenceService errorEquivalenceService, IErrorAttachmentsService errorAttachmentsService, IErrorClosedEnterationAttachmentsSerivce errorClosedEnterationAttachmentsSerivce)
 		{
 			InitializeComponent();
 			_equivalenceService = equivalenceService;
@@ -121,6 +136,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			_attachmentsService = attachmentsService;
 			_emailService = emailService;
 			_sqlTriggerAndTableManagerService = sqlTriggerAndTableManagerService;
+			//Error
+			_errorStateService = errorStateService;
+			_errorAlternateService = errorAlternateService;
+			_errorEquivalenceService = errorEquivalenceService;
+			_errorAttachmentsService = errorAttachmentsService;
+			//Error
 			ShowData();
 			DisplayJsonDataInListBox();
 			UpdateLogList();
@@ -129,6 +150,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			FormClosing += Form1_FormClosing;
 			Resize += Form1_Resize;
 			_closedEnterationAttachmentsSerivce = closedEnterationAttachmentsSerivce;
+			_errorClosedEnterationAttachmentsSerivce = errorClosedEnterationAttachmentsSerivce;
 		}
 
 
@@ -490,7 +512,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					txtKullaniciAdi.Text = jsonObject["KullaniciAdi"].ToString(); ;
 					txtParola.Text = jsonObject["Parola"].ToString(); ;
 
-					txtDesWTCode.Text = "DES-"+jsonObject["DesVeriTasimaID"].ToString();
+					txtDesWTCode.Text = "DES-" + jsonObject["DesVeriTasimaID"].ToString();
 
 				}
 				else
@@ -703,7 +725,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			{
 
 
-			
+
 
 				DateTime anlikTarih = DateTime.Today;
 
@@ -736,14 +758,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 				//Task.WhenAll(_equivalenceService.getEquivalenceData(_configuration, conn, catalogValue));
 
-				
+
 				//await Task.Run(() => AutoPost(cancellationTokenSource.Token, anlikTarih));
 
 
 				// Ýki görevi ayný anda baþlatýyoruz
-			
-					Task.Run(() => AutoPost(cancellationTokenSource.Token, anlikTarih));           
-				
+
+				Task.Run(() => AutoPost(cancellationTokenSource.Token, anlikTarih));
+
 
 
 				_isRunning = true;
@@ -908,54 +930,108 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 							if (rdbEntegrasyonAcik.Checked)
-							{ 
+							{
 								if (sablonDataDurumu == "true" && state == "RELEASED" && sourceApi.Contains("ProdMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _stateService.getReleasedData(_configuration, conn, catalogValue,state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
-							}
-							if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("ProdMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _stateService.getCancelledData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
-							}
-							if (sablonDataDurumu == "true" && state == "INWORK" && sourceApi.Contains("ProdMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _stateService.getInworkData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
-							}
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _stateService.getReleasedData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+								}
+								if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("ProdMgmt"))
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _stateService.getCancelledData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+								}
+								if (sablonDataDurumu == "true" && state == "INWORK" && sourceApi.Contains("ProdMgmt"))
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _stateService.getInworkData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+								}
 
-							if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _equivalenceService.getEquivalenceData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
-							}
-							if (sablonDataDurumu == "true" && state == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _alternateService.getAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
-								await _alternateService.getRemovedAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
-							}
-							if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-							}
-
-							if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt"))
-							{
-								await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-								await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-							}
-
-							}
-							if (rdbEntegrasyonKapali.Checked)
-							{
+								if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt"))
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _equivalenceService.getEquivalenceData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+								}
+								if (sablonDataDurumu == "true" && state == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt"))
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _alternateService.getAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+									await _alternateService.getRemovedAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+								}
 								if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
 								{
-									await _closedEnterationAttachmentsSerivce.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
 								}
-							}
+
+								if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt"))
+								{
+									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+								}
+
+								var now = DateTime.Now;
+								if (now.Hour >= 12 && now.Hour < 23 && now.Minute <= 59)
+								{
+									if (sablonDataDurumu == "true" && state == "RELEASED" && sourceApi.Contains("ProdMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorStateService.getErrorReleasedData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+									}
+									if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("ProdMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorStateService.getErrorCancelledData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+									}
+									if (sablonDataDurumu == "true" && state == "INWORK" && sourceApi.Contains("ProdMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorStateService.getErrorInworkData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
+									}
+
+									if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorEquivalenceService.geErrorEquivalenceData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+									}
+									if (sablonDataDurumu == "true" && state == "ALTERNATE_RELEASED" && sourceApi.Contains("ProdMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorAlternateService.getErrorAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+										await _errorAlternateService.getErrorRemovedAlternateData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
+									}
+									if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+
+									if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+
+
+								}
+
+								}
+								if (rdbEntegrasyonKapali.Checked)
+								{
+									if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+									{
+										await _closedEnterationAttachmentsSerivce.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+								var now = DateTime.Now;
+								if (now.Hour >= 12 && now.Hour < 23 && now.Minute <= 59)
+								{
+									if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+									{
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+								}
+								}
 
 
 						}
@@ -975,7 +1051,6 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			}
 		}
 
-	
 
 
 
@@ -984,15 +1059,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 
-	
+
+
 
 
 
 		//Ýncelenecek
 
 
+		#region FormVeDigerAyarlar
 
-	
+
 		private void DisplayJsonDataInListBox()
 		{
 			try
@@ -1360,7 +1437,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 							{
 								//displayString += $" - {dataObject["Mesaj"]}";
 								if (dataObject.ContainsKey("Display") && !string.IsNullOrEmpty(dataObject["Display"]?.ToString()))
-								{ 
+								{
 									displayString = displayString.Replace(dataObject["State"]["Display"].ToString(), null);
 								}
 							}
@@ -1478,19 +1555,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 		}
 
-		private void rdbAttachment_CheckedChanged(object sender, EventArgs e)
-		{
-			try
-			{
 
-				txtParola.Enabled = true;
-				txtKullaniciAdi.Enabled = true;
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show("HATA !", ex.Message, MessageBoxButtons.OK, MessageBoxIcon.Error);
-			}
-		}
 
 		private async void btnDesVeriTasima_Click(object sender, EventArgs e)
 		{
@@ -1522,7 +1587,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					jsonObject = new JObject
 					{
 						["Catalog"] = "",
-					
+
 					};
 				}
 				else
@@ -1533,7 +1598,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 				// Yeni veriyi JSON nesnesine ekle veya güncelle
 				jsonObject["DesVeriTasimaID"] = await returnVeriTasimaIdCode(txtDesVeriTasima.Text);
-				
+
 				// JSON nesnesini dosyaya geri yaz
 				File.WriteAllText(filePath, JsonConvert.SerializeObject(jsonObject, Formatting.Indented));
 				MessageBox.Show("Aktarma baþarýlý");
@@ -1591,7 +1656,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 				var getVeriTasima = JsonConvert.DeserializeObject<WTDocumentRoot>(getVeriTasimaResponse);
 
 
-				 await _windchillApiService.WTDoc_ChekcOut(WindchillServerName, $"DocMgmt/Documents('OR:wt.doc.WTDocument:{getVeriTasima.Items.FirstOrDefault().Id.Split(':')[2]}')/PTC.DocMgmt.CheckOut", BasicUsername, BasicPassword, token);
+				await _windchillApiService.WTDoc_ChekcOut(WindchillServerName, $"DocMgmt/Documents('OR:wt.doc.WTDocument:{getVeriTasima.Items.FirstOrDefault().Id.Split(':')[2]}')/PTC.DocMgmt.CheckOut", BasicUsername, BasicPassword, token);
 
 
 
@@ -1612,6 +1677,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 
 		}
+
+		private void groupBox9_Enter(object sender, EventArgs e)
+		{
+
+		}
+		#endregion
 
 	}
 }

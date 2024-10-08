@@ -63,29 +63,47 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 						var jsonData2 = JsonConvert.SerializeObject(muadilPart);
 						ApiService _apiService = new ApiService();
+							dynamic dataResponse = null;
+							try
+							{
+								 dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
+								LogService logService = new LogService(_configuration);
+								logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.AnaParcaNumber} - Muadil parça: {item.MuadilParcaNumber} ile ilişkilendirildi. " + dataResponse.message);
 
-						var dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
-						LogService logService = new LogService(_configuration);
-						logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.AnaParcaNumber} - Muadil parça: {item.MuadilParcaNumber} ile ilişkilendirildi. " + dataResponse.message);
+								var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLink_LogTable WHERE LogID = @LogID";
+								await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID }); // await eklendi
+							}
+							catch (Exception ex)
+							{
+								// API çağrısında hata olduğunda, hatalı veriyi 'Des_AlternateLink_LogTable_Error' tablosuna ekleyin.
+								var insertErrorQuery = $@"
+                            INSERT INTO {catalogValue}.Des_AlternateLink_LogTable_Error
+                            SELECT * FROM {catalogValue}.Des_AlternateLink_LogTable WHERE LogID = @LogID";
 
-						var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLink_LogTable WHERE LogID = @LogID";
-						await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID }); // await eklendi
+								await conn.ExecuteAsync(insertErrorQuery, new { LogID = item.LogID });
+
+
+
+
+								var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLink_LogTable WHERE LogID = @LogID";
+								await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID });
+
+								// Hata kaydını loglayın
+								LogService logService = new LogService(_configuration);
+								logService.CreateJsonFileLog(jsonData2, $"API çağrısı başarısız oldu: {ex.Message}. Hatalı veri hata tablosuna aktarıldı."+dataResponse.message);
+
+							}
+
+		
 					}
 					}
 				}
-				else
-				{
-					// Handle the case where no data was found (responseData is null)
-					// You can throw an exception or handle this according to your business logic
-					throw new Exception("No data found for the specified query.");
-				}
+			
 
 
 			}
 			catch (Exception ex)
 			{
-
-				throw new Exception(ex.Message);
 			}
 
 		}
@@ -132,28 +150,46 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 							var jsonData2 = JsonConvert.SerializeObject(muadilPart);
 							ApiService _apiService = new ApiService();
 
-							var dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
+						dynamic dataResponse = null;
+						try
+						{
+							dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2); // await eklendi
 							LogService logService = new LogService(_configuration);
 							logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.AnaParcaNumber} - Muadil parça: {item.MuadilParcaNumber} muadil ilişkisi kaldırıldı." + dataResponse.message);
 
 							var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLinkRemoved_LogTable WHERE LogID = @LogID";
 							await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID }); // await eklendi
+						}
+						catch (Exception ex)
+						{
+							// API çağrısında hata olduğunda, hatalı veriyi 'Des_AlternateLink_LogTable_Error' tablosuna ekleyin.
+							var insertErrorQuery = $@"
+                            INSERT INTO {catalogValue}.Des_AlternateLinkRemoved_LogTable_Error
+                            SELECT * FROM {catalogValue}.Des_AlternateLinkRemoved_LogTable WHERE LogID = @LogID";
+
+							await conn.ExecuteAsync(insertErrorQuery, new { LogID = item.LogID });
+
+
+
+
+							var deleteQuery = $"DELETE FROM {catalogValue}.Des_AlternateLinkRemoved_LogTable WHERE LogID = @LogID";
+							await conn.ExecuteAsync(deleteQuery, new { LogID = item.LogID });
+
+							// Hata kaydını loglayın
+							LogService logService = new LogService(_configuration);
+							logService.CreateJsonFileLog(jsonData2, $"API çağrısı başarısız oldu: {ex.Message}. Hatalı veri hata tablosuna aktarıldı." + dataResponse.message);
+						}	
+			
 						
 					}
 				}
-				else
-				{
-					// Handle the case where no data was found (responseData is null)
-					// You can throw an exception or handle this according to your business logic
-					throw new Exception("No data found for the specified query.");
-				}
+			
 
 
 			}
 			catch (Exception ex)
 			{
 
-				throw new Exception(ex.Message);
 			}
 
 		}

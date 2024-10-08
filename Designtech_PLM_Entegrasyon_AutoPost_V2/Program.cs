@@ -7,6 +7,10 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.Equiva
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.Revise;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.Alternate;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.State;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.EPMDocument.Attachment;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.Equivalence;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.Alternate;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.State;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.SqlSettigns;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EmailSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.EntegrasyonAyar.EntegrasyonDurum;
@@ -15,6 +19,10 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.Equi
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.Revise;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.WTPart.Alternate;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.WTPart.State;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.EPMDocument.Attachment;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.Equivalence;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.WTPart.Alternate;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.WTPart.State;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.SqlSettigns;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data;
@@ -63,6 +71,15 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			services.AddScoped<IClosedEnterationAttachmentsSerivce, ClosedEnterationAttachmentsRepository>();
 			services.AddScoped<IEmailService, EmailRepository>();
 			services.AddScoped<ISqlTriggerAndTableManagerService, SqlTriggerAndTableManagerRepository>();
+
+			//Error
+			services.AddScoped<IErrorStateService, ErrorStateRepository>();
+			services.AddScoped<IErrorAlternateService, ErrorAlternateRepository>();
+			services.AddScoped<IErrorEquivalenceService, ErrorEquivalenceRepository>();
+			services.AddScoped<IErrorAttachmentsService, ErrorAttachmentsRepository>();
+			services.AddScoped<IErrorClosedEnterationAttachmentsSerivce, ErrorClosedEnterationAttachmentsRepository>();
+
+			//Error
 			services.AddScoped<Form1>(); // Formu da kaydedin
 		}
 

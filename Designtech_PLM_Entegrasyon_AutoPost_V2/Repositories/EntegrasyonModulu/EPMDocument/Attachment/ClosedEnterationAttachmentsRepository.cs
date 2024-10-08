@@ -524,18 +524,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 										await conn.ExecuteAsync($@"
                     DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                     WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-										var now = DateTime.Now;
-										if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-										{
-
-											logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "CAD Döküman bilgileri gönderildi." + dataResponse.message);
-
-											await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState_ERROR]
-                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-
-
-										}
+									
 
 
 
@@ -567,19 +556,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 										LogService logService = new LogService(_configuration);
 										logService.CreateJsonFileLog(LogJsonData, "HATA ! " + ex.Message);
 
-										var now = DateTime.Now;
-										if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-										{
-											logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "ERROR PARTS ! " + ex.Message);
-
-											await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState_ERROR]
-                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-
-
-										}
-										else
-										{
+								
 
 
 
@@ -626,7 +603,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 													}
 												);
 											}
-										}
+										
 
 
 
@@ -840,17 +817,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											await conn.ExecuteAsync($@"
                                         DELETE FROM [{catalogValue}].[Ent_EPMDocState]
                                         WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-											if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-											{
-
-												logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "CAD Döküman bilgileri değiştirildi.");
-
-												await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState_ERROR]
-                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-
-
-											}
+									
 
 										}
 										catch (Exception ex)
@@ -879,17 +846,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfo);
 											LogService logService = new LogService(_configuration);
 											logService.CreateJsonFileLog(LogJsonData, "HATA ! " + ex.Message);
-											//var now = DateTime.Now;
-											if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-											{
-												logService.CreateJsonEnt_EPMDocState_ERROR(LogJsonData, "ERROR PARTS ! " + ex.Message);
-												await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState_ERROR]
-                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-
-											}
-											else
-											{
+										
 
 												var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
 						  $"SELECT * FROM [{catalogValue}].[Ent_EPMDocState] WHERE [EPMDocID] = {EPMDocID}");
@@ -933,7 +890,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 														}
 													);
 												}
-											}
+											
 
 
 											await conn.ExecuteAsync($@"
@@ -968,14 +925,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 						}
 						catch (Exception ex)
 						{
-							if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-							{
-								await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState_ERROR]
-                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
-
-
-							}
+						
 							LogService logService = new LogService(_configuration);
 							var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 							logService.CreateJsonFileLogError(jsonData4, "HATA :" + ex.Message);

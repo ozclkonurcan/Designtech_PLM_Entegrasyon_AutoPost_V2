@@ -4,7 +4,7 @@ using Designtech_PLM_Entegrasyon_AutoPost.Helper;
 using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.EntegrasyonAyar.EntegrasyonDurum;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.State;
-using Microsoft.Data.SqlClient;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.State;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -13,17 +13,15 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Humanizer.On;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Menu;
 
-namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.WTPart.State
+namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.WTPart.State
 {
-	public class StateRepository : IStateService
+	public class ErrorStateRepository : IErrorStateService
 	{
 		private readonly IConfiguration _configuration;
 		private readonly IEntegrasyonDurumService _entegrasyonDurumService;
 
-		public StateRepository(IEntegrasyonDurumService entegrasyonDurumService)
+		public ErrorStateRepository(IEntegrasyonDurumService entegrasyonDurumService)
 		{
 			_entegrasyonDurumService = entegrasyonDurumService;
 		}
@@ -31,17 +29,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 		private readonly ApiService _apiService = new();
 		private const int BatchSize = 2000;
 
-		public async Task getCancelledData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
+		public async Task getErrorCancelledData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
 		{
 			await ProcessStateAsync(configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, windchillServerName, serverName, basicUsername, basicPassword);
 		}
 
-		public async Task getInworkData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
+		public async Task getErrorInworkData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
 		{
 			await ProcessStateAsync(configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, windchillServerName, serverName, basicUsername, basicPassword);
 		}
 
-		public async Task getReleasedData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
+		public async Task getErrorReleasedData(IConfiguration configuration, IDbConnection conn, string catalogValue, string state, string apiFullUrl, string apiURL, string sourceApi, string endPoint, string CSRF_NONCE, string windchillServerName, string serverName, string basicUsername, string basicPassword)
 		{
 			await ProcessStateAsync(configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, windchillServerName, serverName, basicUsername, basicPassword);
 		}
@@ -50,7 +48,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 		{
 			try
 			{
-				var sql = "SELECT * FROM PLM1.Des_WTPart_LogTable WHERE [ParcaState] = @ParcaState";
+				var sql = "SELECT * FROM PLM1.Des_WTPart_LogTable_Error WHERE [ParcaState] = @ParcaState";
 				//if (state == "INWORK")
 				//	sql += " AND [ParcaVersion] NOT LIKE 'A%'";
 
@@ -74,17 +72,17 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 
 					foreach (var partItem in resolvedItemsList)
-						{
+					{
 
 
 						var json = await windchillApiService.GetApiData(windchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)", basicUsername, basicPassword, CSRF_NONCE);
 						var response = JsonConvert.DeserializeObject<Part>(json);
 
-					
-						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID,catalogValue);
 
-						await conn.ExecuteAsync("DELETE FROM [PLM1].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
-						}
+						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
+
+						await conn.ExecuteAsync("DELETE FROM [PLM1].[Des_WTPart_LogTable_Error] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+					}
 
 
 					await Task.Delay(1000);
@@ -96,7 +94,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			}
 		}
 
-		private async Task ProcessResponse(Part response, string state, IDbConnection conn, IConfiguration configuration, string apiFullUrl, string apiURL, string endPoint,long ID,string catalogValue)
+		private async Task ProcessResponse(Part response, string state, IDbConnection conn, IConfiguration configuration, string apiFullUrl, string apiURL, string endPoint, long ID, string catalogValue)
 		{
 			if (response.State.Value != state) return;
 
@@ -108,58 +106,19 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			};
 
 			dynamic dataResponse = null;
-			try
-			{
+			
 
-			
-			if(state != "INWORK")
-			{
-			
-			 dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonDataAPI, jsonDataAPI);
-			}
-			await LogAndSaveData(response, state, conn, configuration, dataResponse, ID);
-			}
-			catch (Exception ex)
-			{
-				await LogAndSaveErrorData(response, conn, ex.Message, ID, dataResponse,catalogValue);
-			}
+				if (state != "INWORK")
+				{
+
+					dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonDataAPI, jsonDataAPI);
+				}
+				await LogAndSaveData(response, state, conn, configuration, dataResponse, ID);
+		
 		}
 
 
-		private async Task LogAndSaveErrorData(Part response, IDbConnection conn, string errorMessage, long ID, ApiErrorResponse dataResponse,string catalogValue)
-		{
-			try
-			{
-
-			var logData = JsonConvert.SerializeObject(response);
-			// API çağrısında hata olduğunda, hatalı veriyi 'Des_AlternateLink_LogTable_Error' tablosuna ekleyin.
-			var insertErrorQuery = $@"
-                            INSERT INTO {catalogValue}.Des_WTPart_LogTable_Error
-                            SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE ParcaPartID = @ParcaPartID";
-
-			await conn.ExecuteAsync(insertErrorQuery, new { ParcaPartID = ID });
-
-
-
-
-			var deleteQuery = $"DELETE FROM {catalogValue}.Des_WTPart_LogTable WHERE ParcaPartID = @ParcaPartID";
-			await conn.ExecuteAsync(deleteQuery, new { ParcaPartID = ID });
-
-			// Hata kaydını loglayın
-			LogService logService = new LogService(_configuration);
-			logService.CreateJsonFileLog(logData, $"API çağrısı başarısız oldu: {errorMessage}. Hatalı veri hata tablosuna aktarıldı.");
-
-
-			}
-			catch (Exception ex)
-			{
-
-			}
-
-
-		}
-
-
+	
 		private static string CreateCancelledPartJson(Part response)
 		{
 			response.State.Value = "P";
@@ -193,7 +152,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			return JsonConvert.SerializeObject(anaPart);
 		}
 
-		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse,long ID)
+		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse, long ID)
 		{
 			var logData = JsonConvert.SerializeObject(response);
 
@@ -215,7 +174,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 				});
 
 			LogService logService = new LogService(configuration);
-			if(state == "RELEASED")
+			if (state == "RELEASED")
 			{
 				if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED" && !string.IsNullOrEmpty(response.BirimKodu))
 				{
