@@ -45,12 +45,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 			if(state == "SEND_FILE")
 			{
-				SQL_Attachments = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri],[idA3masterReference] FROM {catalogValue}.Ent_EPMDocState WHERE [StateDegeri] = 'RELEASED'";
+				SQL_Attachments = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri],[idA3masterReference] FROM {catalogValue}.Des_EPMDocument_LogTable WHERE [StateDegeri] = 'RELEASED'";
 			}
 
 			if (state == "CANCELLED")
 			{
-				SQL_Attachments = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri],[idA3masterReference] FROM {catalogValue}.Ent_EPMDocState_CANCELLED WHERE [StateDegeri] = 'CANCELLED'";
+				SQL_Attachments = $"SELECT [Ent_ID], [EPMDocID], [StateDegeri],[idA3masterReference] FROM {catalogValue}.Des_EPMDocument_LogTable_Cancelled WHERE [StateDegeri] = 'CANCELLED'";
 			}
 
 
@@ -209,10 +209,19 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 																var SQL_WTPart = $"SELECT * FROM {catalogValue}.WTPart WHERE [branchIditerationInfo] = '{resolvedItems_SQL_EPMBuildRule.branchIdA3B5}' and latestiterationInfo = 1";
 																var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 
-																//var SQL_WTPartMaster = $"SELECT * FROM {catalogValue}.WTPartMaster WHERE [branchIditerationInfo] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
-																//var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+															#region WTPart Alternate Kontrol pdf içinde
+															//var pdfAlternateControlJson = await windchillApiService.GetApiData(WindchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{resolvedItems_SQL_WTPart.idA2A2}')?$expand=Alternates", BasicUsername, BasicPassword, CSRF_NONCE);
+															//var pdfAlternateControlJsonResponse = JsonConvert.DeserializeObject<Part>(pdfAlternateControlJson);
+															//if(pdfAlternateControlJsonResponse.Alternates.Count() > 0)
+															//{
 
-																partCode = Convert.ToString(resolvedItems_SQL_WTPart.idA2A2);
+															//}
+															#endregion
+
+															//var SQL_WTPartMaster = $"SELECT * FROM {catalogValue}.WTPartMaster WHERE [branchIditerationInfo] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
+															//var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
+
+															partCode = Convert.ToString(resolvedItems_SQL_WTPart.idA2A2);
 															}
 
 
@@ -501,7 +510,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 																logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi." + dataResponse.message);
 
 																await conn.ExecuteAsync($@"
-                                            DELETE FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED]
+                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled]
                                             WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
 
 
@@ -525,10 +534,10 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 															
 
 																	var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
-															$"SELECT * FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED] WHERE [EPMDocID] = {partItem.EPMDocID}");
+															$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled] WHERE [EPMDocID] = {partItem.EPMDocID}");
 
 																	var existingErrorRecord = await conn.QueryFirstOrDefaultAsync<Ent_EPMDocStateModel>(
-															$"SELECT * FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED_ERROR] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+															$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 															new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference }
 															);
 
@@ -538,7 +547,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 																	{
 																		// Veri yoksa yeni bir kayıt ekle
 																		await conn.ExecuteAsync(
-																			$"INSERT INTO [{catalogValue}].[Ent_EPMDocState_CANCELLED_ERROR] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
+																			$"INSERT INTO [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
 																			new
 																			{
 																				EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -554,7 +563,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 																	{
 																		// Veri varsa güncelle
 																		await conn.ExecuteAsync(
-																			$"UPDATE [{catalogValue}].[Ent_EPMDocState_CANCELLED_ERROR] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+																			$"UPDATE [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 																			new
 																			{
 																				EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -571,7 +580,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 																	await conn.ExecuteAsync($@"
-                                            DELETE FROM [{catalogValue}].[Ent_EPMDocState_CANCELLED]
+                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled]
                                             WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
 																
 
@@ -811,7 +820,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 										//await SendPdfToCustomerApiAsync(pdfBytes, pdfFileName, customerApiEndpoint, CADViewResponseContentInfo);
 										await conn.ExecuteAsync($@"
-                    DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                    DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable]
                     WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 										var now = DateTime.Now;
 									
@@ -853,11 +862,11 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 											var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
-					  $"SELECT * FROM [{catalogValue}].[Ent_EPMDocState] WHERE [EPMDocID] = {EPMDocID}");
+					  $"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable] WHERE [EPMDocID] = {EPMDocID}");
 
 
 											var existingErrorRecord = await conn.QueryFirstOrDefaultAsync<Ent_EPMDocStateModel>(
-	$"SELECT * FROM [{catalogValue}].[Ent_EPMDocState_ERROR] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+	$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Error] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 	new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference }
 	);
 
@@ -867,7 +876,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											{
 												// Veri yoksa yeni bir kayıt ekle
 												await conn.ExecuteAsync(
-													$"INSERT INTO [{catalogValue}].[Ent_EPMDocState_ERROR] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
+													$"INSERT INTO [{catalogValue}].[Des_EPMDocument_LogTable_Error] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
 													new
 													{
 														EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -883,7 +892,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											{
 												// Veri varsa güncelle
 												await conn.ExecuteAsync(
-													$"UPDATE [{catalogValue}].[Ent_EPMDocState_ERROR] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+													$"UPDATE [{catalogValue}].[Des_EPMDocument_LogTable_Error] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 													new
 													{
 														EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -901,7 +910,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 										await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable]
                                         WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 
 
@@ -1110,7 +1119,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 											await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable]
                                         WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 							
 
@@ -1145,10 +1154,10 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 										
 
 												var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
-						  $"SELECT * FROM [{catalogValue}].[Ent_EPMDocState] WHERE [EPMDocID] = {EPMDocID}");
+						  $"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable] WHERE [EPMDocID] = {EPMDocID}");
 
 												var existingErrorRecord = await conn.QueryFirstOrDefaultAsync<Ent_EPMDocStateModel>(
-		$"SELECT * FROM [{catalogValue}].[Ent_EPMDocState_ERROR] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+		$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Error] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 		new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference }
 	);
 
@@ -1158,7 +1167,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 												{
 													// Veri yoksa yeni bir kayıt ekle
 													await conn.ExecuteAsync(
-														$"INSERT INTO [{catalogValue}].[Ent_EPMDocState_ERROR] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
+														$"INSERT INTO [{catalogValue}].[Des_EPMDocument_LogTable_Error] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
 														new
 														{
 															EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -1174,7 +1183,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 												{
 													// Veri varsa güncelle
 													await conn.ExecuteAsync(
-														$"UPDATE [{catalogValue}].[Ent_EPMDocState_ERROR] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+														$"UPDATE [{catalogValue}].[Des_EPMDocument_LogTable_Error] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
 														new
 														{
 															EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
@@ -1190,7 +1199,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 											await conn.ExecuteAsync($@"
-                                        DELETE FROM [{catalogValue}].[Ent_EPMDocState]
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable]
                                         WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 										}
 

@@ -971,7 +971,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 								}
 
 								var now = DateTime.Now;
-								if (now.Hour >= 12 && now.Hour < 23 && now.Minute <= 59)
+								if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
 								{
 									if (sablonDataDurumu == "true" && state == "RELEASED" && sourceApi.Contains("ProdMgmt"))
 									{
@@ -1023,14 +1023,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 										await _closedEnterationAttachmentsSerivce.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
 									}
 								var now = DateTime.Now;
-								if (now.Hour >= 12 && now.Hour < 23 && now.Minute <= 59)
-								{
-									if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+									if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
 									{
-										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-										await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+										if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+										{
+											await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+											await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+										}
 									}
-								}
 								}
 
 

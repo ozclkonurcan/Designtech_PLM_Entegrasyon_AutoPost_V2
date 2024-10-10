@@ -73,7 +73,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 							
 						dataResponse = _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonData2, jsonData2);
 						LogService logService = new LogService(_configuration);
-						logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.ApartWtNumber} - Eş parça: {item.BpartWtNumber} arasın da Equivalence bağlantısı kuruldu. " + dataResponse?.message);
+						logService.CreateJsonFileLog(jsonData2, $"Ana parça: {item.ApartWtNumber} - Eş parça: {item.BpartWtNumber} arasın da Equivalence bağlantısı kuruldu. " );
 
 						var deleteQuery = $"DELETE FROM {catalogValue}.Des_EquivalenceLink_LogTable WHERE ID = @ID";
 						await conn.ExecuteAsync(deleteQuery, new { ID = item.ID });
