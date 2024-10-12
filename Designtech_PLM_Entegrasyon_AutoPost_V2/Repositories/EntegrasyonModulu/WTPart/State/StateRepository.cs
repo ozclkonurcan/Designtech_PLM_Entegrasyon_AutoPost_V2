@@ -50,7 +50,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 		{
 			try
 			{
-				var sql = "SELECT * FROM PLM1.Des_WTPart_LogTable WHERE [ParcaState] = @ParcaState";
+				var sql = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE [ParcaState] = @ParcaState";
 				//if (state == "INWORK")
 				//	sql += " AND [ParcaVersion] NOT LIKE 'A%'";
 
@@ -83,7 +83,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 					
 						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID,catalogValue);
 
-						await conn.ExecuteAsync("DELETE FROM [PLM1].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
 						}
 
 
@@ -197,8 +197,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 		{
 			var logData = JsonConvert.SerializeObject(response);
 
-			await conn.ExecuteAsync(@"
-				INSERT INTO [PLM1].[Change_Notice_LogTable] 
+			await conn.ExecuteAsync($@"
+				INSERT INTO [{caa}].[Change_Notice_LogTable] 
 				([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2], [statestate], [name], [WTPartNumber],[Version],[VersionID]) 
 				VALUES (@TransferID, @idA2A2, @ProcessTimestamp, @updateStampA2, @statestate, @name, @WTPartNumber, @Version, @VersionID)",
 				new

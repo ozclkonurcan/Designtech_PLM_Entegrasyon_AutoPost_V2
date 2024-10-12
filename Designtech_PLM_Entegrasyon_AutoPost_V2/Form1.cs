@@ -509,8 +509,8 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 					txtServerName.Text = jsonObject["ServerName"].ToString();
 					txtDatabaseAdi.Text = jsonObject["Catalog"].ToString();
-					txtKullaniciAdi.Text = jsonObject["KullaniciAdi"].ToString(); ;
-					txtParola.Text = jsonObject["Parola"].ToString(); ;
+					txtKullaniciAdi.Text = jsonObject["KullaniciAdi"].ToString();
+					txtParola.Text = jsonObject["Parola"].ToString();
 
 					txtDesWTCode.Text = "DES-" + jsonObject["DesVeriTasimaID"].ToString();
 
@@ -1015,23 +1015,23 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 								}
 
+							}
+							if (rdbEntegrasyonKapali.Checked)
+							{
+								if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
+								{
+									await _closedEnterationAttachmentsSerivce.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
 								}
-								if (rdbEntegrasyonKapali.Checked)
+								var now = DateTime.Now;
+								if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
 								{
 									if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
 									{
-										await _closedEnterationAttachmentsSerivce.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-									}
-								var now = DateTime.Now;
-									if (now.Hour >= 22 && now.Hour < 23 && now.Minute <= 59)
-									{
-										if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
-										{
-											await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
-											await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-										}
+										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
+										await _errorClosedEnterationAttachmentsSerivce.GetErrorAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
 									}
 								}
+							}
 
 
 						}
@@ -1684,6 +1684,20 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		}
 		#endregion
 
+		private void txtDesWTCode_TextChanged(object sender, EventArgs e)
+		{
+
+		}
+
+		private void listBox1_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Control && e.KeyCode == Keys.C && listBox1.SelectedItem != null)
+			{
+				Clipboard.SetText(listBox1.SelectedItem.ToString());
+			}
+		}
+
+	
 	}
 }
 #endregion

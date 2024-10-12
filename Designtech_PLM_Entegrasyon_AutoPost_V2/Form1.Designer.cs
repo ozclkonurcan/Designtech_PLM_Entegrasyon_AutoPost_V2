@@ -301,6 +301,8 @@
 			txtDesWTCode.Name = "txtDesWTCode";
 			txtDesWTCode.Size = new Size(189, 20);
 			txtDesWTCode.TabIndex = 14;
+			txtDesWTCode.Text = "DES-";
+			txtDesWTCode.TextChanged += txtDesWTCode_TextChanged;
 			// 
 			// label13
 			// 
@@ -527,6 +529,7 @@
 			listBox1.Size = new Size(921, 305);
 			listBox1.TabIndex = 0;
 			listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged;
+			listBox1.KeyDown += listBox1_KeyDown;
 			// 
 			// groupBox5
 			// 

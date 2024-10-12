@@ -48,7 +48,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 		{
 			try
 			{
-				var sql = "SELECT * FROM PLM1.Des_WTPart_LogTable_Error WHERE [ParcaState] = @ParcaState";
+				var sql = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable_Error WHERE [ParcaState] = @ParcaState";
 				//if (state == "INWORK")
 				//	sql += " AND [ParcaVersion] NOT LIKE 'A%'";
 
@@ -81,7 +81,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 
 						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
 
-						await conn.ExecuteAsync("DELETE FROM [PLM1].[Des_WTPart_LogTable_Error] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable_Error] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
 					}
 
 
@@ -113,7 +113,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 
 					dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonDataAPI, jsonDataAPI);
 				}
-				await LogAndSaveData(response, state, conn, configuration, dataResponse, ID);
+				await LogAndSaveData(response, state, conn, configuration, dataResponse, ID,catalogValue);
 		
 		}
 
@@ -152,12 +152,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 			return JsonConvert.SerializeObject(anaPart);
 		}
 
-		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse, long ID)
+		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse, long ID,string catalogValue)
 		{
 			var logData = JsonConvert.SerializeObject(response);
 
-			await conn.ExecuteAsync(@"
-				INSERT INTO [PLM1].[Change_Notice_LogTable] 
+			await conn.ExecuteAsync($@"
+				INSERT INTO [{catalogValue}].[Change_Notice_LogTable] 
 				([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2], [statestate], [name], [WTPartNumber],[Version],[VersionID]) 
 				VALUES (@TransferID, @idA2A2, @ProcessTimestamp, @updateStampA2, @statestate, @name, @WTPartNumber, @Version, @VersionID)",
 				new
