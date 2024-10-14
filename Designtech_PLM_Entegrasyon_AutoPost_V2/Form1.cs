@@ -960,14 +960,32 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 								}
 								if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
 								{
+									try
+									{
+
+								
 									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+									catch (Exception ex)
+									{
+										MessageBox.Show("Attachment Hata :" + ex.Message);
+									}
 								}
 
 								if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt"))
 								{
+									try
+									{
+
+							
 									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
+									}
+									catch (Exception ex)
+									{
+										MessageBox.Show("Attachment Hata :" + ex.Message);
+									}
 								}
 
 								var now = DateTime.Now;
@@ -1045,9 +1063,6 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			{
 				notificatonSettings("Hata!" + ex.Message);
 				MessageBox.Show(ex.Message);
-			}
-			finally
-			{
 			}
 		}
 

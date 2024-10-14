@@ -141,7 +141,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 					AlternatePart = new AlternatePart2
 					{
 						Number = item.MuadilParcaNumber,
-						isCancel = false
+						isCancel = true
 					}
 				}
 			}

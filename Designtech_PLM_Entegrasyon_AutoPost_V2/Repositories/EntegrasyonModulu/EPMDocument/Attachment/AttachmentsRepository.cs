@@ -41,6 +41,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 		public async Task GetAttachments(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string WindchillServerName, string ServerName, string BasicUsername, string BasicPassword, string sourceApi, string endPoint, int oldAlternateLinkCount, string sablonDataDurumu)
 		{
+			try
+			{
+
 			var SQL_Attachments = "";
 
 			if(state == "SEND_FILE")
@@ -148,7 +151,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 
 													var SQL_EPMReferenceLink = $"SELECT * FROM {catalogValue}.EPMReferenceLink WHERE [idA2A2] = '{empReferenceLinkID}'";
-													var resolvedItems_SQL_EPMReferenceLink = await conn.QuerySingleAsync<dynamic>(SQL_EPMReferenceLink);
+													var resolvedItems_SQL_EPMReferenceLink = await conn.QueryFirstOrDefaultAsync<dynamic>(SQL_EPMReferenceLink);
 													var SQL_EPMDocument = $@"
 SELECT * 
 FROM [{catalogValue}].EPMDocument 
@@ -339,7 +342,9 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											catch (Exception ex)
 											{
 												LogService logService = new LogService(_configuration);
-												logService.CreateJsonFileLogError("Beklenmedik bir hata oluştu. Hata detayı: " + ex.Message);
+												var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+												logService.CreateJsonFileLogError(jsonData4, "Beklenmedik bir hata oluştu. Hata detayı: " + ex.Message);
+
 											}
 										}
 
@@ -401,7 +406,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 												var SQL_EPMReferenceLink = $"SELECT * FROM {catalogValue}.EPMReferenceLink WHERE [idA2A2] = '{empReferenceLinkID}'";
-												var resolvedItems_SQL_EPMReferenceLink = await conn.QuerySingleAsync<dynamic>(SQL_EPMReferenceLink);
+												var resolvedItems_SQL_EPMReferenceLink = await conn.QueryFirstOrDefaultAsync<dynamic>(SQL_EPMReferenceLink);
 												var SQL_EPMDocument = $@"
 SELECT * 
 FROM [{catalogValue}].EPMDocument 
@@ -630,7 +635,8 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 										catch (Exception ex)
 										{
 											LogService logService = new LogService(_configuration);
-											logService.CreateJsonFileLogError("Beklenmedik bir hata oluştu. Hata detayı: " + ex.Message);
+											var jsonData4 = JsonConvert.SerializeObject(CADResponse);
+											logService.CreateJsonFileLogError(jsonData4,"Beklenmedik bir hata oluştu. Hata detayı: " + ex.Message);
 										}
 
 									}
@@ -668,6 +674,14 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 			}
 
 
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message);
+				//LogService logService = new LogService(_configuration);
+				//logService.CreateJsonFileLogError(jsonData4, "CADReferencesResponse nesnesi null. Hata detayı: " + ex.Message);
+				//logService.CreateJsonFileLogError(null, "CAD Döküman References çıktısı boş.İlişkilendirilmiş bir WTPart parça bulunamadı. Hata detayı: " + ex.Message);
+			}
 		}
 
 
@@ -1442,7 +1456,6 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 		{
 			try
 			{
-				//pdfUrl = "http://plm-1.designtech.com/Windchill/servlet/WindchillAuthGW/com.ptc.windchill.enterprise.wvs.saveWVSObject.utils.SaveWVSObjectHelper/saveWVSObject/PDF_P-00000119327_prt.pdf?annotations=true&oid=OR%3Awt.content.ApplicationData%3A107583206&fileType=pdf&u8=1";
 
 				string directoryPath = "Configuration";
 				string fileName2 = "appsettings.json";

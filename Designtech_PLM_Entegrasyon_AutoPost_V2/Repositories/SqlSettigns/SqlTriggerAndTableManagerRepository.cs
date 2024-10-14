@@ -417,22 +417,22 @@ END";
 
 			#region WTPart AlternateLink
 			string MuadilTakip = @$"
-CREATE TRIGGER [{scheman}].[MuadilTakip]
+CREATE TRIGGER [{scheman}].[MuadilTakip] 
 ON [{scheman}].[WTPartAlternateLink]
-AFTER INSERT, DELETE
-AS
+AFTER INSERT,DELETE
+AS 
 BEGIN
-    DECLARE
+    DECLARE 
         @MuadilParcaMasterID INT,
         @AnaParcaPartMasterID INT,
-        @AnaParcaState NVARCHAR(50),
+        @AnaParcaState NVARCHAR(50), 
         @AnaParcaPartID INT,
-        @AnaParcaName NVARCHAR(255),
+        @AnaParcaName NVARCHAR(255), 
         @AnaParcaNumber NVARCHAR(50),
-        @AnaParcaVersion NVARCHAR(50),
-        @MuadilParcaState NVARCHAR(50),
+        @AnaParcaVersion NVARCHAR(50), 
+        @MuadilParcaState NVARCHAR(50), 
         @MuadilParcaPartID INT,
-        @MuadilParcaName NVARCHAR(255),
+        @MuadilParcaName NVARCHAR(255), 
         @MuadilParcaNumber NVARCHAR(50),
         @MuadilParcaVersion NVARCHAR(50),
         @iterationIdA2iterationInfoA NVARCHAR(150),
@@ -443,25 +443,25 @@ BEGIN
         @KulAd NVARCHAR(200);
 
     -- Kullanıcı bilgilerini al
-    SELECT @KulID = USER_ID();
 
-    SELECT @KulAd = name
-    FROM {scheman}.WTUser
+
+    SELECT @KulAd = name 
+    FROM {scheman}.WTUser 
     WHERE idA2A2 = @KulID;
 
     -- Ekleme işlemi
-    IF EXISTS (SELECT * FROM INSERTED) AND NOT EXISTS (SELECT * FROM DELETED)
+IF EXISTS (SELECT * FROM INSERTED) AND NOT EXISTS(SELECT * FROM DELETED)
     BEGIN
-        SELECT @MuadilParcaMasterID = idA3B5, @AnaParcaPartMasterID = idA3A5
+        SELECT @MuadilParcaMasterID = idA3B5, @AnaParcaPartMasterID = idA3A5 
         FROM INSERTED;
 
         -- Ana ve muadil parça bilgilerini al
-        SELECT
+        SELECT 
             @versionIdA2versionInfoA = versionIdA2versionInfo,
             @iterationIdA2iterationInfoA = iterationIdA2iterationInfo,
             @AnaParcaState = statestate,
             @AnaParcaPartID = idA2A2
-        FROM {scheman}.WTPart
+        FROM {scheman}.WTPart 
         WHERE idA3masterReference = @AnaParcaPartMasterID
         AND versionIdA2versionInfo = (
             SELECT MAX(versionIdA2versionInfo)
@@ -479,12 +479,12 @@ BEGIN
             )
         );
 
-        SELECT
+        SELECT 
             @versionIdA2versionInfoB = versionIdA2versionInfo,
             @iterationIdA2iterationInfoB = iterationIdA2iterationInfo,
             @MuadilParcaState = statestate,
             @MuadilParcaPartID = idA2A2
-        FROM {scheman}.WTPart
+        FROM {scheman}.WTPart 
         WHERE idA3masterReference = @MuadilParcaMasterID
         AND versionIdA2versionInfo = (
             SELECT MAX(versionIdA2versionInfo)
@@ -502,20 +502,28 @@ BEGIN
             )
         );
 
-        SELECT @AnaParcaName = name, @AnaParcaNumber = WTPartNumber
-        FROM {scheman}.WTPartMaster
+        SELECT @AnaParcaName = name, @AnaParcaNumber = WTPartNumber 
+        FROM {scheman}.WTPartMaster 
         WHERE idA2A2 = @AnaParcaPartMasterID;
 
-        SELECT @MuadilParcaName = name, @MuadilParcaNumber = WTPartNumber
-        FROM {scheman}.WTPartMaster
+        SELECT @MuadilParcaName = name, @MuadilParcaNumber = WTPartNumber 
+        FROM {scheman}.WTPartMaster 
         WHERE idA2A2 = @MuadilParcaMasterID;
 
         SET @AnaParcaVersion = @versionIdA2versionInfoA + '.' + @iterationIdA2iterationInfoA;
         SET @MuadilParcaVersion = @versionIdA2versionInfoB + '.' + @iterationIdA2iterationInfoB;
 
+
+	---Nul Control
+	IF @AnaParcaPartID IS NULL OR @AnaParcaState IS NULL OR @AnaParcaNumber IS NULL OR @MuadilParcaState IS NULL OR @MuadilParcaPartID IS NULL OR @MuadilParcaNumber IS NULL
+    BEGIN
+        RETURN;
+    END
+	---Nul Control
+
         -- Log tablolarında güncelleme veya ekleme işlemi
-        IF EXISTS (SELECT 1 FROM {scheman}.Des_AlternateLink_LogTable
-                   WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID
+        IF EXISTS (SELECT 1 FROM {scheman}.Des_AlternateLink_LogTable 
+                   WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID 
                    AND MuadilParcaMasterID = @MuadilParcaMasterID)
         BEGIN
             -- Kayıt varsa güncelle
@@ -539,34 +547,44 @@ BEGIN
         BEGIN
             -- Kayıt yoksa ekle
             INSERT INTO {scheman}.Des_AlternateLink_LogTable (
-                AnaParcaState, AnaParcaPartID, AnaParcaPartMasterID,
-                AnaParcaName, AnaParcaNumber, AnaParcaVersion,
-                MuadilParcaState, MuadilParcaPartID, MuadilParcaMasterID,
-                MuadilParcaName, MuadilParcaNumber, MuadilParcaVersion,
+                AnaParcaState, AnaParcaPartID, AnaParcaPartMasterID, 
+                AnaParcaName, AnaParcaNumber, AnaParcaVersion, 
+                MuadilParcaState, MuadilParcaPartID, MuadilParcaMasterID, 
+                MuadilParcaName, MuadilParcaNumber, MuadilParcaVersion, 
                 KulAd, LogMesaj
-            )
+            ) 
             VALUES (
-                @AnaParcaState, @AnaParcaPartID, @AnaParcaPartMasterID,
-                @AnaParcaName, @AnaParcaNumber, @AnaParcaVersion,
-                @MuadilParcaState, @MuadilParcaPartID, @MuadilParcaMasterID,
-                @MuadilParcaName, @MuadilParcaNumber, @MuadilParcaVersion,
+                @AnaParcaState, @AnaParcaPartID, @AnaParcaPartMasterID, 
+                @AnaParcaName, @AnaParcaNumber, @AnaParcaVersion, 
+                @MuadilParcaState, @MuadilParcaPartID, @MuadilParcaMasterID, 
+                @MuadilParcaName, @MuadilParcaNumber, @MuadilParcaVersion, 
                 @KulAd, 'Ana Parça: ' + @AnaParcaName + ' Muadil Parça: ' + @MuadilParcaName + ' ile ilişkisi eklendi'
             );
         END
-    END;
+    END
 
-    -- Silme işlemi
-    IF NOT EXISTS (SELECT * FROM INSERTED) AND EXISTS (SELECT * FROM DELETED)
-    BEGIN
-        SELECT @MuadilParcaMasterID = idA3B5, @AnaParcaPartMasterID = idA3A5
-        FROM DELETED;
+    -- Silme işlemi 
 
-        -- Ana ve muadil parça bilgilerini al
-        SELECT
-            @versionIdA2versionInfoA = versionIdA2versionInfo,
-            @iterationIdA2iterationInfoA = iterationIdA2iterationInfo,
-            @AnaParcaState = statestate,
-            @AnaParcaPartID = idA2A2
+   IF NOT EXISTS(SELECT * FROM INSERTED) AND EXISTS (SELECT * FROM DELETED)
+BEGIN
+    SELECT @MuadilParcaMasterID = idA3B5, @AnaParcaPartMasterID = idA3A5 
+    FROM DELETED;
+
+    -- Ana ve muadil parça bilgilerini al
+    SELECT 
+        @versionIdA2versionInfoA = versionIdA2versionInfo,
+        @iterationIdA2iterationInfoA = iterationIdA2iterationInfo,
+        @AnaParcaState = statestate,
+        @AnaParcaPartID = idA2A2
+    FROM {scheman}.WTPart 
+    WHERE idA3masterReference = @AnaParcaPartMasterID
+    AND versionIdA2versionInfo = (
+        SELECT MAX(versionIdA2versionInfo)
+        FROM {scheman}.WTPart
+        WHERE idA3masterReference = @AnaParcaPartMasterID
+    )
+    AND iterationIdA2iterationInfo = (
+        SELECT MAX(iterationIdA2iterationInfo)
         FROM {scheman}.WTPart
         WHERE idA3masterReference = @AnaParcaPartMasterID
         AND versionIdA2versionInfo = (
@@ -574,22 +592,22 @@ BEGIN
             FROM {scheman}.WTPart
             WHERE idA3masterReference = @AnaParcaPartMasterID
         )
-        AND iterationIdA2iterationInfo = (
-            SELECT MAX(iterationIdA2iterationInfo)
-            FROM {scheman}.WTPart
-            WHERE idA3masterReference = @AnaParcaPartMasterID
-            AND versionIdA2versionInfo = (
-                SELECT MAX(versionIdA2versionInfo)
-                FROM {scheman}.WTPart
-                WHERE idA3masterReference = @AnaParcaPartMasterID
-            )
-        );
+    );
 
-        SELECT
-            @versionIdA2versionInfoB = versionIdA2versionInfo,
-            @iterationIdA2iterationInfoB = iterationIdA2iterationInfo,
-            @MuadilParcaState = statestate,
-            @MuadilParcaPartID = idA2A2
+    SELECT 
+        @versionIdA2versionInfoB = versionIdA2versionInfo,
+        @iterationIdA2iterationInfoB = iterationIdA2iterationInfo,
+        @MuadilParcaState = statestate,
+        @MuadilParcaPartID = idA2A2
+    FROM {scheman}.WTPart 
+    WHERE idA3masterReference = @MuadilParcaMasterID
+    AND versionIdA2versionInfo = (
+        SELECT MAX(versionIdA2versionInfo)
+        FROM {scheman}.WTPart
+        WHERE idA3masterReference = @MuadilParcaMasterID
+    )
+    AND iterationIdA2iterationInfo = (
+        SELECT MAX(iterationIdA2iterationInfo)
         FROM {scheman}.WTPart
         WHERE idA3masterReference = @MuadilParcaMasterID
         AND versionIdA2versionInfo = (
@@ -597,69 +615,70 @@ BEGIN
             FROM {scheman}.WTPart
             WHERE idA3masterReference = @MuadilParcaMasterID
         )
-        AND iterationIdA2iterationInfo = (
-            SELECT MAX(iterationIdA2iterationInfo)
-            FROM {scheman}.WTPart
-            WHERE idA3masterReference = @MuadilParcaMasterID
-            AND versionIdA2versionInfo = (
-                SELECT MAX(versionIdA2versionInfo)
-                FROM {scheman}.WTPart
-                WHERE idA3masterReference = @MuadilParcaMasterID
-            )
+    );
+
+    SELECT @AnaParcaName = name, @AnaParcaNumber = WTPartNumber 
+    FROM {scheman}.WTPartMaster 
+    WHERE idA2A2 = @AnaParcaPartMasterID;
+
+    SELECT @MuadilParcaName = name, @MuadilParcaNumber = WTPartNumber 
+    FROM {scheman}.WTPartMaster 
+    WHERE idA2A2 = @MuadilParcaMasterID;
+
+    SET @AnaParcaVersion = @versionIdA2versionInfoA + '.' + @iterationIdA2iterationInfoA;
+    SET @MuadilParcaVersion = @versionIdA2versionInfoB + '.' + @iterationIdA2iterationInfoB;
+
+
+	---Nul Control
+	IF @AnaParcaPartID IS NULL OR @AnaParcaState IS NULL OR @AnaParcaNumber IS NULL OR @MuadilParcaState IS NULL OR @MuadilParcaPartID IS NULL OR @MuadilParcaNumber IS NULL
+    BEGIN
+        RETURN;
+    END
+	---Nul Control
+
+
+    -- Log tablosuna güncelleme işlemi
+    IF EXISTS (SELECT 1 FROM {scheman}.Des_AlternateLinkRemoved_LogTable 
+               WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID 
+               AND MuadilParcaMasterID = @MuadilParcaMasterID)
+    BEGIN
+        -- Kayıt varsa güncelle
+        UPDATE {scheman}.Des_AlternateLinkRemoved_LogTable
+        SET AnaParcaState = @AnaParcaState,
+            AnaParcaPartID = @AnaParcaPartID,
+            AnaParcaName = @AnaParcaName,
+            AnaParcaNumber = @AnaParcaNumber,
+            AnaParcaVersion = @AnaParcaVersion,
+            MuadilParcaState = @MuadilParcaState,
+            MuadilParcaPartID = @MuadilParcaPartID,
+            MuadilParcaName = @MuadilParcaName,
+            MuadilParcaNumber = @MuadilParcaNumber,
+            MuadilParcaVersion = @MuadilParcaVersion,
+            KulAd = @KulAd,
+            LogMesaj = 'Ana Parça: ' + @AnaParcaName + ' Muadil Parça: ' + @MuadilParcaName + ' ile ilişkisi silindi'
+        WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID
+        AND MuadilParcaMasterID = @MuadilParcaMasterID;
+    END
+    ELSE
+    BEGIN
+        -- Eğer kayıt yoksa ekleme yap (silinen ilişkileri kaydetmek için)
+        INSERT INTO {scheman}.Des_AlternateLinkRemoved_LogTable (
+            AnaParcaState, AnaParcaPartID, AnaParcaPartMasterID, 
+            AnaParcaName, AnaParcaNumber, AnaParcaVersion, 
+            MuadilParcaState, MuadilParcaPartID, MuadilParcaMasterID, 
+            MuadilParcaName, MuadilParcaNumber, MuadilParcaVersion, 
+            KulAd, LogMesaj
+        ) 
+        VALUES (
+            @AnaParcaState, @AnaParcaPartID, @AnaParcaPartMasterID, 
+            @AnaParcaName, @AnaParcaNumber, @AnaParcaVersion, 
+            @MuadilParcaState, @MuadilParcaPartID, @MuadilParcaMasterID, 
+            @MuadilParcaName, @MuadilParcaNumber, @MuadilParcaVersion, 
+            @KulAd, 'Ana Parça: ' + @AnaParcaName + ' Muadil Parça: ' + @MuadilParcaName + ' ile ilişkisi silindi'
         );
+    END
+END
 
-        SELECT @AnaParcaName = name, @AnaParcaNumber = WTPartNumber
-        FROM {scheman}.WTPartMaster
-        WHERE idA2A2 = @AnaParcaPartMasterID;
-
-        SELECT @MuadilParcaName = name, @MuadilParcaNumber = WTPartNumber
-        FROM {scheman}.WTPartMaster
-        WHERE idA2A2 = @MuadilParcaMasterID;
-
-        SET @AnaParcaVersion = @versionIdA2versionInfoA + '.' + @iterationIdA2iterationInfoA;
-        SET @MuadilParcaVersion = @versionIdA2versionInfoB + '.' + @iterationIdA2iterationInfoB;
-
-        -- Log tablolarında güncelleme veya ekleme işlemi
-        IF EXISTS (SELECT 1 FROM {scheman}.Des_AlternateLinkRemoved_LogTable
-                   WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID
-                   AND MuadilParcaMasterID = @MuadilParcaMasterID)
-        BEGIN
-            -- Kayıt varsa güncelle
-            UPDATE {scheman}.Des_AlternateLinkRemoved_LogTable
-            SET AnaParcaState = @AnaParcaState,
-                AnaParcaPartID = @AnaParcaPartID,
-                AnaParcaName = @AnaParcaName,
-                AnaParcaNumber = @AnaParcaNumber,
-                AnaParcaVersion = @AnaParcaVersion,
-                MuadilParcaState = @MuadilParcaState,
-                MuadilParcaPartID = @MuadilParcaPartID,
-                MuadilParcaName = @MuadilParcaName,
-                MuadilParcaNumber = @MuadilParcaNumber,
-                MuadilParcaVersion = @MuadilParcaVersion,
-                KulAd = @KulAd,
-                LogMesaj = 'Ana Parça: ' + @AnaParcaName + ' Muadil Parça: ' + @MuadilParcaName + ' ile ilişkisi silindi'
-            WHERE AnaParcaPartMasterID = @AnaParcaPartMasterID
-            AND MuadilParcaMasterID = @MuadilParcaMasterID;
-        END
-        ELSE
-        BEGIN
-            -- Kayıt yoksa ekle
-            INSERT INTO {scheman}.Des_AlternateLinkRemoved_LogTable (
-                AnaParcaState, AnaParcaPartID, AnaParcaPartMasterID,
-                AnaParcaName, AnaParcaNumber, AnaParcaVersion,
-                MuadilParcaState, MuadilParcaPartID, MuadilParcaMasterID,
-                MuadilParcaName, MuadilParcaNumber, MuadilParcaVersion,
-                KulAd, LogMesaj
-            )
-            VALUES (
-                @AnaParcaState, @AnaParcaPartID, @AnaParcaPartMasterID,
-                @AnaParcaName, @AnaParcaNumber, @AnaParcaVersion,
-                @MuadilParcaState, @MuadilParcaPartID, @MuadilParcaMasterID,
-                @MuadilParcaName, @MuadilParcaNumber, @MuadilParcaVersion,
-                @KulAd, 'Ana Parça: ' + @AnaParcaName + ' Muadil Parça: ' + @MuadilParcaName + ' ile ilişkisi silindi'
-            );
-        END
-    END;
 END;";
 
 			#endregion
@@ -1296,7 +1315,14 @@ BEGIN
     FROM [{scheman}].[WTPartMaster] m
     WHERE m.idA2A2 = @idA3masterReferenceB5;
 
-	
+
+	---Nul Control
+	IF @idA3A5 IS NULL OR @stateStateA5 IS NULL OR @wtpartNumberA5 IS NULL OR @stateStateB5 IS NULL OR @idA3B5 IS NULL OR @wtpartNumberB5 IS NULL
+    BEGIN
+        RETURN;
+    END
+	---Nul Control	
+
 	IF @idA3masterReferenceA5 <> @idA3masterReferenceB5
 	BEGIN
     IF EXISTS (

@@ -117,7 +117,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			
 			 dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, jsonDataAPI, jsonDataAPI);
 			}
-			await LogAndSaveData(response, state, conn, configuration, dataResponse, ID);
+			await LogAndSaveData(response, state, conn, configuration, dataResponse, ID, catalogValue);
 			}
 			catch (Exception ex)
 			{
@@ -193,12 +193,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			return JsonConvert.SerializeObject(anaPart);
 		}
 
-		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse,long ID)
+		private async Task LogAndSaveData(Part response, string state, IDbConnection conn, IConfiguration configuration, ApiErrorResponse dataResponse,long ID,string catalogValue)
 		{
 			var logData = JsonConvert.SerializeObject(response);
 
 			await conn.ExecuteAsync($@"
-				INSERT INTO [{caa}].[Change_Notice_LogTable] 
+				INSERT INTO [{catalogValue}].[Change_Notice_LogTable] 
 				([TransferID],[idA2A2], [ProcessTimestamp], [updateStampA2], [statestate], [name], [WTPartNumber],[Version],[VersionID]) 
 				VALUES (@TransferID, @idA2A2, @ProcessTimestamp, @updateStampA2, @statestate, @name, @WTPartNumber, @Version, @VersionID)",
 				new

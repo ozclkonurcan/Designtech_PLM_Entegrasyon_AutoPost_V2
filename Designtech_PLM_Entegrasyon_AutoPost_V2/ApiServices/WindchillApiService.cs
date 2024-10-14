@@ -20,10 +20,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.ApiServices
 	{
 
 
-		//public async Task GetApiToken()
-		//{
-		//http://192.168.1.11/Windchill/servlet/odata/PTC/GetCSRFToken()
-		//}
+	
 
 		public async Task<string> GetApiVeriTasimaWTDoc(string baseUrl, string endpoint, string username, string password, string CSRF_NONCE)
 		{
