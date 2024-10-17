@@ -50,14 +50,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 							Number = item.AnaParcaNumber,
 							Alternates = new List<Alternates2>
 			{
-				new Alternates2
-				{
-					AlternatePart = new AlternatePart2
-					{
-						Number = item.MuadilParcaNumber,
-						isCancel = false
-					}
-				}
+						new Alternates2
+						{
+							AlternatePart = new AlternatePart2
+							{
+								Number = item.MuadilParcaNumber,
+								isCancel = false
+							}
+						}
 			}
 						};
 

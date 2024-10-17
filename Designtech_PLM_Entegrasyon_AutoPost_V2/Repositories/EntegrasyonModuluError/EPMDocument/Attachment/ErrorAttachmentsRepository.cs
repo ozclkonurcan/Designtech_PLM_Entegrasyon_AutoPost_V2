@@ -452,6 +452,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											var partName = "";
 											var partNumber = "";
 											var partState = "";
+											var idA3ViewName = "";
 											if (!string.IsNullOrEmpty(partCode))
 											{
 
@@ -464,6 +465,16 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 												partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
 												partState = resolvedItems_SQL_WTPart.statestate;
 
+												//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
+
+
+												var SQL_WTPartIdA3View = $"SELECT [name] FROM {catalogValue}.WTView WHERE idA2A2 = '{resolvedItems_SQL_WTPart.idA3view}'";
+												var resolvedItems_SQL_WTPartIdA3View = await conn.QueryFirstAsync<dynamic>(SQL_WTPartIdA3View);
+												idA3ViewName = resolvedItems_SQL_WTPartIdA3View.name;
+												//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
+
+												if(idA3ViewName == "Design")
+												{ 
 												if (partState == "CANCELLED")
 												{
 													if (resolvedItems_SQL_EPMDocument.statestate == "CANCELLED")
@@ -599,6 +610,13 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 													var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 													logService.CreateJsonFileLogError(jsonData4, $"Cancelled işlemi gerçekleştirildi WTPart state durumu cancelled değil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
 												}
+												}
+												else
+												{
+													await conn.ExecuteAsync($@"
+                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
+                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+												}
 
 											}
 											else
@@ -672,12 +690,13 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 					var partNumber = "";
 					var partState = "";
 					var projeCode = "";
+					var idA3ViewName = "";
 					var json = "";
 					if (!string.IsNullOrEmpty(partCode))
 					{
 
 
-						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate],[idA3View] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
 						var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 						var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
 						var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
@@ -686,6 +705,14 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 						partName = resolvedItems_SQL_WTPartMaster.name;
 						partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
 						partState = resolvedItems_SQL_WTPart.statestate;
+
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
+
+
+						var SQL_WTPartIdA3View = $"SELECT [name] FROM {catalogValue}.WTView WHERE idA2A2 = '{resolvedItems_SQL_WTPart.idA3View}'";
+						var resolvedItems_SQL_WTPartIdA3View = await conn.QuerySingleAsync<dynamic>(SQL_WTPartIdA3View);
+						idA3ViewName = resolvedItems_SQL_WTPartIdA3View.name;
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
 						json = await projectCodeRootObjectInfo(partCode, CADResponse);
 					}
 
@@ -750,8 +777,9 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 							var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
 							if (!string.IsNullOrEmpty(partCode))
 							{
-
-								if (partState == "RELEASED")
+								if (idA3ViewName == "Design")
+								{
+									if (partState == "RELEASED")
 								{
 
 									try
@@ -918,6 +946,13 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 									//logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadı.");
 									logService.CreateJsonFileLogError(jsonData4, $"Released işlemi gerçekleştirildi WTPart state durumu released değil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
 								}
+								}
+								else
+								{
+									await conn.ExecuteAsync($@"
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Error]
+                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
+								}
 							}
 							else
 							{
@@ -964,6 +999,7 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 					var partNumber = "";
 					var partState = "";
 					var projeCode = "";
+					var idA3ViewName = "";
 					var json = "";
 
 
@@ -972,7 +1008,7 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 					{
 
 
-						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate],[idA3View] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
 						var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 						var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
 						var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
@@ -982,6 +1018,15 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 						partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
 						partState = resolvedItems_SQL_WTPart.statestate;
 						//projeCode = resolvedItems_SQL_WTPart.ProjeKodu;
+
+
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
+
+
+						var SQL_WTPartIdA3View = $"SELECT [name] FROM {catalogValue}.WTView WHERE idA2A2 = '{resolvedItems_SQL_WTPart.idA3View}'";
+						var resolvedItems_SQL_WTPartIdA3View = await conn.QuerySingleAsync<dynamic>(SQL_WTPartIdA3View);
+						idA3ViewName = resolvedItems_SQL_WTPartIdA3View.name;
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
 
 						//incelenecek1
 						json = await projectCodeInfo(partCode, CADResponse); // partCode değerini fonksiyona gönderin
@@ -1048,7 +1093,9 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 								if (!string.IsNullOrEmpty(partCode))
 								{
 
-									if (partState == "RELEASED")
+									if (idA3ViewName == "Design")
+									{
+										if (partState == "RELEASED")
 									{
 										//var now = DateTime.Now;
 
@@ -1205,6 +1252,14 @@ new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = En
 										var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 										//logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadı.");
 										logService.CreateJsonFileLogError(jsonData4, $"Released işlemi gerçekleştirildi WTPart state durumu released değil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+									}
+									}
+									else
+									{
+
+										await conn.ExecuteAsync($@"
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Error]
+                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 									}
 								}
 								else

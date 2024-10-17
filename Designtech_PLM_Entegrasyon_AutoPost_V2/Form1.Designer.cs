@@ -84,6 +84,9 @@
 			rdbEntegrasyonKapali = new RadioButton();
 			rdbEntegrasyonAcik = new RadioButton();
 			groupBox9 = new GroupBox();
+			groupBox6 = new GroupBox();
+			rdbEquivalenceAcik = new RadioButton();
+			rdbEquivalenceKapali = new RadioButton();
 			groupBox1.SuspendLayout();
 			groupBox2.SuspendLayout();
 			groupBox3.SuspendLayout();
@@ -92,11 +95,12 @@
 			contextMenuStrip1.SuspendLayout();
 			groupBox8.SuspendLayout();
 			groupBox9.SuspendLayout();
+			groupBox6.SuspendLayout();
 			SuspendLayout();
 			// 
 			// btnStartAutoPost
 			// 
-			btnStartAutoPost.Location = new Point(825, 420);
+			btnStartAutoPost.Location = new Point(825, 354);
 			btnStartAutoPost.Name = "btnStartAutoPost";
 			btnStartAutoPost.Size = new Size(119, 29);
 			btnStartAutoPost.TabIndex = 0;
@@ -469,7 +473,7 @@
 			// label5
 			// 
 			label5.AutoSize = true;
-			label5.Location = new Point(743, 14);
+			label5.Location = new Point(630, 397);
 			label5.Name = "label5";
 			label5.Size = new Size(129, 20);
 			label5.TabIndex = 4;
@@ -478,7 +482,7 @@
 			// 
 			// button1btnStopAutoPost
 			// 
-			button1btnStopAutoPost.Location = new Point(725, 420);
+			button1btnStopAutoPost.Location = new Point(730, 354);
 			button1btnStopAutoPost.Name = "button1btnStopAutoPost";
 			button1btnStopAutoPost.Size = new Size(94, 29);
 			button1btnStopAutoPost.TabIndex = 5;
@@ -488,7 +492,7 @@
 			// 
 			// btnKapat
 			// 
-			btnKapat.Location = new Point(630, 420);
+			btnKapat.Location = new Point(630, 354);
 			btnKapat.Name = "btnKapat";
 			btnKapat.Size = new Size(94, 29);
 			btnKapat.TabIndex = 6;
@@ -499,7 +503,7 @@
 			// lblDataCount
 			// 
 			lblDataCount.AutoSize = true;
-			lblDataCount.Location = new Point(878, 14);
+			lblDataCount.Location = new Point(758, 399);
 			lblDataCount.Name = "lblDataCount";
 			lblDataCount.Size = new Size(17, 20);
 			lblDataCount.TabIndex = 7;
@@ -508,25 +512,24 @@
 			// groupBox4
 			// 
 			groupBox4.Controls.Add(listBox1);
-			groupBox4.Controls.Add(lblDataCount);
-			groupBox4.Controls.Add(label5);
-			groupBox4.Location = new Point(12, 455);
+			groupBox4.Location = new Point(12, 420);
 			groupBox4.Name = "groupBox4";
-			groupBox4.Size = new Size(938, 353);
+			groupBox4.Size = new Size(1126, 401);
 			groupBox4.TabIndex = 8;
 			groupBox4.TabStop = false;
-			groupBox4.Text = "PLM LOG";
+			groupBox4.Text = "LOG";
 			// 
 			// listBox1
 			// 
+			listBox1.Font = new Font("Segoe UI", 9F);
 			listBox1.FormattingEnabled = true;
 			listBox1.HorizontalExtent = 3000;
 			listBox1.HorizontalScrollbar = true;
 			listBox1.IntegralHeight = false;
-			listBox1.Location = new Point(11, 42);
+			listBox1.Location = new Point(11, 26);
 			listBox1.Name = "listBox1";
 			listBox1.ScrollAlwaysVisible = true;
-			listBox1.Size = new Size(921, 305);
+			listBox1.Size = new Size(1109, 369);
 			listBox1.TabIndex = 0;
 			listBox1.SelectedIndexChanged += listBox1_SelectedIndexChanged;
 			listBox1.KeyDown += listBox1_KeyDown;
@@ -535,9 +538,9 @@
 			// 
 			groupBox5.Controls.Add(btnListbox2Reflesh);
 			groupBox5.Controls.Add(listBox2);
-			groupBox5.Location = new Point(956, 12);
+			groupBox5.Location = new Point(1139, 11);
 			groupBox5.Name = "groupBox5";
-			groupBox5.Size = new Size(247, 796);
+			groupBox5.Size = new Size(247, 810);
 			groupBox5.TabIndex = 9;
 			groupBox5.TabStop = false;
 			groupBox5.Text = "Log dosya listesi";
@@ -557,7 +560,7 @@
 			listBox2.FormattingEnabled = true;
 			listBox2.Location = new Point(5, 27);
 			listBox2.Name = "listBox2";
-			listBox2.Size = new Size(237, 744);
+			listBox2.Size = new Size(237, 764);
 			listBox2.TabIndex = 0;
 			listBox2.SelectedIndexChanged += listBox2_SelectedIndexChanged;
 			// 
@@ -635,7 +638,6 @@
 			rdbEntegrasyonAcik.Name = "rdbEntegrasyonAcik";
 			rdbEntegrasyonAcik.Size = new Size(58, 24);
 			rdbEntegrasyonAcik.TabIndex = 18;
-			rdbEntegrasyonAcik.TabStop = true;
 			rdbEntegrasyonAcik.Text = "Açık";
 			rdbEntegrasyonAcik.UseVisualStyleBackColor = true;
 			// 
@@ -643,20 +645,58 @@
 			// 
 			groupBox9.Controls.Add(rdbEntegrasyonAcik);
 			groupBox9.Controls.Add(rdbEntegrasyonKapali);
-			groupBox9.Location = new Point(630, 350);
+			groupBox9.Location = new Point(956, 12);
 			groupBox9.Name = "groupBox9";
-			groupBox9.Size = new Size(320, 64);
+			groupBox9.Size = new Size(176, 64);
 			groupBox9.TabIndex = 19;
 			groupBox9.TabStop = false;
 			groupBox9.Text = "Entegrasyon Durumu";
 			groupBox9.Enter += groupBox9_Enter;
+			// 
+			// groupBox6
+			// 
+			groupBox6.Controls.Add(rdbEquivalenceAcik);
+			groupBox6.Controls.Add(rdbEquivalenceKapali);
+			groupBox6.Location = new Point(956, 82);
+			groupBox6.Name = "groupBox6";
+			groupBox6.Size = new Size(176, 64);
+			groupBox6.TabIndex = 20;
+			groupBox6.TabStop = false;
+			groupBox6.Text = "Equivalence Durumu";
+			// 
+			// rdbEquivalenceAcik
+			// 
+			rdbEquivalenceAcik.AutoSize = true;
+			rdbEquivalenceAcik.Location = new Point(14, 29);
+			rdbEquivalenceAcik.Name = "rdbEquivalenceAcik";
+			rdbEquivalenceAcik.Size = new Size(58, 24);
+			rdbEquivalenceAcik.TabIndex = 18;
+			rdbEquivalenceAcik.Text = "Açık";
+			rdbEquivalenceAcik.UseVisualStyleBackColor = true;
+			rdbEquivalenceAcik.CheckedChanged += rdbEquivalenceAcik_CheckedChanged;
+			// 
+			// rdbEquivalenceKapali
+			// 
+			rdbEquivalenceKapali.AutoSize = true;
+			rdbEquivalenceKapali.Checked = true;
+			rdbEquivalenceKapali.Location = new Point(95, 29);
+			rdbEquivalenceKapali.Name = "rdbEquivalenceKapali";
+			rdbEquivalenceKapali.Size = new Size(72, 24);
+			rdbEquivalenceKapali.TabIndex = 17;
+			rdbEquivalenceKapali.TabStop = true;
+			rdbEquivalenceKapali.Text = "Kapalı";
+			rdbEquivalenceKapali.UseVisualStyleBackColor = true;
+			rdbEquivalenceKapali.CheckedChanged += rdbEquivalenceKapali_CheckedChanged;
 			// 
 			// Form1
 			// 
 			AutoScaleDimensions = new SizeF(8F, 20F);
 			AutoScaleMode = AutoScaleMode.Font;
 			AutoSize = true;
-			ClientSize = new Size(1210, 833);
+			ClientSize = new Size(1398, 833);
+			Controls.Add(lblDataCount);
+			Controls.Add(groupBox6);
+			Controls.Add(label5);
 			Controls.Add(groupBox9);
 			Controls.Add(groupBox8);
 			Controls.Add(groupBox5);
@@ -682,14 +722,16 @@
 			groupBox3.ResumeLayout(false);
 			groupBox3.PerformLayout();
 			groupBox4.ResumeLayout(false);
-			groupBox4.PerformLayout();
 			groupBox5.ResumeLayout(false);
 			contextMenuStrip1.ResumeLayout(false);
 			groupBox8.ResumeLayout(false);
 			groupBox8.PerformLayout();
 			groupBox9.ResumeLayout(false);
 			groupBox9.PerformLayout();
+			groupBox6.ResumeLayout(false);
+			groupBox6.PerformLayout();
 			ResumeLayout(false);
+			PerformLayout();
 		}
 
 		#endregion
@@ -748,5 +790,8 @@
 		private RadioButton rdbEntegrasyonKapali;
 		private RadioButton rdbEntegrasyonAcik;
 		private GroupBox groupBox9;
+		private GroupBox groupBox6;
+		private RadioButton rdbEquivalenceAcik;
+		private RadioButton rdbEquivalenceKapali;
 	}
 }

@@ -82,6 +82,7 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.W
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.Alternate;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.Equivalence;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.EPMDocument.Attachment;
+using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -475,7 +476,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		}
 
 
-		private void ShowData()
+		private async void ShowData()
 		{
 			try
 			{
@@ -513,6 +514,20 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					txtParola.Text = jsonObject["Parola"].ToString();
 
 					txtDesWTCode.Text = "DES-" + jsonObject["DesVeriTasimaID"].ToString();
+
+
+					#region Equivalence Trigger Aktif/Pasif Control
+					bool isTriggerEnabled = await IsEquivalenceTriggerEnabledAsync();
+
+					if (isTriggerEnabled)
+					{
+						rdbEquivalenceAcik.Checked = true;
+					}
+					else
+					{
+						rdbEquivalenceKapali.Checked = true;
+					}
+					#endregion
 
 				}
 				else
@@ -947,7 +962,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 									await _stateService.getInworkData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
 								}
 
-								if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt"))
+								if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt") && rdbEquivalenceAcik.Checked)
 								{
 									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 									await _equivalenceService.getEquivalenceData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
@@ -960,32 +975,20 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 								}
 								if (sablonDataDurumu == "true" && state == "SEND_FILE" && sourceApi.Contains("CADDocumentMgmt"))
 								{
-									try
-									{
 
-								
+
 									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-									}
-									catch (Exception ex)
-									{
-										MessageBox.Show("Attachment Hata :" + ex.Message);
-									}
+
 								}
 
 								if (sablonDataDurumu == "true" && state == "CANCELLED" && sourceApi.Contains("CADDocumentMgmt"))
 								{
-									try
-									{
 
-							
+
 									await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 									await _attachmentsService.GetAttachments(state, catalogValue, conn, apiFullUrl, apiURL, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword, sourceApi, endPoint, oldAlternateLinkCount, sablonDataDurumu);
-									}
-									catch (Exception ex)
-									{
-										MessageBox.Show("Attachment Hata :" + ex.Message);
-									}
+
 								}
 
 								var now = DateTime.Now;
@@ -1007,7 +1010,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 										await _errorStateService.getErrorInworkData(_configuration, conn, catalogValue, state, apiFullUrl, apiURL, sourceApi, endPoint, CSRF_NONCE, WindchillServerName, ServerName, BasicUsername, BasicPassword);
 									}
 
-									if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt"))
+									if (sablonDataDurumu == "true" && state == "RELEASED_EquivalenceLink" && sourceApi.Contains("ProdMgmt") && rdbEquivalenceAcik.Checked)
 									{
 										await _partReviseService.ProcessReviseAsync(state, catalogValue, conn);
 										await _errorEquivalenceService.geErrorEquivalenceData(_configuration, conn, catalogValue, apiFullUrl, apiURL, sourceApi, endPoint);
@@ -1712,7 +1715,112 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			}
 		}
 
-	
+		private async void rdbEquivalenceAcik_CheckedChanged(object sender, EventArgs e)
+		{
+			try
+			{
+				string directoryPath = "Configuration";
+				string fileName = "appsettings.json";
+				string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+				string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+
+				JObject jsonObject = JObject.Parse(jsonData);
+				var catalogValue = jsonObject["DatabaseSchema"].ToString();
+				var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+				var conn = new SqlConnection(connectionString);
+
+				string triggerName = $"{catalogValue}.Des_EquivalenceLink";
+				string tableName = $"{catalogValue}.EquivalenceLink";
+
+
+
+				string sql = $"ENABLE TRIGGER {triggerName} ON {tableName}";
+
+				using (var connection = new SqlConnection(connectionString))
+				{
+					await connection.ExecuteAsync(sql);
+				}
+
+			}
+			catch (Exception)
+			{
+
+			}
+
+
+		}
+
+		private async void rdbEquivalenceKapali_CheckedChanged(object sender, EventArgs e)
+		{
+			try
+			{
+				string directoryPath = "Configuration";
+				string fileName = "appsettings.json";
+				string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+				string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+
+				JObject jsonObject = JObject.Parse(jsonData);
+				var catalogValue = jsonObject["DatabaseSchema"].ToString();
+				var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+				var conn = new SqlConnection(connectionString);
+
+				string triggerName = $"{catalogValue}.Des_EquivalenceLink";
+				string tableName = $"{catalogValue}.EquivalenceLink";
+
+
+
+				string sql = $"DISABLE TRIGGER {triggerName} ON {tableName}";
+
+				using (var connection = new SqlConnection(connectionString))
+				{
+					await connection.ExecuteAsync(sql);
+				}
+			}
+			catch (Exception)
+			{
+
+			}
+		}
+
+
+		private async Task<bool> IsEquivalenceTriggerEnabledAsync()
+		{
+			try
+			{
+				string directoryPath = "Configuration";
+				string fileName = "appsettings.json";
+				string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath, fileName);
+				string jsonData = File.Exists(filePath) ? File.ReadAllText(filePath) : string.Empty;
+
+				JObject jsonObject = JObject.Parse(jsonData);
+				var catalogValue = jsonObject["DatabaseSchema"].ToString();
+				var connectionString = jsonObject["ConnectionStrings"]["Plm"].ToString();
+
+				string triggerName = $"{catalogValue}.Des_EquivalenceLink";
+
+			
+
+
+				using (var connection = new SqlConnection(connectionString))
+				{
+
+					await connection.OpenAsync();
+					// Trigger durumunu kontrol et
+					var isDisabled = await connection.ExecuteScalarAsync<int>($"SELECT is_disabled FROM sys.triggers WHERE name = '{triggerName.Split('.').Last()}'");
+					// Parametreli sorgu
+					bool isActive = isDisabled == 0;
+					// Trigger durumu
+					return isActive;
+				}
+			
+			}
+			catch (Exception)
+			{
+				// Hata durumunda varsayýlan olarak trigger'ýn kapalý olduðunu dönüyoruz
+				return false;
+			}
+		}
+
 	}
 }
 #endregion

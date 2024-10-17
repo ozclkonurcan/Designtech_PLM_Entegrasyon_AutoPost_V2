@@ -289,12 +289,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 					var partNumber = "";
 					var partState = "";
 					var projeCode = "";
+					var idA3ViewName = "";
 					var json = "";
 					if (!string.IsNullOrEmpty(partCode))
 					{
 
 
-						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
+						var SQL_WTPart = $"SELECT [idA3masterReference] ,[statestate],[idA3View] FROM {catalogValue}.WTPart WHERE [idA2A2] = '{partCode}'";
 						var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 						var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
 						var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
@@ -303,6 +304,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 						partName = resolvedItems_SQL_WTPartMaster.name;
 						partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
 						partState = resolvedItems_SQL_WTPart.statestate;
+
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
+
+
+						var SQL_WTPartIdA3View = $"SELECT [name] FROM {catalogValue}.WTView WHERE idA2A2 = '{resolvedItems_SQL_WTPart.idA3View}'";
+						var resolvedItems_SQL_WTPartIdA3View = await conn.QuerySingleAsync<dynamic>(SQL_WTPartIdA3View);
+						idA3ViewName = resolvedItems_SQL_WTPartIdA3View.name;
+						//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
 						json = await projectCodeRootObjectInfo(partCode, CADResponse);
 					}
 
@@ -357,8 +366,9 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 							var LogJsonData = JsonConvert.SerializeObject(CADViewResponseContentInfo);
 							if (!string.IsNullOrEmpty(partCode))
 							{
-
-								if (partState == "RELEASED")
+								if (idA3ViewName == "Design")
+								{
+									if (partState == "RELEASED")
 								{
 
 									try
@@ -521,6 +531,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 									var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 									//logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadı.");
 									logService.CreateJsonFileLogError(jsonData4, $"Released işlemi gerçekleştirildi WTPart state durumu released değil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
+								}
+								}
+								else
+								{
+									await conn.ExecuteAsync($@"
+                                        DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable]
+                                        WHERE EPMDocID = @Ids", new { Ids = EPMDocID });
 								}
 							}
 							else

@@ -17,6 +17,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 	using System.Data.SqlClient;
 	using System.Text.Json;
 	using Newtonsoft.Json.Linq;
+	using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
 
 	public class EntegrasyonDurumRepository : IEntegrasyonDurumService
 	{
@@ -141,13 +142,22 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			}
 			else
 			{
+				var IdSeq = $"SELECT TOP 1 [value] FROM {catalogValue}.id_sequence ORDER BY [value] DESC";
+				var resolvedIdSeq = await conn.QueryFirstOrDefaultAsync<dynamic>(IdSeq);
+				long newId = Convert.ToInt64(resolvedIdSeq.value) + 100;
+
 				// Ekle
-				long newId = await GetNextIdSequence(conn, catalogValue);
-				await conn.ExecuteAsync(
+				//long newId = await GetNextIdSequence(conn, catalogValue);
+				int result = await conn.ExecuteAsync(
 					$"INSERT INTO [{catalogValue}].[StringValue] " +
 					"([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) " +
 					"VALUES ('7058085483721066086', @newId, @KodidA2A2, 'wt.iba.value.StringValue', 0, @stringDefinitionId, 0, @modifyStampA2, 1, @updateStampA2, @createStampA2, 'wt.part.WTPart', 'wt.iba.definition.StringDefinition', @value, @value2)",
 					new { newId, KodidA2A2, stringDefinitionId, modifyStampA2 = DateTime.Now.Date, updateStampA2 = DateTime.Now.Date, createStampA2 = DateTime.Now.Date, value, value2 });
+				if (result == 1)
+				{
+					await conn.ExecuteAsync(
+						$"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+				}
 			}
 		}
 
@@ -167,12 +177,21 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			else if (value.HasValue)
 			{
 				// Ekle (sadece değer null değilse)
-				long newId = await GetNextIdSequence(conn, catalogValue);
-				await conn.ExecuteAsync(
+				var IdSeq = $"SELECT TOP 1 [value] FROM {catalogValue}.id_sequence ORDER BY [value] DESC";
+				var resolvedIdSeq = await conn.QueryFirstOrDefaultAsync<dynamic>(IdSeq);
+				long newId = Convert.ToInt64(resolvedIdSeq.value) + 100;
+				//long newId = await GetNextIdSequence(conn, catalogValue);
+				int result = await conn.ExecuteAsync(
 					$"INSERT INTO [{catalogValue}].[TimestampValue] " +
 					"([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) " +
 					"VALUES ('-148878178526147486', @newId, @KodidA2A2, 'wt.iba.value.TimestampValue', 0, @timestampDefinitionId, 0, @modifyStampA2, 1, @updateStampA2, @createStampA2, 'wt.part.WTPart', 'wt.iba.definition.TimestampDefinition', @value)",
 					new { newId, KodidA2A2, timestampDefinitionId, modifyStampA2 = DateTime.Now.Date, updateStampA2 = DateTime.Now.Date, createStampA2 = DateTime.Now.Date, value });
+
+				if (result == 1)
+				{
+					await conn.ExecuteAsync(
+						$"INSERT INTO [{catalogValue}].[id_sequence] (dummy) VALUES ('x')");
+				}
 			}
 		}
 
@@ -498,40 +517,18 @@ new
 					// Sadece state "INWORK" ise işlem yapın
 					if (state == "INWORK")
 					{
-						// Mevcut StringValue ve TimestampValue kayıtlarını kontrol edin
-						var existingRecordStringValue = await conn.QueryFirstOrDefaultAsync($@"
-                    SELECT * 
-                    FROM [{catalogValue}].[StringValue] 
+						// Mevcut StringValue ve TimestampValue kayıtlarını silin
+						await conn.ExecuteAsync($@"
+                    DELETE FROM [{catalogValue}].[StringValue] 
                     WHERE [idA3A4] = @KodidA2A2 
                         AND [idA3A6] = @StringDefinitionId",
 							new { KodidA2A2, StringDefinitionId = existingRecordStringDefinition.idA2A2 });
 
-						var existingRecordTimestampValue = await conn.QueryFirstOrDefaultAsync($@"
-                    SELECT * 
-                    FROM [{catalogValue}].[TimestampValue] 
+						await conn.ExecuteAsync($@"
+                    DELETE FROM [{catalogValue}].[TimestampValue] 
                     WHERE [idA3A4] = @KodidA2A2 
                         AND [idA3A6] = @TimestampDefinitionId",
 							new { KodidA2A2, TimestampDefinitionId = existingRecordTimestampDefinition.idA2A2 });
-
-						// StringValue kaydı varsa güncelleyin, yoksa yeni bir kayıt ekleyin
-						if (existingRecordStringValue != null)
-						{
-							await UpdateStringValue(conn, catalogValue, respIdSeq, KodidA2A2, existingRecordStringDefinition.idA2A2);
-						}
-						else
-						{
-							await InsertStringValue(conn, catalogValue, respIdSeq, KodidA2A2, existingRecordStringDefinition.idA2A2);
-						}
-
-						// TimestampValue kaydı varsa güncelleyin, yoksa yeni bir kayıt ekleyin
-						if (existingRecordTimestampValue != null)
-						{
-							await UpdateTimestampValue(conn, catalogValue, respIdSeq, KodidA2A2, existingRecordTimestampDefinition.idA2A2);
-						}
-						else
-						{
-							await InsertTimestampValue(conn, catalogValue, respIdSeq, KodidA2A2, existingRecordTimestampDefinition.idA2A2);
-						}
 					}
 				}
 
@@ -549,125 +546,7 @@ new
 			}
 		}
 
-		// StringValue tablosunu güncelleyen fonksiyon
-		private async Task UpdateStringValue(SqlConnection conn, string catalogValue, long respIdSeq, long KodidA2A2, long stringDefinitionId)
-		{
-			await conn.ExecuteAsync($@"
-        UPDATE [{catalogValue}].[StringValue] 
-        SET 
-            [hierarchyIDA6] = '7058085483721066086', 
-            [idA2A2] = @respIdSeq, 
-            [classnameA2A2] = 'wt.iba.value.StringValue', 
-            [idA3A5] = 0, 
-            [idA3A6] = @stringDefinitionId, 
-            [markForDeleteA2] = 0, 
-            [modifyStampA2] = @modifyStampA2, 
-            [updateCountA2] = 1, 
-            [updateStampA2] = @updateStampA2, 
-            [createStampA2] = @createStampA2, 
-            [classnamekeyA4] = 'wt.part.WTPart', 
-            [classnamekeyA6] = 'wt.iba.definition.StringDefinition', 
-            [value] = '', 
-            [value2] = '' 
-        WHERE [idA3A4] = @KodidA2A2 
-            AND [idA3A6] = @stringDefinitionId",
-				new
-				{
-					respIdSeq,
-					stringDefinitionId,
-					modifyStampA2 = DateTime.Now.Date,
-					updateStampA2 = DateTime.Now.Date,
-					createStampA2 = DateTime.Now.Date,
-					KodidA2A2
-				});
-
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[id_sequence] (dummy) 
-        VALUES ('x')");
-		}
-
-		// StringValue tablosuna yeni kayıt ekleyen fonksiyon
-		private async Task InsertStringValue(SqlConnection conn, string catalogValue, long respIdSeq, long KodidA2A2, long stringDefinitionId)
-		{
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[StringValue] 
-            ([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value], [value2]) 
-        VALUES 
-            ('7058085483721066086', @respIdSeq, @KodidA2A2, 'wt.iba.value.StringValue', 0, @stringDefinitionId, 0, @modifyStampA2, 1, @updateStampA2, @createStampA2, 'wt.part.WTPart', 'wt.iba.definition.StringDefinition', '', '')",
-				new
-				{
-					respIdSeq,
-					KodidA2A2,
-					stringDefinitionId,
-					modifyStampA2 = DateTime.Now.Date,
-					updateStampA2 = DateTime.Now.Date,
-					createStampA2 = DateTime.Now.Date
-				});
-
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[id_sequence] (dummy) 
-        VALUES ('x')");
-		}
-
-		// TimestampValue tablosunu güncelleyen fonksiyon
-		private async Task UpdateTimestampValue(SqlConnection conn, string catalogValue, long respIdSeq, long KodidA2A2, long timestampDefinitionId)
-		{
-			await conn.ExecuteAsync($@"
-        UPDATE [{catalogValue}].[TimestampValue] 
-        SET 
-            [hierarchyIDA6] = '-148878178526147486', 
-            [idA2A2] = @respIdSeq, 
-            [classnameA2A2] = 'wt.iba.value.TimestampValue', 
-            [idA3A5] = 0, 
-            [idA3A6] = @timestampDefinitionId, 
-            [markForDeleteA2] = 0, 
-            [modifyStampA2] = @modifyStampA2, 
-            [updateCountA2] = 1, 
-            [updateStampA2] = @updateStampA2, 
-            [createStampA2] = @createStampA2, 
-            [classnamekeyA4] = 'wt.part.WTPart', 
-            [classnamekeyA6] = 'wt.iba.definition.TimestampDefinition', 
-            [value] = '' 
-        WHERE [idA3A4] = @KodidA2A2 
-            AND [idA3A6] = @timestampDefinitionId",
-				new
-				{
-					respIdSeq,
-					timestampDefinitionId,
-					modifyStampA2 = DateTime.Now.Date,
-					updateStampA2 = DateTime.Now.Date,
-					createStampA2 = DateTime.Now.Date,
-					KodidA2A2
-				});
-
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[id_sequence] (dummy) 
-        VALUES ('x')");
-		}
-
-		// TimestampValue tablosuna yeni kayıt ekleyen fonksiyon
-		private async Task InsertTimestampValue(SqlConnection conn, string catalogValue, long respIdSeq, long KodidA2A2, long timestampDefinitionId)
-		{
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[TimestampValue] 
-            ([hierarchyIDA6], [idA2A2], [idA3A4], [classnameA2A2], [idA3A5], [idA3A6], [markForDeleteA2], [modifyStampA2], [updateCountA2], [updateStampA2], [createStampA2], [classnamekeyA4], [classnamekeyA6], [value]) 
-        VALUES 
-            ('-148878178526147486', @respIdSeq, @KodidA2A2, 'wt.iba.value.TimestampValue', 0, @timestampDefinitionId, 0, @modifyStampA2, 1, @updateStampA2, @createStampA2, 'wt.part.WTPart', 'wt.iba.definition.TimestampDefinition', '')",
-				new
-				{
-					respIdSeq,
-					KodidA2A2,
-					timestampDefinitionId,
-					modifyStampA2 = DateTime.Now.Date,
-					updateStampA2 = DateTime.Now.Date,
-					createStampA2 = DateTime.Now.Date
-				});
-
-			await conn.ExecuteAsync($@"
-        INSERT INTO [{catalogValue}].[id_sequence] (dummy) 
-        VALUES ('x')");
-		}
-		#endregion
+	#endregion
 
 	}
 }

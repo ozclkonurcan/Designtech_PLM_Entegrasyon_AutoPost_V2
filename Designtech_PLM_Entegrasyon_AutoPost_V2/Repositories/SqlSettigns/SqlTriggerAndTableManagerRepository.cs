@@ -195,7 +195,7 @@ BEGIN
     END
 
     -- Eğer kontrol sonucunda wtpResult 0 ise devam ediyoruz
-    IF @wtpResult = 0 
+    IF @wtpResult = 0  and @ViewAd = 'Design' and @ParcaState <> 'INWORK'
     BEGIN
         -- Eğer ParcaPartID varsa güncelleme işlemi yapılacak
         IF EXISTS (SELECT 1 FROM [{scheman}].[Des_WTPart_LogTable] WHERE ParcaPartID = @ParcaPartID)
@@ -247,7 +247,6 @@ BEGIN
 END;
 ";
 
-
 			string Part_ReviseAndSaveAsClean = $@"
 CREATE TRIGGER [{scheman}].[Part_ReviseAndSaveAsClean]
 ON [{scheman}].[WTPart]
@@ -294,43 +293,16 @@ BEGIN
     -- Process only if the state is 'INWORK'
     IF @State = 'INWORK'
     BEGIN
-        SELECT @StringDefinitionID = idA2A2
-        FROM [{scheman}].[StringDefinition]
-        WHERE [displayName] = 'Entegrasyon Durumu';
+        
 
         INSERT INTO {scheman}.Des_LogDataReviseAndSaveAsProcess 
             (statestate, PartID, AnaNumber, AnaParcaAd, Number, ParcaAd, Version, KulAd, LogCode, LogMesaj)
         VALUES 
             (@State, @Part_ID, NULL, NULL, @Number, @ParcaAd, @Versiyon, @KulAd, 'DES-WTP-005', 'Parça oluşturuldu ve işlemde');
 
-        IF EXISTS (SELECT 1 
-                   FROM [{scheman}].[StringValue] 
-                   WHERE idA3A4 = @Part_ID 
-                     AND idA3A6 = @StringDefinitionID)
-        BEGIN
-            UPDATE [{scheman}].[StringValue]
-            SET [value] = NULL,
-                [value2] = NULL
-            WHERE idA3A4 = @Part_ID 
-              AND idA3A6 = @StringDefinitionID;
-
-            SET @UpdateCount = @@ROWCOUNT;
-
-            INSERT INTO {scheman}.DebugTable 
-                (Part_ID, StringDefinitionID, UpdateCount, DebugMessage) 
-            VALUES 
-                (@Part_ID, @StringDefinitionID, @UpdateCount, 'Güncelleme başarılı');
-        END
-        ELSE
-        BEGIN
-            INSERT INTO {scheman}.DebugTable 
-                (Part_ID, StringDefinitionID, UpdateCount, DebugMessage) 
-            VALUES 
-                (@Part_ID, @StringDefinitionID, 0, 'Kayıt bulunamadı');
-        END
+       
     END
 END";
-
 			string Part_EquivalenceLink_Control = $@"
 CREATE TRIGGER [{scheman}].[Part_EquivalenceLink_Control]
 ON [{scheman}].[WTPart]
