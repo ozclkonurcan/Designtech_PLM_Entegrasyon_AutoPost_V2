@@ -12,6 +12,7 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.E
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.Alternate;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.State;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.SqlSettigns;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.WindchillApiSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EmailSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.EntegrasyonAyar.EntegrasyonDurum;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.EPMDocument.Attachment;
@@ -24,6 +25,7 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.WTPart.Alternate;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluError.WTPart.State;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.SqlSettigns;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.WindchillApiSettings;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data;
 
@@ -71,6 +73,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			services.AddScoped<IClosedEnterationAttachmentsSerivce, ClosedEnterationAttachmentsRepository>();
 			services.AddScoped<IEmailService, EmailRepository>();
 			services.AddScoped<ISqlTriggerAndTableManagerService, SqlTriggerAndTableManagerRepository>();
+			services.AddScoped<IGetWindchillApiServices, GetWindchillApiRepository>();
 
 			//Error
 			services.AddScoped<IErrorStateService, ErrorStateRepository>();

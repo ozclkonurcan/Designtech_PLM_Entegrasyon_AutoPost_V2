@@ -4,6 +4,7 @@ using Designtech_PLM_Entegrasyon_AutoPost.Helper;
 using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EmailSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.EPMDocument.Attachment;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.WindchillApiSettings;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Model.WindchillApiModel.CADDocumentMgmt;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.ViewModel.WTDocAttachmentsModel;
@@ -34,10 +35,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 	{
 		private readonly IConfiguration _configuration;
 		private readonly IEmailService _emailService;
+		private readonly IGetWindchillApiServices  _getWindchillApiServices;
 
-		public AttachmentsRepository(IEmailService emailService)
+		public AttachmentsRepository(IEmailService emailService, IGetWindchillApiServices getWindchillApiServices)
 		{
 			_emailService = emailService;
+			_getWindchillApiServices = getWindchillApiServices;
 		}
 
 		public async Task GetAttachments(string state, string catalogValue, SqlConnection conn, string apiFullUrl, string apiURL, string CSRF_NONCE, string WindchillServerName, string ServerName, string BasicUsername, string BasicPassword, string sourceApi, string endPoint, int oldAlternateLinkCount, string sablonDataDurumu)
@@ -86,6 +89,10 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 
 
+					//cadJSON = await _getWindchillApiServices.GetApiData($"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Attachments");
+					//cadJSON2 = await _getWindchillApiServices.GetApiData($"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations");
+					//cadReferencesJSON = await _getWindchillApiServices.GetApiData($"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')/References");
+					//jsonWTUSER = await _getWindchillApiServices.GetApiData($"PrincipalMgmt/Users?$select=EMail,Name,FullName");
 
 
 
@@ -93,7 +100,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 
 
-						try
+					try
 					{
 
 						
@@ -301,7 +308,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 															LogService logService = new LogService(_configuration);
 															var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 															//logService.CreateJsonFileLogError(jsonData4, "CADReferencesResponse nesnesi null. Hata detayı: " + ex.Message);
-															logService.CreateJsonFileLogError(jsonData4, "Released işlemi gerçekleştirildi ama ilişkilendirilmiş bir WTPart parça bulunamadı. Hata detayı: ");
+															logService.CreateJsonFileLogError(jsonData4, "Released işlemi gerçekleştirildi ama ilişkilendirilmiş bir WTPart parça bulunamadı. ");
 														continue;
 													}
 

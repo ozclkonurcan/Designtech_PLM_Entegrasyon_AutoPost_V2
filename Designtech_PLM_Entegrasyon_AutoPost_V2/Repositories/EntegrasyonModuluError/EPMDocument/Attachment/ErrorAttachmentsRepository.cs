@@ -302,7 +302,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 														LogService logService = new LogService(_configuration);
 														var jsonData4 = JsonConvert.SerializeObject(CADResponse);
 														//logService.CreateJsonFileLogError(jsonData4, "CADReferencesResponse nesnesi null. Hata detayı: " + ex.Message);
-														logService.CreateJsonFileLogError(jsonData4, "Released işlemi gerçekleştirildi ama ilişkilendirilmiş bir WTPart parça bulunamadı. Hata detayı: ");
+														logService.CreateJsonFileLogError(jsonData4, "Released işlemi gerçekleştirildi ama ilişkilendirilmiş bir WTPart parça bulunamadı. ");
 													}
 
 												}

@@ -83,6 +83,7 @@ using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.W
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.Equivalence;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.EPMDocument.Attachment;
 using static Google.Cloud.Vision.V1.ProductSearchResults.Types;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.WindchillApiSettings;
 
 namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 {
@@ -104,6 +105,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 		private readonly IEmailService _emailService;
 		private readonly IClosedEnterationAttachmentsSerivce _closedEnterationAttachmentsSerivce;
 		private readonly ISqlTriggerAndTableManagerService _sqlTriggerAndTableManagerService;
+		private readonly IGetWindchillApiServices _getWindchillApiServices;
 		//Error
 		private readonly IErrorStateService _errorStateService;
 		private readonly IErrorAlternateService _errorAlternateService;
@@ -127,7 +129,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 
 		}
 
-		public Form1(IEquivalenceService equivalenceService, IAlternateService alternateService, IStateService stateService, IWTPartReviseService partReviseService, IAttachmentsService attachmentsService, IEmailService emailService, ISqlTriggerAndTableManagerService sqlTriggerAndTableManagerService, IClosedEnterationAttachmentsSerivce closedEnterationAttachmentsSerivce, IErrorStateService errorStateService, IErrorAlternateService errorAlternateService, IErrorEquivalenceService errorEquivalenceService, IErrorAttachmentsService errorAttachmentsService, IErrorClosedEnterationAttachmentsSerivce errorClosedEnterationAttachmentsSerivce)
+		public Form1(IEquivalenceService equivalenceService, IAlternateService alternateService, IStateService stateService, IWTPartReviseService partReviseService, IAttachmentsService attachmentsService, IEmailService emailService, ISqlTriggerAndTableManagerService sqlTriggerAndTableManagerService, IClosedEnterationAttachmentsSerivce closedEnterationAttachmentsSerivce, IErrorStateService errorStateService, IErrorAlternateService errorAlternateService, IErrorEquivalenceService errorEquivalenceService, IErrorAttachmentsService errorAttachmentsService, IErrorClosedEnterationAttachmentsSerivce errorClosedEnterationAttachmentsSerivce,IGetWindchillApiServices getWindchillApiServices)
 		{
 			InitializeComponent();
 			_equivalenceService = equivalenceService;
@@ -137,6 +139,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 			_attachmentsService = attachmentsService;
 			_emailService = emailService;
 			_sqlTriggerAndTableManagerService = sqlTriggerAndTableManagerService;
+			_getWindchillApiServices = getWindchillApiServices;
 			//Error
 			_errorStateService = errorStateService;
 			_errorAlternateService = errorAlternateService;

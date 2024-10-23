@@ -5,6 +5,7 @@ using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.EntegrasyonAyar.EntegrasyonDurum;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.State;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModuluError.WTPart.State;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.WindchillApiSettings;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -20,10 +21,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 	{
 		private readonly IConfiguration _configuration;
 		private readonly IEntegrasyonDurumService _entegrasyonDurumService;
-
-		public ErrorStateRepository(IEntegrasyonDurumService entegrasyonDurumService)
+		private readonly IGetWindchillApiServices _getWindchillApiServices;
+		public ErrorStateRepository(IEntegrasyonDurumService entegrasyonDurumService, IGetWindchillApiServices getWindchillApiServices)
 		{
 			_entegrasyonDurumService = entegrasyonDurumService;
+			_getWindchillApiServices = getWindchillApiServices;
 		}
 
 		private readonly ApiService _apiService = new();
@@ -75,7 +77,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 					{
 
 
-						var json = await windchillApiService.GetApiData(windchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)", basicUsername, basicPassword, CSRF_NONCE);
+						var json = await _getWindchillApiServices.GetApiData($"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)");
 						var response = JsonConvert.DeserializeObject<Part>(json);
 
 

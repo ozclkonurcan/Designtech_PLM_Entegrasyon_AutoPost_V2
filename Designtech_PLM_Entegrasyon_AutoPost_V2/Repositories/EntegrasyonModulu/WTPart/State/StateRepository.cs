@@ -4,6 +4,7 @@ using Designtech_PLM_Entegrasyon_AutoPost.Helper;
 using Designtech_PLM_Entegrasyon_AutoPost.Model.WindchillApiModel;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.EntegrasyonAyar.EntegrasyonDurum;
 using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.EntegrasyonModulu.WTPart.State;
+using Designtech_PLM_Entegrasyon_AutoPost_V2.Interfaces.WindchillApiSettings;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -22,10 +23,13 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 	{
 		private readonly IConfiguration _configuration;
 		private readonly IEntegrasyonDurumService _entegrasyonDurumService;
+		private readonly IGetWindchillApiServices _getWindchillApiServices;
 
-		public StateRepository(IEntegrasyonDurumService entegrasyonDurumService)
+
+		public StateRepository(IEntegrasyonDurumService entegrasyonDurumService, IGetWindchillApiServices getWindchillApiServices)
 		{
 			_entegrasyonDurumService = entegrasyonDurumService;
+			_getWindchillApiServices = getWindchillApiServices;
 		}
 
 		private readonly ApiService _apiService = new();
@@ -50,6 +54,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 		{
 			try
 			{
+				LogService logService = new LogService(configuration);
 				var sql = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE [ParcaState] = @ParcaState";
 				//if (state == "INWORK")
 				//	sql += " AND [ParcaVersion] NOT LIKE 'A%'";
@@ -73,18 +78,62 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 					//{ });
 
 
+					//foreach (var partItem in resolvedItemsList)
+					//{
+
+
+					//	var json = await _getWindchillApiServices.GetApiData($"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)");
+					//	var response = JsonConvert.DeserializeObject<Part>(json);
+
+
+
+					//	var responseWTPartJson = JsonConvert.SerializeObject(response);
+
+					//	if (response.BirimKodu is not null)
+					//	{
+					//		await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
+					//		await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+					//	}
+					//	else
+					//	{
+					//		logService.CreateJsonFileLog(responseWTPartJson, $"Birim Kodu boş");
+					//		await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+					//	}
+					//}
+
+
 					foreach (var partItem in resolvedItemsList)
-						{
-
-
-						var json = await windchillApiService.GetApiData(windchillServerName, $"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)", basicUsername, basicPassword, CSRF_NONCE);
+					{
+						var json = await _getWindchillApiServices.GetApiData($"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)");
 						var response = JsonConvert.DeserializeObject<Part>(json);
 
-					
-						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID,catalogValue);
+						var responseWTPartJson = JsonConvert.SerializeObject(response);
 
-						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+						// Check if any of the required fields are null
+						if (response.BirimKodu is null ||
+							response.PlanlamaTipiKodu is null ||
+							response.ProjeKodu is null ||
+							response.Fai is null ||
+							response.PLM is null)
+						{
+							logService.CreateJsonFileLog(responseWTPartJson, $"Uyarı! : Eksik Parametreler var işlem gerçekleşmiyor: {string.Join(", ", new[] {
+							response.BirimKodu is null ? "BirimKodu" : null,
+							response.PlanlamaTipiKodu is null ? "PlanlamaTipiKodu" : null,
+							response.ProjeKodu is null ? "ProjeKodu" : null,
+							response.Fai is null ? "Fai" : null,
+							response.PLM is null ? "PLM" : null
+						}.Where(x => x != null))}");
+
+							await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+
+							continue; 
 						}
+
+						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
+						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+					}
+
+
 
 
 					await Task.Delay(1000);
@@ -217,7 +266,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			LogService logService = new LogService(configuration);
 			if(state == "RELEASED")
 			{
-				if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED" && !string.IsNullOrEmpty(response.BirimKodu))
+				if (response.EntegrasyonDurumu is null or not "Parça entegre oldu" && state == "RELEASED")
 				{
 					await _entegrasyonDurumService.EntegrasyonDurumUpdate(state, ID);
 

@@ -69,6 +69,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 				var existingRecord = await conn.QueryFirstOrDefaultAsync(
 					$"SELECT * FROM [{catalogValue}].[StringValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = @stringDefinitionId",
 					new { KodidA2A2, stringDefinitionId });
+
 				var existingRecordTimeStamp = await conn.QueryFirstOrDefaultAsync(
 				   $"SELECT * FROM [{catalogValue}].[TimestampValue] WHERE [idA3A4] = @KodidA2A2 AND [idA3A6] = @timestampDefinitionId",
 				   new { KodidA2A2, timestampDefinitionId });
