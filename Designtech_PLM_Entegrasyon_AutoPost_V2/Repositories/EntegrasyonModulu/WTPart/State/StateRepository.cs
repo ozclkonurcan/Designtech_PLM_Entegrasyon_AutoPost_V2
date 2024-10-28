@@ -109,19 +109,37 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 						var responseWTPartJson = JsonConvert.SerializeObject(response);
 
-						// Check if any of the required fields are null
-						if (response.BirimKodu is null ||
+
+						// Sorguyu tanımla
+						var wtpartWrkControl = $@"
+									 SELECT CASE WHEN EXISTS (SELECT 1 FROM [{catalogValue}].WTPart WHERE idA3masterReference = @ParcaPartMasterID AND statecheckoutInfo = 'wrk') THEN 1 ELSE 0 END;
+										";
+
+						var parameters = new DynamicParameters();
+						parameters.Add("@ParcaPartMasterID", partItem.ParcaPartMasterID, DbType.Int32);
+
+						int wtpResult = conn.QuerySingle<int>(wtpartWrkControl, parameters);
+
+						if (wtpResult == 0)
+					{}
+
+						//if (response.BirimKodu is null ||
+						//response.PlanlamaTipiKodu is null ||
+						//response.ProjeKodu is null ||
+						//response.Fai is null ||
+						//response.PLM is null)
+						//{
+
+							if (response.BirimKodu is null ||
 							response.PlanlamaTipiKodu is null ||
 							response.ProjeKodu is null ||
-							response.Fai is null ||
-							response.PLM is null)
+							response.MuhasebeKodu is null)
 						{
-							logService.CreateJsonFileLog(responseWTPartJson, $"Uyarı! : Eksik Parametreler var işlem gerçekleşmiyor: {string.Join(", ", new[] {
+							logService.CreateJsonFileLogError(responseWTPartJson, $"Uyarı! : Eksik Parametreler var işlem gerçekleşmiyor: {string.Join(", ", new[] {
 							response.BirimKodu is null ? "BirimKodu" : null,
 							response.PlanlamaTipiKodu is null ? "PlanlamaTipiKodu" : null,
 							response.ProjeKodu is null ? "ProjeKodu" : null,
-							response.Fai is null ? "Fai" : null,
-							response.PLM is null ? "PLM" : null
+							response.MuhasebeKodu is null ? "MuhasebeKodu" : null
 						}.Where(x => x != null))}");
 
 							await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
@@ -129,8 +147,11 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 							continue; 
 						}
 
+
+
 						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
 						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+
 					}
 
 

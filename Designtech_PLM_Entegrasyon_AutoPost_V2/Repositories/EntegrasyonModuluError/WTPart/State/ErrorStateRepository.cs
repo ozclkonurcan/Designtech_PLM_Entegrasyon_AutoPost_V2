@@ -50,6 +50,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 		{
 			try
 			{
+				LogService logService = new LogService(configuration);
 				var sql = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable_Error WHERE [ParcaState] = @ParcaState";
 				//if (state == "INWORK")
 				//	sql += " AND [ParcaVersion] NOT LIKE 'A%'";
@@ -75,16 +76,68 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 
 					foreach (var partItem in resolvedItemsList)
 					{
-
-
 						var json = await _getWindchillApiServices.GetApiData($"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)");
 						var response = JsonConvert.DeserializeObject<Part>(json);
 
+						var responseWTPartJson = JsonConvert.SerializeObject(response);
+
+
+						// Sorguyu tanımla
+						var wtpartWrkControl = $@"
+									 SELECT CASE WHEN EXISTS (SELECT 1 FROM [{catalogValue}].WTPart WHERE idA3masterReference = @ParcaPartMasterID AND statecheckoutInfo = 'wrk') THEN 1 ELSE 0 END;
+										";
+
+						var parameters = new DynamicParameters();
+						parameters.Add("@ParcaPartMasterID", partItem.ParcaPartMasterID, DbType.Int32);
+
+						int wtpResult = conn.QuerySingle<int>(wtpartWrkControl, parameters);
+
+						if (wtpResult == 0)
+						{ }
+
+						//if (response.BirimKodu is null ||
+						//response.PlanlamaTipiKodu is null ||
+						//response.ProjeKodu is null ||
+						//response.Fai is null ||
+						//response.PLM is null)
+						//{
+
+						if (response.BirimKodu is null ||
+						response.PlanlamaTipiKodu is null ||
+						response.ProjeKodu is null ||
+						response.MuhasebeKodu is null)
+						{
+							logService.CreateJsonFileLogError(responseWTPartJson, $"Uyarı! : Eksik Parametreler var işlem gerçekleşmiyor: {string.Join(", ", new[] {
+							response.BirimKodu is null ? "BirimKodu" : null,
+							response.PlanlamaTipiKodu is null ? "PlanlamaTipiKodu" : null,
+							response.ProjeKodu is null ? "ProjeKodu" : null,
+							response.MuhasebeKodu is null ? "MuhasebeKodu" : null
+						}.Where(x => x != null))}");
+
+							await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+
+							continue;
+						}
+
+
 
 						await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
-
 						await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable_Error] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+
 					}
+
+					//foreach (var partItem in resolvedItemsList)
+					//{
+
+
+					//	var json = await _getWindchillApiServices.GetApiData($"ProdMgmt/Parts('OR:wt.part.WTPart:{partItem.ParcaPartID}')?$expand=Alternates($expand=AlternatePart)");
+					//	var response = JsonConvert.DeserializeObject<Part>(json);
+
+
+					//	await ProcessResponse(response, state, conn, configuration, apiFullUrl, apiURL, endPoint, partItem.ParcaPartID, catalogValue);
+
+					//	await conn.ExecuteAsync($"DELETE FROM [{catalogValue}].[Des_WTPart_LogTable_Error] WHERE [ParcaPartID] = @ParcaPartID", new { partItem.ParcaPartID });
+					//}
 
 
 					await Task.Delay(1000);

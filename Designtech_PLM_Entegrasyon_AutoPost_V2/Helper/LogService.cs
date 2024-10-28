@@ -351,7 +351,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost.Helper
                     {
                         Port = Convert.ToInt32(portNumber),
                         Credentials = new NetworkCredential(jsonObjectFile["FromEmail"].ToString(), jsonObjectFile["FromEmailPassword"].ToString()),
-                        EnableSsl = true,
+                        EnableSsl = false,
                     };
 
 					var mailMessage = new MailMessage();

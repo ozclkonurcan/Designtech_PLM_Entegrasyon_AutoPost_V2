@@ -75,7 +75,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 					jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName, $"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
 					cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
 					cadReferencesJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/References", BasicUsername, BasicPassword, CSRF_NONCE);
-					cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
+					cadJSON2 = await windchillApiService.GetApiDataUser(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
 
 
 

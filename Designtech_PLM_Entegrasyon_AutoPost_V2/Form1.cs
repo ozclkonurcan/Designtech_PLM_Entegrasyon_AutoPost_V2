@@ -532,6 +532,29 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					}
 					#endregion
 
+
+
+
+					//MailAyarlarý
+
+
+
+					if (!Directory.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath)))
+					{
+						Directory.CreateDirectory(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, directoryPath));
+					}
+
+	
+
+			
+				
+
+		
+
+
+
+
+
 				}
 				else
 				{
@@ -908,6 +931,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2
 					var anaKaynak = "";
 					var endPoint = "";
 
+
+
+					//MailAyarlarý
+					WindchillApiService windchillApiService = new WindchillApiService();
+					var jsonWTUSER = await windchillApiService.GetApiDataUser(WindchillServerName, $"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
+					var responseCreator = JsonConvert.DeserializeObject<WTUsers>(jsonWTUSER);
+					await _emailService.EmailControlString(responseCreator);
+					//MailAyarlarý
 
 
 

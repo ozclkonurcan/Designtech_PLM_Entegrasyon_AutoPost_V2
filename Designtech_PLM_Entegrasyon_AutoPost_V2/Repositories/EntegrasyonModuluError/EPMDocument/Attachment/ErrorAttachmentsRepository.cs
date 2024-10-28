@@ -72,7 +72,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModuluE
 					var jsonWTUSER = "";
 					var cadReferencesJSON = "";
 
-					jsonWTUSER = await windchillApiService.GetApiData(WindchillServerName, $"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
+					jsonWTUSER = await windchillApiService.GetApiDataUser(WindchillServerName, $"PrincipalMgmt/Users?$select=EMail,Name,FullName", BasicUsername, BasicPassword, CSRF_NONCE);
 					cadJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')?$expand=Attachments", BasicUsername, BasicPassword, CSRF_NONCE);
 					cadReferencesJSON = await windchillApiService.GetApiData(WindchillServerName, $"{sourceApi + partItem.EPMDocID}')/References", BasicUsername, BasicPassword, CSRF_NONCE);
 					cadJSON2 = await windchillApiService.GetApiData(WindchillServerName, $"CADDocumentMgmt/CADDocuments('OR:wt.epm.EPMDocument:{partItem.EPMDocID}')?$expand=Representations", BasicUsername, BasicPassword, CSRF_NONCE);
@@ -351,7 +351,8 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 							}
 							#endregion
 
-							#region CAD Cancelled
+
+							#region CAD Cancelled yeni
 
 							if (partItem.StateDegeri == "CANCELLED")
 							{
@@ -360,7 +361,6 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 								var cadAssociationsJSON = "";
 								var CADResponse = JsonConvert.DeserializeObject<RootObject>(cadJSON2);
 
-								string partCode = "";
 								if (cadReferencesJSON != null)
 								{
 									try
@@ -393,27 +393,27 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											var SQL_EPMReferenceLink = $"SELECT * FROM {catalogValue}.EPMReferenceLink WHERE [idA2A2] = '{empReferenceLinkID}'";
 											var resolvedItems_SQL_EPMReferenceLink = await conn.QuerySingleAsync<dynamic>(SQL_EPMReferenceLink);
 											var SQL_EPMDocument = $@"
-SELECT * 
-FROM [{catalogValue}].EPMDocument 
-WHERE [idA3masterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
-  AND latestiterationInfo = 1
-  AND versionIdA2versionInfo = (
-      SELECT MAX(versionIdA2versionInfo)
-      FROM [{catalogValue}].EPMDocument
-      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
-  )
-  AND versionLevelA2versionInfo = (
-      SELECT MAX(versionLevelA2versionInfo)
-      FROM [{catalogValue}].EPMDocument
-      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
-)";
+							SELECT * 
+							FROM [{catalogValue}].EPMDocument 
+							WHERE [idA3masterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+							  AND latestiterationInfo = 1
+							  AND versionIdA2versionInfo = (
+							      SELECT MAX(versionIdA2versionInfo)
+							      FROM [{catalogValue}].EPMDocument
+							      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+							  )
+							  AND versionLevelA2versionInfo = (
+							      SELECT MAX(versionLevelA2versionInfo)
+							      FROM [{catalogValue}].EPMDocument
+							      WHERE [idA3MasterReference] = '{resolvedItems_SQL_EPMReferenceLink.idA3B5}'
+							)";
 
 											var resolvedItems_SQL_EPMDocument = await conn.QuerySingleAsync<dynamic>(SQL_EPMDocument);
 
 											var SQL_EPMDocumentMaster = $@"
-SELECT * 
-FROM [{catalogValue}].EPMDocumentMaster 
-WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
+							SELECT * 
+							FROM [{catalogValue}].EPMDocumentMaster 
+							WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 											var resolvedItems_SQL_EPMDocumentMaster = await conn.QuerySingleAsync<dynamic>(SQL_EPMDocumentMaster);
 
@@ -438,193 +438,143 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 											}
 
 
-											var SQL_EPMBuildRule = $"SELECT * FROM {catalogValue}.EPMBuildRule WHERE [idA2A2] = '{EPMBuildRuleID}'";
-											var resolvedItems_SQL_EPMBuildRule = await conn.QuerySingleAsync<dynamic>(SQL_EPMBuildRule);
-
-											var SQL_WTPart = $"SELECT * FROM {catalogValue}.WTPart WHERE [branchIditerationInfo] = '{resolvedItems_SQL_EPMBuildRule.branchIdA3B5}' and latestiterationInfo = 1";
-											var resolvedItems_SQL_WTPart = await conn.QuerySingleAsync<dynamic>(SQL_WTPart);
 
 											//var SQL_WTPartMaster = $"SELECT * FROM {catalogValue}.WTPartMaster WHERE [branchIditerationInfo] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
 											//var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
 
-											partCode = Convert.ToString(resolvedItems_SQL_WTPart.idA2A2);
 
-											var partName = "";
-											var partNumber = "";
-											var partState = "";
-											var idA3ViewName = "";
-											if (!string.IsNullOrEmpty(partCode))
+
+
+
+
+
+											if (resolvedItems_SQL_EPMDocument.statestate == "CANCELLED")
 											{
 
 
-												var SQL_WTPartMaster = $"SELECT [name],[WTPartNumber] FROM {catalogValue}.WTPartMaster WHERE [idA2A2] = '{resolvedItems_SQL_WTPart.idA3masterReference}'";
-												var resolvedItems_SQL_WTPartMaster = await conn.QuerySingleAsync<dynamic>(SQL_WTPartMaster);
 
-
-												partName = resolvedItems_SQL_WTPartMaster.name;
-												partNumber = resolvedItems_SQL_WTPartMaster.WTPartNumber;
-												partState = resolvedItems_SQL_WTPart.statestate;
-
-												//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
-
-
-												var SQL_WTPartIdA3View = $"SELECT [name] FROM {catalogValue}.WTView WHERE idA2A2 = '{resolvedItems_SQL_WTPart.idA3view}'";
-												var resolvedItems_SQL_WTPartIdA3View = await conn.QueryFirstAsync<dynamic>(SQL_WTPartIdA3View);
-												idA3ViewName = resolvedItems_SQL_WTPartIdA3View.name;
-												//Design Kontrolü yapılacak design değil ise pdf gönderme iptal ediliecek ve logdan da kaldırılacak tekrar denenmememsi için
-
-												if(idA3ViewName == "Design")
-												{ 
-												if (partState == "CANCELLED")
+												try
 												{
-													if (resolvedItems_SQL_EPMDocument.statestate == "CANCELLED")
+
+													var CADViewResponse = new TeknikResimCancel
 													{
+														Number = "TR_" + CADResponse.Number,
+														Revizyon = CADResponse.Revision,
 
-														var SQL_WTPartControl = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE [ParcaPartID] = {partCode}";
-														var responseDataWTPart = await conn.QueryAsync<dynamic>(SQL_WTPartControl);
-														if (responseDataWTPart.Count() == 0)
-														{
+													};
 
-															try
+
+													ApiService _apiService = new ApiService();
+
+
+
+													//var jsonData3 = JsonConvert.SerializeObject(anaPart);
+													var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
+													dynamic dataResponse = null;
+
+													dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
+
+													LogService logService = new LogService(_configuration);
+
+													logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi." + dataResponse.message);
+
+													await conn.ExecuteAsync($@"
+							                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
+							                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+
+
+
+
+
+												}
+												catch (Exception ex)
+												{
+													//Burasıda cancelled olan parçanın düştüğü hata yeri bunun error ayarınıda buradan yapcaz
+
+													var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
+													{
+														Number = "TR_" + CADResponse.Number,
+														Revizyon = CADResponse.Revision,
+													};
+
+													var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfoCatch);
+													LogService logService = new LogService(_configuration);
+													logService.CreateJsonFileLog(LogJsonDataCatch, "HATA ! " + ex.Message);
+
+
+													var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
+											$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] WHERE [EPMDocID] = {partItem.EPMDocID}");
+
+													var existingErrorRecord = await conn.QueryFirstOrDefaultAsync<Ent_EPMDocStateModel>(
+											$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+											new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference }
+											);
+
+
+
+													if (existingErrorRecord == null)
+													{
+														// Veri yoksa yeni bir kayıt ekle
+														await conn.ExecuteAsync(
+															$"INSERT INTO [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
+															new
 															{
-
-																var CADViewResponse = new TeknikResimCancel
-																{
-																	Number = "TR_" + CADResponse.Number,
-																	Revizyon = CADResponse.Revision,
-
-																};
-
-
-																ApiService _apiService = new ApiService();
-
-
-
-																//var jsonData3 = JsonConvert.SerializeObject(anaPart);
-																var LogJsonData = JsonConvert.SerializeObject(CADViewResponse);
-																dynamic dataResponse = null;
-
-																dataResponse = await _apiService.PostDataAsync(apiFullUrl, apiURL, endPoint, LogJsonData, LogJsonData);
-
-																LogService logService = new LogService(_configuration);
-
-																logService.CreateJsonFileLog(LogJsonData, "CAD Döküman iptal edildi." + dataResponse.message);
-
-																await conn.ExecuteAsync($@"
-                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
-                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
-
-
-
-
-
+																EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
+																StateDegeri = Ent_EPMDocStateModelResponse.StateDegeri,
+																idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference,
+																CadName = Ent_EPMDocStateModelResponse.CadName,
+																name = Ent_EPMDocStateModelResponse.CadName,
+																docNumber = Ent_EPMDocStateModelResponse.docNumber
 															}
-															catch (Exception ex)
-															{
-																//Burasıda cancelled olan parçanın düştüğü hata yeri bunun error ayarınıda buradan yapcaz
-
-																var CADViewResponseContentInfoCatch = new TeknikResim2ViewModel
-																{
-																	Number = "TR_" + CADResponse.Number,
-																	Revizyon = CADResponse.Revision,
-																};
-
-																var LogJsonDataCatch = JsonConvert.SerializeObject(CADViewResponseContentInfoCatch);
-																LogService logService = new LogService(_configuration);
-																logService.CreateJsonFileLog(LogJsonDataCatch, "HATA ! " + ex.Message);
-
-
-																var Ent_EPMDocStateModelResponse = await conn.QueryFirstAsync<Ent_EPMDocStateModel>(
-														$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] WHERE [EPMDocID] = {partItem.EPMDocID}");
-
-																var existingErrorRecord = await conn.QueryFirstOrDefaultAsync<Ent_EPMDocStateModel>(
-														$"SELECT * FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
-														new { EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID, idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference }
 														);
-
-
-
-																if (existingErrorRecord == null)
-																{
-																	// Veri yoksa yeni bir kayıt ekle
-																	await conn.ExecuteAsync(
-																		$"INSERT INTO [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] ([EPMDocID],[StateDegeri], [idA3masterReference], [CadName],[name], [docNumber]) VALUES (@EPMDocID,@StateDegeri, @idA3masterReference, @CadName,@name, @docNumber)",
-																		new
-																		{
-																			EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
-																			StateDegeri = Ent_EPMDocStateModelResponse.StateDegeri,
-																			idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference,
-																			CadName = Ent_EPMDocStateModelResponse.CadName,
-																			name = Ent_EPMDocStateModelResponse.CadName,
-																			docNumber = Ent_EPMDocStateModelResponse.docNumber
-																		}
-																	);
-																}
-																else
-																{
-																	// Veri varsa güncelle
-																	await conn.ExecuteAsync(
-																		$"UPDATE [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
-																		new
-																		{
-																			EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
-																			StateDegeri = Ent_EPMDocStateModelResponse.StateDegeri,
-																			idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference,
-																			CadName = Ent_EPMDocStateModelResponse.CadName,
-																			name = Ent_EPMDocStateModelResponse.CadName,
-																			docNumber = Ent_EPMDocStateModelResponse.docNumber
-																		}
-																	);
-																}
-
-
-
-
-																await conn.ExecuteAsync($@"
-                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
-                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
-
-
-															}
-
-
-
-
-
-
-														}
 													}
 													else
 													{
-														LogService logService = new LogService(_configuration);
-
-														var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-														//logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadı.");
-														logService.CreateJsonFileLogError(jsonData4, $"Cancelled işlemi gerçekleştirildi ama CAD Döküman Cancelled değil. CADName : {resolvedItems_SQL_EPMDocumentMaster.CADName} Name : {resolvedItems_SQL_EPMDocumentMaster.name} DocumentNumber : {resolvedItems_SQL_EPMDocumentMaster.documentNumber} State : {resolvedItems_SQL_EPMDocument.statestate}");
+														// Veri varsa güncelle
+														await conn.ExecuteAsync(
+															$"UPDATE [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error] SET [StateDegeri] = @StateDegeri, [CadName] = @CadName, [name] = @name, [docNumber] = @docNumber WHERE [EPMDocID] = @EPMDocID AND [idA3masterReference] = @idA3masterReference",
+															new
+															{
+																EPMDocID = Ent_EPMDocStateModelResponse.EPMDocID,
+																StateDegeri = Ent_EPMDocStateModelResponse.StateDegeri,
+																idA3masterReference = Ent_EPMDocStateModelResponse.idA3masterReference,
+																CadName = Ent_EPMDocStateModelResponse.CadName,
+																name = Ent_EPMDocStateModelResponse.CadName,
+																docNumber = Ent_EPMDocStateModelResponse.docNumber
+															}
+														);
 													}
 
-												}
-												else
-												{
-													LogService logService = new LogService(_configuration);
-													var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-													logService.CreateJsonFileLogError(jsonData4, $"Cancelled işlemi gerçekleştirildi WTPart state durumu cancelled değil. WTPart Name : {partName} - WTPart Number {partNumber} - WTPart State {partState}");
-												}
-												}
-												else
-												{
+
+
+
 													await conn.ExecuteAsync($@"
-                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
-                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+							                                            DELETE FROM [{catalogValue}].[Des_EPMDocument_LogTable_Cancelled_Error]
+							                                            WHERE EPMDocID = @Ids", new { Ids = partItem.EPMDocID });
+
+
 												}
+
+
+
+
+
+
 
 											}
 											else
 											{
 												LogService logService = new LogService(_configuration);
+
 												var jsonData4 = JsonConvert.SerializeObject(CADResponse);
-												logService.CreateJsonFileLogError(jsonData4, "Cancelled işlemi gerçekleştirildi ama gönderilmedi. WTPart ilişkisi bulunmadı.");
+												//logService.CreateJsonFileLog(jsonData4, "Attachment da Veri bulunamadı.");
+												logService.CreateJsonFileLogError(jsonData4, $"Cancelled işlemi gerçekleştirildi ama CAD Döküman Cancelled değil. CADName : {resolvedItems_SQL_EPMDocumentMaster.CADName} Name : {resolvedItems_SQL_EPMDocumentMaster.name} DocumentNumber : {resolvedItems_SQL_EPMDocumentMaster.documentNumber} State : {resolvedItems_SQL_EPMDocument.statestate}");
 											}
+
+
+
+
+
 
 										}
 									}
@@ -646,6 +596,7 @@ WHERE [idA2A2] = '{resolvedItems_SQL_EPMDocument.idA3masterReference}'";
 
 
 							}
+
 							#endregion
 
 						}

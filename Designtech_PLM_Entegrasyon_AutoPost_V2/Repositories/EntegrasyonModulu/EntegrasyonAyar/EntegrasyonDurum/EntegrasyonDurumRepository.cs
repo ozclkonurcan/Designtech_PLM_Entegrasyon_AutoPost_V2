@@ -81,14 +81,14 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 
 				if (state == "RELEASED")
 				{
-					value = "PARCA ENTEGRE OLDU";
-					value2 = "Parca entegre oldu";
+					value = "ERP'YE AKTARIM BAŞARILI";
+					value2 = "ERP'ye aktarım başarılı";
 					controlDate2 = DateTime.UtcNow;
 				}
 				else if (state == "CANCELLED")
 				{
-					value = "PARCA İPTAL OLDU";
-					value2 = "Parca iptal oldu";
+					value = "ERP'YE AKTARILAN VERİ İPTAL EDİLDİ"; 
+					value2 = "ERP'ye aktarılan veri iptal edildi";
 					controlDate2 = DateTime.UtcNow;
 				}
 				else if (state == "INWORK")
