@@ -33,7 +33,7 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 			try
 			{
 
-
+				//Alternate Data 
 				var SQL_Alternate = $"SELECT * FROM {catalogValue}.Des_AlternateLink_LogTable WHERE [EntegrasyonDurum] = 1";
 
 				var responseData = await conn.QueryAsync<dynamic>(SQL_Alternate);
@@ -41,15 +41,12 @@ namespace Designtech_PLM_Entegrasyon_AutoPost_V2.Repositories.EntegrasyonModulu.
 				var dataList = responseData.ToList();
 
 
-	
-				
-
 
 				if (responseData != null)
 				{
 					foreach (var item in dataList)
 					{
-
+						 
 						var SQL_WTPart = $"SELECT * FROM {catalogValue}.Des_WTPart_LogTable WHERE [ParcaPartID] = {item.AnaParcaPartID} OR [ParcaPartID] = {item.MuadilParcaPartID}";
 						var responseDataWTPart = await conn.QueryAsync<dynamic>(SQL_WTPart);
 
